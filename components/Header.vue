@@ -2,7 +2,8 @@
   <header class="bg-white shadow-sm sticky top-0 z-50">
     <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-16">
-        <NuxtLink to="/" class="flex items-center space-x-2">
+        <NuxtLink to="/" class="flex items-center space-x-3">
+          <img src="/favicon.svg" alt="Studio Inkless Logo" class="w-10 h-10">
           <span class="text-2xl font-bold text-primary-600">Studio Inkless Blog</span>
         </NuxtLink>
 

@@ -11,19 +11,22 @@
       <!-- Floating shapes -->
       <div class="absolute inset-0 overflow-hidden pointer-events-none">
         <!-- Large circle - top left -->
-        <div class="absolute w-64 h-64 bg-gradient-to-br from-blue-200/20 to-indigo-200/20 rounded-full -top-32 -left-32 animate-float-slow blur-3xl"></div>
+        <div class="absolute w-96 h-96 bg-gradient-to-br from-blue-400/30 to-indigo-400/30 rounded-full -top-48 -left-48 animate-float-slow blur-2xl"></div>
 
         <!-- Medium circle - top right -->
-        <div class="absolute w-48 h-48 bg-gradient-to-br from-purple-200/20 to-pink-200/20 rounded-full top-20 right-10 animate-float-medium blur-2xl"></div>
+        <div class="absolute w-80 h-80 bg-gradient-to-br from-purple-400/35 to-pink-400/35 rounded-full -top-20 -right-20 animate-float-medium blur-xl"></div>
 
-        <!-- Small circle - bottom left -->
-        <div class="absolute w-32 h-32 bg-gradient-to-br from-indigo-200/20 to-blue-200/20 rounded-full bottom-20 left-20 animate-float-fast blur-2xl"></div>
+        <!-- Large circle - bottom left -->
+        <div class="absolute w-72 h-72 bg-gradient-to-br from-indigo-400/30 to-cyan-400/30 rounded-full -bottom-36 -left-36 animate-float-fast blur-2xl"></div>
 
-        <!-- Small square - middle right -->
-        <div class="absolute w-24 h-24 bg-gradient-to-br from-cyan-200/15 to-blue-200/15 rounded-2xl top-1/2 right-1/4 animate-float-reverse blur-xl"></div>
+        <!-- Medium square - middle right -->
+        <div class="absolute w-64 h-64 bg-gradient-to-br from-cyan-300/25 to-blue-300/25 rounded-3xl top-1/3 -right-32 animate-float-reverse blur-xl"></div>
 
-        <!-- Tiny circle - center -->
-        <div class="absolute w-20 h-20 bg-gradient-to-br from-violet-200/20 to-purple-200/20 rounded-full top-1/3 left-1/3 animate-float-slow blur-xl"></div>
+        <!-- Small circle - center left -->
+        <div class="absolute w-48 h-48 bg-gradient-to-br from-violet-400/35 to-purple-400/35 rounded-full top-1/2 left-1/4 animate-float-slow blur-lg"></div>
+
+        <!-- Small circle - bottom right -->
+        <div class="absolute w-56 h-56 bg-gradient-to-br from-pink-300/30 to-rose-300/30 rounded-full bottom-10 right-1/3 animate-float-medium blur-xl"></div>
       </div>
 
       <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
@@ -292,10 +295,10 @@ useSeoMeta({
     transform: translate(0, 0) rotate(0deg);
   }
   33% {
-    transform: translate(30px, -30px) rotate(120deg);
+    transform: translate(60px, -60px) rotate(120deg);
   }
   66% {
-    transform: translate(-20px, 20px) rotate(240deg);
+    transform: translate(-40px, 40px) rotate(240deg);
   }
 }
 
@@ -304,7 +307,7 @@ useSeoMeta({
     transform: translate(0, 0) rotate(0deg);
   }
   50% {
-    transform: translate(-40px, 40px) rotate(180deg);
+    transform: translate(-80px, 80px) rotate(180deg);
   }
 }
 
@@ -313,13 +316,13 @@ useSeoMeta({
     transform: translate(0, 0) scale(1);
   }
   25% {
-    transform: translate(20px, -20px) scale(1.1);
+    transform: translate(50px, -50px) scale(1.2);
   }
   50% {
-    transform: translate(-20px, -10px) scale(0.9);
+    transform: translate(-50px, -30px) scale(0.8);
   }
   75% {
-    transform: translate(10px, 20px) scale(1.05);
+    transform: translate(30px, 50px) scale(1.1);
   }
 }
 
@@ -328,10 +331,10 @@ useSeoMeta({
     transform: translate(0, 0) rotate(0deg);
   }
   33% {
-    transform: translate(-25px, 25px) rotate(-120deg);
+    transform: translate(-60px, 60px) rotate(-120deg);
   }
   66% {
-    transform: translate(15px, -15px) rotate(-240deg);
+    transform: translate(40px, -40px) rotate(-240deg);
   }
 }
 

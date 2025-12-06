@@ -93,3 +93,14 @@
     </div>
   </div>
 </template>
+
+<script setup lang="ts">
+useSeoMeta({
+  title: 'About - Studio Inkless Blog',
+  ogTitle: 'About Studio Inkless Blog',
+  description: 'Learn about Studio Inkless Blog - a modern blogging platform built with Nuxt 3, Tailwind CSS, and cutting-edge technologies.',
+  ogDescription: 'A modern blogging platform built with Nuxt 3, Tailwind CSS, and deployed on Cloudflare Pages.',
+  ogImage: 'https://images.pexels.com/photos/11035471/pexels-photo-11035471.jpeg?auto=compress&cs=tinysrgb&w=1200',
+  twitterCard: 'summary_large_image',
+})
+</script>

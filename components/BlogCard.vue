@@ -2,10 +2,13 @@
   <article class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300">
     <NuxtLink :to="`/blog/${post.slug}`">
       <div class="aspect-video w-full overflow-hidden">
-        <img
+        <NuxtImg
           :src="post.coverImage"
           :alt="post.title"
           class="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+          loading="lazy"
+          width="600"
+          height="400"
         />
       </div>
     </NuxtLink>
@@ -40,10 +43,12 @@
 
       <div class="flex items-center justify-between pt-4 border-t border-gray-200">
         <div class="flex items-center gap-3">
-          <img
+          <NuxtImg
             :src="post.author.avatar"
             :alt="post.author.name"
             class="w-10 h-10 rounded-full object-cover"
+            width="40"
+            height="40"
           />
           <div>
             <p class="text-sm font-medium text-gray-900">{{ post.author.name }}</p>
@@ -71,12 +76,5 @@ interface Props {
 
 defineProps<Props>()
 
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString)
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  })
-}
+const { formatDate } = useFormatDate()
 </script>

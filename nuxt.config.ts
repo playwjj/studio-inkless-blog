@@ -3,7 +3,14 @@ export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
   devtools: { enabled: true },
 
-  modules: ['@nuxtjs/tailwindcss'],
+  modules: ['@nuxtjs/tailwindcss', '@nuxt/image'],
+
+  // Nuxt Image configuration
+  image: {
+    // Disable ipx as we use external image sources
+    provider: 'none',
+    quality: 80,
+  },
 
   // Cloudflare Pages configuration
   nitro: {

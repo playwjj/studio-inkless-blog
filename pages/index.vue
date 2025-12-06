@@ -95,4 +95,17 @@
 const { data, pending, error } = await useFetch('/api/posts', {
   query: { limit: 3 }
 })
+
+useSeoMeta({
+  title: 'Studio Inkless Blog - Web Development & Technology Articles',
+  ogTitle: 'Studio Inkless Blog',
+  description: 'Discover articles about web development, design, and technology. Learn Nuxt 3, Vue, Tailwind CSS, and modern web development practices.',
+  ogDescription: 'Discover articles about web development, design, and technology. Learn Nuxt 3, Vue, Tailwind CSS, and modern web development practices.',
+  ogImage: 'https://images.pexels.com/photos/11035471/pexels-photo-11035471.jpeg?auto=compress&cs=tinysrgb&w=1200',
+  ogUrl: 'https://studio-inkless-blog.pages.dev',
+  twitterCard: 'summary_large_image',
+  twitterTitle: 'Studio Inkless Blog',
+  twitterDescription: 'Discover articles about web development, design, and technology.',
+  twitterImage: 'https://images.pexels.com/photos/11035471/pexels-photo-11035471.jpeg?auto=compress&cs=tinysrgb&w=1200',
+})
 </script>

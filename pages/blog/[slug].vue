@@ -49,14 +49,16 @@
         </h1>
 
         <div class="flex items-center gap-4 mb-6">
-          <img
+          <NuxtImg
             :src="data.author.avatar"
             :alt="data.author.name"
             class="w-12 h-12 rounded-full object-cover"
+            width="48"
+            height="48"
           />
           <div>
             <p class="font-medium text-gray-900">{{ data.author.name }}</p>
-            <p class="text-sm text-gray-500">{{ formatDate(data.publishedAt) }}</p>
+            <p class="text-sm text-gray-500">{{ formatDate(data.publishedAt, 'long') }}</p>
           </div>
         </div>
 
@@ -71,10 +73,13 @@
         </div>
 
         <div class="aspect-video w-full overflow-hidden rounded-xl mb-8">
-          <img
+          <NuxtImg
             :src="data.coverImage"
             :alt="data.title"
             class="w-full h-full object-cover"
+            width="1200"
+            height="675"
+            loading="eager"
           />
         </div>
       </header>
@@ -86,10 +91,12 @@
       <footer class="mt-12 pt-8 border-t border-gray-200">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-4">
-            <img
+            <NuxtImg
               :src="data.author.avatar"
               :alt="data.author.name"
               class="w-16 h-16 rounded-full object-cover"
+              width="64"
+              height="64"
             />
             <div>
               <p class="text-sm text-gray-500">Written by</p>
@@ -115,14 +122,7 @@ const slug = route.params.slug
 
 const { data, pending, error } = await useFetch(`/api/posts/${slug}`)
 
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString)
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })
-}
+const { formatDate } = useFormatDate()
 
 const formattedContent = computed(() => {
   if (!data.value?.content) return ''
@@ -141,13 +141,19 @@ const formattedContent = computed(() => {
     .replace(/^\d+\.\s+(.+)/gm, '<li class="ml-4">$1</li>')
 })
 
-useHead({
+useSeoMeta({
   title: () => data.value ? `${data.value.title} - Studio Inkless Blog` : 'Post - Studio Inkless Blog',
-  meta: [
-    {
-      name: 'description',
-      content: () => data.value?.excerpt || 'Read this post on Studio Inkless Blog'
-    }
-  ]
+  ogTitle: () => data.value?.title || 'Blog Post',
+  description: () => data.value?.excerpt || 'Read this post on Studio Inkless Blog',
+  ogDescription: () => data.value?.excerpt || 'Read this post on Studio Inkless Blog',
+  ogImage: () => data.value?.coverImage || 'https://images.pexels.com/photos/11035471/pexels-photo-11035471.jpeg?auto=compress&cs=tinysrgb&w=1200',
+  ogType: 'article',
+  articlePublishedTime: () => data.value?.publishedAt,
+  articleAuthor: () => data.value?.author.name,
+  articleTag: () => data.value?.tags,
+  twitterCard: 'summary_large_image',
+  twitterTitle: () => data.value?.title,
+  twitterDescription: () => data.value?.excerpt,
+  twitterImage: () => data.value?.coverImage,
 })
 </script>

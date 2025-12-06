@@ -1,0 +1,16 @@
+{
+  "name": "Studio Inkless Blog",
+  "short_name": "SI Blog",
+  "description": "A modern blog about web development, design, and technology",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f9fafb",
+  "theme_color": "#0284c7",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

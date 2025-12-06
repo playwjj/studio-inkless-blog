@@ -1,17 +1,33 @@
 <template>
   <div>
-    <!-- Hero Section - Lightweight -->
+    <!-- Hero Section -->
     <section class="relative overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-12 md:py-16">
       <div class="absolute inset-0 bg-gradient-to-br from-primary-600/5 via-indigo-500/5 to-purple-600/5"></div>
       <div class="absolute inset-0" style="background-image: radial-gradient(circle at 1px 1px, rgb(148 163 184 / 0.1) 1px, transparent 0); background-size: 40px 40px;"></div>
 
       <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Breadcrumb -->
+        <nav class="mb-6">
+          <ol class="flex items-center gap-2 text-sm">
+            <li>
+              <NuxtLink to="/blog" class="text-gray-600 hover:text-gray-900 transition-colors font-medium">
+                Blog
+              </NuxtLink>
+            </li>
+            <li class="text-gray-400">/</li>
+            <li class="text-gray-900 font-semibold">{{ categoryName }}</li>
+          </ol>
+        </nav>
+
         <div class="max-w-3xl">
+          <div class="inline-flex items-center px-4 py-1.5 text-sm font-semibold bg-white/80 backdrop-blur-sm rounded-lg border border-gray-200 text-primary-600 shadow-sm mb-4">
+            {{ categoryName }}
+          </div>
           <h1 class="text-3xl md:text-4xl font-bold mb-3 text-gray-900">
-            Blog Articles
+            {{ categoryName }} Articles
           </h1>
           <p class="text-base md:text-lg text-gray-600">
-            Explore our collection of {{ data?.posts?.length || 0 }} articles on web development and technology
+            Explore {{ filteredPosts.length }} article{{ filteredPosts.length !== 1 ? 's' : '' }} in {{ categoryName }}
           </p>
         </div>
       </div>
@@ -57,24 +73,9 @@
 
         <!-- Active Filters & Sort -->
         <div class="flex flex-wrap items-center gap-3">
-          <!-- Active Filters Display -->
-          <div v-if="hasActiveFilters" class="flex items-center gap-2 flex-wrap">
-            <span class="text-sm text-gray-600 font-medium">Active filters:</span>
-
-            <button
-              v-if="selectedCategory"
-              @click="selectedCategory = null"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-100 text-primary-700 rounded-lg text-sm font-medium hover:bg-primary-200 transition-colors"
-            >
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-              </svg>
-              {{ selectedCategory }}
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-
+          <!-- Active Tag Filters -->
+          <div v-if="selectedTags.length > 0" class="flex items-center gap-2 flex-wrap">
+            <span class="text-sm text-gray-600 font-medium">Tags:</span>
             <button
               v-for="tag in selectedTags"
               :key="tag"
@@ -86,12 +87,11 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-
             <button
-              @click="clearAllFilters"
+              @click="clearFilters"
               class="text-sm text-gray-600 hover:text-gray-900 font-medium underline"
             >
-              Clear all
+              Clear filters
             </button>
           </div>
 
@@ -112,7 +112,7 @@
         <div v-if="!pending" class="text-sm text-gray-600">
           Showing <span class="font-semibold text-gray-900">{{ filteredPosts.length }}</span>
           {{ filteredPosts.length === 1 ? 'article' : 'articles' }}
-          <span v-if="hasActiveFilters"> (filtered)</span>
+          <span v-if="searchQuery || selectedTags.length > 0"> (filtered)</span>
         </div>
       </div>
 
@@ -132,36 +132,34 @@
                 </h2>
               </div>
               <div v-if="categoriesData" class="p-3 space-y-1">
-                <button
-                  @click="selectedCategory = null"
+                <NuxtLink
+                  to="/blog"
                   :class="[
                     'block w-full text-left px-4 py-2.5 rounded-lg transition-all font-medium text-sm',
-                    !selectedCategory
-                      ? 'bg-primary-600 text-white shadow-md'
-                      : 'text-gray-700 hover:bg-gray-50'
+                    'text-gray-700 hover:bg-gray-50'
                   ]"
                 >
                   <span class="flex items-center justify-between">
                     <span>All Posts</span>
-                    <span :class="!selectedCategory ? 'text-primary-100' : 'text-gray-500'">
-                      {{ data?.posts?.length || 0 }}
+                    <span class="text-gray-500">
+                      {{ allPostsCount }}
                     </span>
                   </span>
-                </button>
+                </NuxtLink>
                 <NuxtLink
                   v-for="category in categoriesData"
                   :key="category.slug"
                   :to="`/blog/category/${category.slug}`"
                   :class="[
                     'block w-full text-left px-4 py-2.5 rounded-lg transition-all font-medium text-sm',
-                    selectedCategory === category.name
+                    categorySlug === category.slug
                       ? 'bg-primary-600 text-white shadow-md'
                       : 'text-gray-700 hover:bg-gray-50'
                   ]"
                 >
                   <span class="flex items-center justify-between">
                     <span>{{ category.name }}</span>
-                    <span :class="selectedCategory === category.name ? 'text-primary-100' : 'text-gray-500'">
+                    <span :class="categorySlug === category.slug ? 'text-primary-100' : 'text-gray-500'">
                       {{ category.count }}
                     </span>
                   </span>
@@ -176,13 +174,13 @@
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
                   </svg>
-                  Popular Tags
+                  Tags in {{ categoryName }}
                 </h2>
               </div>
-              <div v-if="tagsData" class="p-4">
+              <div v-if="categoryTags && categoryTags.length > 0" class="p-4">
                 <div class="flex flex-wrap gap-2">
                   <button
-                    v-for="tag in tagsData"
+                    v-for="tag in categoryTags"
                     :key="tag.name"
                     @click="toggleTag(tag.name)"
                     :class="[
@@ -192,9 +190,12 @@
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105'
                     ]"
                   >
-                    #{{ tag.name }}
+                    #{{ tag.name }} ({{ tag.count }})
                   </button>
                 </div>
+              </div>
+              <div v-else class="p-4 text-sm text-gray-500 text-center">
+                No tags in this category
               </div>
             </div>
           </div>
@@ -226,11 +227,11 @@
             </svg>
             <h3 class="text-xl font-semibold text-gray-900 mb-2">No articles found</h3>
             <p class="text-gray-600 mb-6">
-              {{ searchQuery ? 'Try adjusting your search terms or filters' : 'No posts match your criteria' }}
+              {{ searchQuery || selectedTags.length > 0 ? 'Try adjusting your search terms or filters' : `No posts in ${categoryName} category yet` }}
             </p>
             <button
-              v-if="hasActiveFilters"
-              @click="clearAllFilters"
+              v-if="searchQuery || selectedTags.length > 0"
+              @click="clearFilters"
               class="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition-colors"
             >
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -249,13 +250,6 @@
                 :post="post"
               />
             </div>
-
-            <Pagination
-              v-if="data?.pagination"
-              :current-page="currentPage"
-              :total-pages="data.pagination.totalPages"
-              @update:page="handlePageChange"
-            />
           </div>
         </div>
       </div>
@@ -266,21 +260,52 @@
 <script setup lang="ts">
 import type { BlogListItem } from '~/types/blog'
 
-const selectedCategory = ref<string | null>(null)
-const selectedTags = ref<string[]>([])
-const currentPage = ref(1)
+const route = useRoute()
+const categorySlug = computed(() => route.params.name as string)
+
 const searchQuery = ref('')
+const selectedTags = ref<string[]>([])
 const sortBy = ref('newest')
 
-const { data, pending, error, refresh } = await useFetch('/api/posts', {
-  query: {
-    page: currentPage,
-    limit: 10
-  },
-  watch: [currentPage]
-})
+// Fetch all categories for sidebar
 const { data: categoriesData } = await useFetch('/api/categories')
-const { data: tagsData } = await useFetch('/api/tags')
+
+// Find current category by slug
+const currentCategory = computed(() => {
+  if (!categoriesData.value) return null
+  return categoriesData.value.find(cat => cat.slug === categorySlug.value)
+})
+
+const categoryName = computed(() => currentCategory.value?.name || '')
+
+// Fetch posts for this category
+const { data, pending, error } = await useFetch('/api/posts', {
+  query: {
+    category: categorySlug,
+  }
+})
+
+// Calculate all posts count
+const allPostsCount = computed(() => {
+  if (!categoriesData.value) return 0
+  return categoriesData.value.reduce((sum, cat) => sum + cat.count, 0)
+})
+
+// Get tags specific to this category
+const categoryTags = computed(() => {
+  if (!data.value?.posts) return []
+
+  const tagCounts = new Map<string, number>()
+  data.value.posts.forEach((post: BlogListItem) => {
+    post.tags.forEach(tag => {
+      tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1)
+    })
+  })
+
+  return Array.from(tagCounts.entries())
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count)
+})
 
 const filteredPosts = computed(() => {
   if (!data.value?.posts) return []
@@ -295,11 +320,6 @@ const filteredPosts = computed(() => {
       post.excerpt.toLowerCase().includes(query) ||
       post.tags.some(tag => tag.toLowerCase().includes(query))
     )
-  }
-
-  // Category filter
-  if (selectedCategory.value) {
-    posts = posts.filter(post => post.category === selectedCategory.value)
   }
 
   // Tag filter
@@ -327,10 +347,6 @@ const sortedPosts = computed(() => {
   }
 })
 
-const hasActiveFilters = computed(() => {
-  return selectedCategory.value !== null || selectedTags.value.length > 0 || searchQuery.value.trim() !== ''
-})
-
 const toggleTag = (tag: string) => {
   const index = selectedTags.value.indexOf(tag)
   if (index > -1) {
@@ -338,32 +354,18 @@ const toggleTag = (tag: string) => {
   } else {
     selectedTags.value.push(tag)
   }
-  currentPage.value = 1
 }
 
-const clearAllFilters = () => {
-  selectedCategory.value = null
+const clearFilters = () => {
   selectedTags.value = []
   searchQuery.value = ''
-  currentPage.value = 1
 }
-
-const handlePageChange = (page: number) => {
-  currentPage.value = page
-  // Scroll to top of page
-  window.scrollTo({ top: 0, behavior: 'smooth' })
-}
-
-// Watch category and search changes, reset page number
-watch([selectedCategory, searchQuery], () => {
-  currentPage.value = 1
-})
 
 useSeoMeta({
-  title: 'Blog - Studio Inkless Blog',
-  ogTitle: 'Blog Articles - Studio Inkless Blog',
-  description: 'Explore our collection of articles on web development, design, and technology. Filter by categories and tags to find what interests you.',
-  ogDescription: 'Explore our collection of articles on web development, design, and technology.',
+  title: `${categoryName.value} - Blog - Studio Inkless Blog`,
+  ogTitle: `${categoryName.value} Articles - Studio Inkless Blog`,
+  description: `Explore articles in ${categoryName.value} category. Find tutorials, guides, and insights about ${categoryName.value}.`,
+  ogDescription: `Explore articles in ${categoryName.value} category.`,
   ogImage: 'https://images.pexels.com/photos/11035471/pexels-photo-11035471.jpeg?auto=compress&cs=tinysrgb&w=1200',
   twitterCard: 'summary_large_image',
 })

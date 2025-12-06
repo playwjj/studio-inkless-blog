@@ -1,5 +1,19 @@
 import type { BlogPost } from '~/types/blog'
 
+export interface Category {
+  name: string
+  slug: string
+}
+
+export const categories: Category[] = [
+  { name: 'Tutorial', slug: 'tutorial' },
+  { name: 'CSS', slug: 'css' },
+  { name: 'Backend', slug: 'backend' },
+  { name: 'Programming', slug: 'programming' },
+  { name: 'DevOps', slug: 'devops' },
+  { name: 'Performance', slug: 'performance' }
+]
+
 export const mockPosts: BlogPost[] = [
   {
     id: '1',

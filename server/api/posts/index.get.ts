@@ -1,15 +1,23 @@
-import { mockPosts } from '~/server/utils/mockData'
+import { mockPosts, categories } from '~/server/utils/mockData'
 
 export default defineEventHandler((event) => {
   const query = getQuery(event)
 
   let posts = mockPosts.map(({ content, ...post }) => post)
 
-  // Filter by category
+  // Filter by category (supports both slug and name)
   if (query.category && typeof query.category === 'string') {
-    posts = posts.filter(post =>
-      post.category.toLowerCase() === query.category.toString().toLowerCase()
-    )
+    const categorySlug = query.category.toString().toLowerCase()
+    // Find category by slug
+    const category = categories.find(cat => cat.slug === categorySlug)
+    if (category) {
+      posts = posts.filter(post => post.category === category.name)
+    } else {
+      // Fallback to filter by name (case-insensitive)
+      posts = posts.filter(post =>
+        post.category.toLowerCase() === categorySlug
+      )
+    }
   }
 
   // Filter by tag

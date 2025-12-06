@@ -185,12 +185,17 @@
         </div>
 
         <div v-else-if="categories" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <CategoryCard
+          <NuxtLink
             v-for="category in categories"
-            :key="category.name"
-            :name="category.name"
-            :count="category.count"
-          />
+            :key="category.slug"
+            :to="`/blog/category/${category.slug}`"
+            class="block transition-transform hover:scale-105"
+          >
+            <CategoryCard
+              :name="category.name"
+              :count="category.count"
+            />
+          </NuxtLink>
         </div>
       </div>
     </section>

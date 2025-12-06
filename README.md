@@ -158,7 +158,7 @@ Update `nuxt.config.ts` for:
 ### Build Configuration
 
 - **Build command**: `npm run build`
-- **Build output directory**: `.output/public`
+- **Build output directory**: `dist`
 - **Node version**: 20
 
 ### Deployment Steps
@@ -173,7 +173,7 @@ Update `nuxt.config.ts` for:
 3. **Configure Build**:
    - Framework preset: **Nuxt.js**
    - Build command: `npm run build`
-   - Build output directory: `.output/public`
+   - Build output directory: `dist`
 
 4. **Deploy**: Click **Save and Deploy**
 

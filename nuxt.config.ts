@@ -55,5 +55,10 @@ export default defineNuxtConfig({
 
   typescript: {
     strict: true
+  },
+
+  runtimeConfig: {
+    dbApiKey: process.env.DB_API_KEY,
+    dbApiUrl: process.env.DB_API_URL || 'https://db.404401.xyz'
   }
 })

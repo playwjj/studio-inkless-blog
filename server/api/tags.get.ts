@@ -1,12 +1,20 @@
-import { mockPosts } from '~/server/utils/mockData'
+import type { DbTag } from '~/server/types/dbTypes'
 
-export default defineEventHandler(() => {
-  const allTags = mockPosts.flatMap(post => post.tags)
-  const uniqueTags = [...new Set(allTags)]
+export default defineEventHandler(async () => {
+  try {
+    // Fetch tags
+    const tagsResponse = await fetchFromDb<DbTag>('tags', { limit: 100 })
+    const tags = tagsResponse.data
 
-  return uniqueTags.map(tag => ({
-    name: tag,
-    slug: tag.toLowerCase().replace(/\s+/g, '-'),
-    count: allTags.filter(t => t === tag).length
-  })).sort((a, b) => b.count - a.count)
+    // Note: Tag count would require article_tags junction table
+    // For now, return tags with count = 0 or implement counting logic if available
+    return tags.map(tag => ({
+      name: tag.name,
+      slug: tag.slug,
+      count: 0 // TODO: Implement counting with article_tags table
+    })).sort((a, b) => b.count - a.count)
+  } catch (error) {
+    console.error('Failed to fetch tags:', error)
+    return []
+  }
 })

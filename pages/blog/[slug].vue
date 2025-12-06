@@ -83,9 +83,12 @@
           <div class="max-w-4xl">
             <!-- Category & Read Time -->
             <div class="flex items-center gap-4 mb-4">
-              <span class="inline-flex items-center px-4 py-1.5 text-sm font-semibold bg-white/80 backdrop-blur-sm rounded-lg border border-gray-200 text-primary-600 shadow-sm">
+              <NuxtLink
+                :to="`/blog/category/${data.category.toLowerCase().replace(/\s+/g, '-')}`"
+                class="inline-flex items-center px-4 py-1.5 text-sm font-semibold bg-white/80 backdrop-blur-sm rounded-lg border border-gray-200 text-primary-600 shadow-sm hover:bg-primary-50 hover:border-primary-300 transition-all"
+              >
                 {{ data.category }}
-              </span>
+              </NuxtLink>
               <span class="text-gray-600 text-sm flex items-center gap-1.5">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -267,7 +270,12 @@
                     </svg>
                     <div>
                       <p class="text-gray-500 mb-1">Category</p>
-                      <p class="text-gray-900 font-medium">{{ data.category }}</p>
+                      <NuxtLink
+                        :to="`/blog/category/${data.category.toLowerCase().replace(/\s+/g, '-')}`"
+                        class="text-gray-900 font-medium hover:text-primary-600 transition-colors"
+                      >
+                        {{ data.category }}
+                      </NuxtLink>
                     </div>
                   </div>
                   <div class="flex items-start gap-3">

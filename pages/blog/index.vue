@@ -272,44 +272,26 @@ const currentPage = ref(1)
 const searchQuery = ref('')
 const sortBy = ref('newest')
 
+// Compute query parameters for API
+const apiQuery = computed(() => ({
+  page: currentPage.value,
+  limit: 10,
+  category: selectedCategory.value || undefined,
+  tag: selectedTags.value.length > 0 ? selectedTags.value[0] : undefined,
+  search: searchQuery.value.trim() || undefined
+}))
+
 const { data, pending, error, refresh } = await useFetch('/api/posts', {
-  query: {
-    page: currentPage,
-    limit: 10
-  },
-  watch: [currentPage]
+  query: apiQuery,
+  watch: [currentPage, selectedCategory, selectedTags, searchQuery]
 })
 const { data: categoriesData } = await useFetch('/api/categories')
 const { data: tagsData } = await useFetch('/api/tags')
 
 const filteredPosts = computed(() => {
   if (!data.value?.posts) return []
-
-  let posts = data.value.posts as BlogListItem[]
-
-  // Search filter
-  if (searchQuery.value.trim()) {
-    const query = searchQuery.value.toLowerCase()
-    posts = posts.filter(post =>
-      post.title.toLowerCase().includes(query) ||
-      post.excerpt.toLowerCase().includes(query) ||
-      post.tags.some(tag => tag.toLowerCase().includes(query))
-    )
-  }
-
-  // Category filter
-  if (selectedCategory.value) {
-    posts = posts.filter(post => post.category === selectedCategory.value)
-  }
-
-  // Tag filter
-  if (selectedTags.value.length > 0) {
-    posts = posts.filter(post =>
-      selectedTags.value.some(tag => post.tags.includes(tag))
-    )
-  }
-
-  return posts
+  // All filtering is handled by the API (search, category, tag)
+  return data.value.posts as BlogListItem[]
 })
 
 const sortedPosts = computed(() => {
@@ -354,8 +336,8 @@ const handlePageChange = (page: number) => {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
-// Watch category and search changes, reset page number
-watch([selectedCategory, searchQuery], () => {
+// Watch filter changes, reset page number
+watch([selectedCategory, selectedTags, searchQuery], () => {
   currentPage.value = 1
 })
 

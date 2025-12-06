@@ -15,7 +15,11 @@
               </NuxtLink>
             </li>
             <li class="text-gray-400">/</li>
-            <li class="text-gray-600">Tags</li>
+            <li>
+              <NuxtLink to="/blog/tags" class="text-gray-600 hover:text-gray-900 transition-colors font-medium">
+                Tags
+              </NuxtLink>
+            </li>
             <li class="text-gray-400">/</li>
             <li class="text-gray-900 font-semibold">{{ tagName }}</li>
           </ol>

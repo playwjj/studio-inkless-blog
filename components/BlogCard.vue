@@ -15,9 +15,13 @@
 
     <div class="p-6">
       <div class="flex items-center gap-4 mb-3">
-        <span class="inline-block px-3 py-1 text-xs font-semibold text-primary-600 bg-primary-50 rounded-full">
+        <NuxtLink
+          :to="`/blog/category/${post.category.toLowerCase().replace(/\s+/g, '-')}`"
+          class="inline-block px-3 py-1 text-xs font-semibold text-primary-600 bg-primary-50 rounded-full hover:bg-primary-100 hover:shadow-sm transition-all"
+          @click.stop
+        >
           {{ post.category }}
-        </span>
+        </NuxtLink>
         <span class="text-sm text-gray-500">{{ post.readTime }} min read</span>
       </div>
 

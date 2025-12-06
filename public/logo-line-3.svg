@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Feather quill line art -->
+  <g transform="translate(50, 50)">
+    <!-- Feather shaft -->
+    <path d="M 0 -30 Q -1 -10 0 20"
+          fill="none"
+          stroke="#0284c7"
+          stroke-width="2.5"
+          stroke-linecap="round"/>
+
+    <!-- Feather barbs (simplified) -->
+    <!-- Left side -->
+    <path d="M -1 -20 Q -8 -18 -12 -15"
+          fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round"/>
+    <path d="M -1 -10 Q -10 -8 -15 -5"
+          fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round"/>
+    <path d="M -1 0 Q -12 2 -16 5"
+          fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round"/>
+
+    <!-- Right side -->
+    <path d="M 1 -20 Q 8 -18 12 -15"
+          fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round"/>
+    <path d="M 1 -10 Q 10 -8 15 -5"
+          fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round"/>
+    <path d="M 1 0 Q 12 2 16 5"
+          fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round"/>
+
+    <!-- Pen tip -->
+    <path d="M -2 18 L 0 25 L 2 18"
+          fill="none" stroke="#0284c7" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

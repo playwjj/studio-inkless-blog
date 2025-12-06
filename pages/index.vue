@@ -10,48 +10,52 @@
 
       <!-- Animated lines background -->
       <div class="absolute inset-0 overflow-hidden pointer-events-none">
-        <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+        <!-- Lines layer with stretched aspect ratio -->
+        <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" viewBox="0 0 100 100">
           <defs>
             <linearGradient id="line-gradient-1" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" style="stop-color:rgb(59, 130, 246);stop-opacity:0.4" />
-              <stop offset="100%" style="stop-color:rgb(99, 102, 241);stop-opacity:0.1" />
+              <stop offset="0%" style="stop-color:rgb(59, 130, 246);stop-opacity:0.5" />
+              <stop offset="50%" style="stop-color:rgb(99, 102, 241);stop-opacity:0.3" />
+              <stop offset="100%" style="stop-color:rgb(59, 130, 246);stop-opacity:0.5" />
             </linearGradient>
             <linearGradient id="line-gradient-2" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" style="stop-color:rgb(139, 92, 246);stop-opacity:0.4" />
-              <stop offset="100%" style="stop-color:rgb(236, 72, 153);stop-opacity:0.1" />
+              <stop offset="0%" style="stop-color:rgb(139, 92, 246);stop-opacity:0.5" />
+              <stop offset="50%" style="stop-color:rgb(236, 72, 153);stop-opacity:0.3" />
+              <stop offset="100%" style="stop-color:rgb(139, 92, 246);stop-opacity:0.5" />
             </linearGradient>
             <linearGradient id="line-gradient-3" x1="100%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" style="stop-color:rgb(34, 211, 238);stop-opacity:0.4" />
-              <stop offset="100%" style="stop-color:rgb(59, 130, 246);stop-opacity:0.1" />
+              <stop offset="0%" style="stop-color:rgb(34, 211, 238);stop-opacity:0.5" />
+              <stop offset="50%" style="stop-color:rgb(59, 130, 246);stop-opacity:0.3" />
+              <stop offset="100%" style="stop-color:rgb(34, 211, 238);stop-opacity:0.5" />
             </linearGradient>
           </defs>
 
-          <!-- Animated curved lines -->
-          <path class="animate-line-draw-1" d="M -100 150 Q 200 50, 500 200 T 1100 150" stroke="url(#line-gradient-1)" stroke-width="2" fill="none" opacity="0.6" />
-          <path class="animate-line-draw-2" d="M 0 300 Q 400 200, 800 350 T 1400 300" stroke="url(#line-gradient-2)" stroke-width="2" fill="none" opacity="0.5" />
-          <path class="animate-line-draw-3" d="M 200 -50 Q 500 150, 800 50 T 1400 100" stroke="url(#line-gradient-3)" stroke-width="2" fill="none" opacity="0.6" />
+          <!-- Animated curved lines that span full width -->
+          <path class="animate-line-draw-1" d="M -5 30 Q 25 20, 50 35 T 105 30" stroke="url(#line-gradient-1)" stroke-width="0.3" fill="none" opacity="0.7" />
+          <path class="animate-line-draw-2" d="M -5 60 Q 25 50, 50 65 T 105 60" stroke="url(#line-gradient-2)" stroke-width="0.3" fill="none" opacity="0.65" />
+          <path class="animate-line-draw-3" d="M -5 45 Q 25 35, 50 48 T 105 45" stroke="url(#line-gradient-3)" stroke-width="0.3" fill="none" opacity="0.7" />
 
-          <!-- Animated dots along the lines -->
-          <circle class="animate-dot-1" r="4" fill="rgb(59, 130, 246)" opacity="0.8">
-            <animateMotion dur="10s" repeatCount="indefinite" path="M -100 150 Q 200 50, 500 200 T 1100 150" />
-          </circle>
-          <circle class="animate-dot-2" r="4" fill="rgb(139, 92, 246)" opacity="0.8">
-            <animateMotion dur="12s" repeatCount="indefinite" path="M 0 300 Q 400 200, 800 350 T 1400 300" />
-          </circle>
-          <circle class="animate-dot-3" r="4" fill="rgb(34, 211, 238)" opacity="0.8">
-            <animateMotion dur="15s" repeatCount="indefinite" path="M 200 -50 Q 500 150, 800 50 T 1400 100" />
-          </circle>
+          <!-- Additional wave lines for fullness -->
+          <path class="animate-line-draw-1" d="M -5 25 Q 25 15, 50 28 T 105 25" stroke="url(#line-gradient-1)" stroke-width="0.18" fill="none" opacity="0.45" />
+          <path class="animate-line-draw-2" d="M -5 70 Q 25 60, 50 72 T 105 70" stroke="url(#line-gradient-2)" stroke-width="0.18" fill="none" opacity="0.35" />
 
           <!-- Static grid lines that fade in/out -->
-          <g class="animate-grid-pulse" opacity="0.15">
-            <line x1="0" y1="100" x2="100%" y2="100" stroke="rgb(148, 163, 184)" stroke-width="1" stroke-dasharray="5,5" />
-            <line x1="0" y1="250" x2="100%" y2="250" stroke="rgb(148, 163, 184)" stroke-width="1" stroke-dasharray="5,5" />
-            <line x1="0" y1="400" x2="100%" y2="400" stroke="rgb(148, 163, 184)" stroke-width="1" stroke-dasharray="5,5" />
-            <line x1="200" y1="0" x2="200" y2="100%" stroke="rgb(148, 163, 184)" stroke-width="1" stroke-dasharray="5,5" />
-            <line x1="500" y1="0" x2="500" y2="100%" stroke="rgb(148, 163, 184)" stroke-width="1" stroke-dasharray="5,5" />
-            <line x1="800" y1="0" x2="800" y2="100%" stroke="rgb(148, 163, 184)" stroke-width="1" stroke-dasharray="5,5" />
+          <g class="animate-grid-pulse" opacity="0.12">
+            <line x1="0" y1="20" x2="100" y2="20" stroke="rgb(148, 163, 184)" stroke-width="0.15" stroke-dasharray="2,2" vector-effect="non-scaling-stroke" />
+            <line x1="0" y1="50" x2="100" y2="50" stroke="rgb(148, 163, 184)" stroke-width="0.15" stroke-dasharray="2,2" vector-effect="non-scaling-stroke" />
+            <line x1="0" y1="80" x2="100" y2="80" stroke="rgb(148, 163, 184)" stroke-width="0.15" stroke-dasharray="2,2" vector-effect="non-scaling-stroke" />
+            <line x1="20" y1="0" x2="20" y2="100" stroke="rgb(148, 163, 184)" stroke-width="0.15" stroke-dasharray="2,2" vector-effect="non-scaling-stroke" />
+            <line x1="50" y1="0" x2="50" y2="100" stroke="rgb(148, 163, 184)" stroke-width="0.15" stroke-dasharray="2,2" vector-effect="non-scaling-stroke" />
+            <line x1="80" y1="0" x2="80" y2="100" stroke="rgb(148, 163, 184)" stroke-width="0.15" stroke-dasharray="2,2" vector-effect="non-scaling-stroke" />
           </g>
         </svg>
+
+        <!-- Dots layer using CSS for perfect circles -->
+        <div class="animate-dot-path-1 absolute w-2 h-2 rounded-full bg-blue-500 opacity-90"></div>
+        <div class="animate-dot-path-2 absolute w-2 h-2 rounded-full bg-purple-500 opacity-90"></div>
+        <div class="animate-dot-path-3 absolute w-2 h-2 rounded-full bg-cyan-400 opacity-90"></div>
+        <div class="animate-dot-path-4 absolute w-1.5 h-1.5 rounded-full bg-indigo-500 opacity-70"></div>
+        <div class="animate-dot-path-5 absolute w-1.5 h-1.5 rounded-full bg-pink-400 opacity-70"></div>
 
         <!-- Floating gradient orbs for depth -->
         <div class="absolute w-64 h-64 bg-gradient-to-br from-blue-400/10 to-indigo-400/5 rounded-full top-10 left-10 animate-float-slow blur-3xl"></div>
@@ -395,6 +399,34 @@ useSeoMeta({
   }
 }
 
+/* Dot path animations using offset-path */
+@keyframes dot-move-1 {
+  0% {
+    offset-distance: 0%;
+  }
+  100% {
+    offset-distance: 100%;
+  }
+}
+
+@keyframes dot-move-2 {
+  0% {
+    offset-distance: 0%;
+  }
+  100% {
+    offset-distance: 100%;
+  }
+}
+
+@keyframes dot-move-3 {
+  0% {
+    offset-distance: 0%;
+  }
+  100% {
+    offset-distance: 100%;
+  }
+}
+
 /* Apply animations */
 .animate-float-slow {
   animation: float-slow 25s ease-in-out infinite;
@@ -425,5 +457,66 @@ useSeoMeta({
 
 .animate-gradient-shift {
   animation: gradient-shift 8s ease-in-out infinite;
+}
+
+/* Dot path animations - simulate wave movement */
+.animate-dot-path-1 {
+  animation: dot-path-1 12s ease-in-out infinite;
+}
+
+.animate-dot-path-2 {
+  animation: dot-path-2 15s ease-in-out infinite;
+}
+
+.animate-dot-path-3 {
+  animation: dot-path-3 10s ease-in-out infinite;
+}
+
+.animate-dot-path-4 {
+  animation: dot-path-4 18s ease-in-out infinite;
+}
+
+.animate-dot-path-5 {
+  animation: dot-path-5 14s ease-in-out infinite;
+}
+
+@keyframes dot-path-1 {
+  0% { left: -2%; top: 30%; }
+  25% { left: 25%; top: 20%; }
+  50% { left: 50%; top: 35%; }
+  75% { left: 75%; top: 30%; }
+  100% { left: 102%; top: 30%; }
+}
+
+@keyframes dot-path-2 {
+  0% { left: -2%; top: 60%; }
+  25% { left: 25%; top: 50%; }
+  50% { left: 50%; top: 65%; }
+  75% { left: 75%; top: 60%; }
+  100% { left: 102%; top: 60%; }
+}
+
+@keyframes dot-path-3 {
+  0% { left: -2%; top: 45%; }
+  25% { left: 25%; top: 35%; }
+  50% { left: 50%; top: 48%; }
+  75% { left: 75%; top: 45%; }
+  100% { left: 102%; top: 45%; }
+}
+
+@keyframes dot-path-4 {
+  0% { left: -2%; top: 25%; }
+  25% { left: 25%; top: 15%; }
+  50% { left: 50%; top: 28%; }
+  75% { left: 75%; top: 25%; }
+  100% { left: 102%; top: 25%; }
+}
+
+@keyframes dot-path-5 {
+  0% { left: -2%; top: 70%; }
+  25% { left: 25%; top: 60%; }
+  50% { left: 50%; top: 72%; }
+  75% { left: 75%; top: 70%; }
+  100% { left: 102%; top: 70%; }
 }
 </style>

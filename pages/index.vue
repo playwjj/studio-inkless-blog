@@ -2,8 +2,29 @@
   <div class="min-h-screen">
     <!-- Hero Section - Lightweight -->
     <section class="relative overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <div class="absolute inset-0 bg-gradient-to-br from-primary-600/5 via-indigo-500/5 to-purple-600/5"></div>
+      <!-- Animated background gradient overlay -->
+      <div class="absolute inset-0 bg-gradient-to-br from-primary-600/5 via-indigo-500/5 to-purple-600/5 animate-gradient-shift"></div>
+
+      <!-- Dot pattern -->
       <div class="absolute inset-0" style="background-image: radial-gradient(circle at 1px 1px, rgb(148 163 184 / 0.1) 1px, transparent 0); background-size: 40px 40px;"></div>
+
+      <!-- Floating shapes -->
+      <div class="absolute inset-0 overflow-hidden pointer-events-none">
+        <!-- Large circle - top left -->
+        <div class="absolute w-64 h-64 bg-gradient-to-br from-blue-200/20 to-indigo-200/20 rounded-full -top-32 -left-32 animate-float-slow blur-3xl"></div>
+
+        <!-- Medium circle - top right -->
+        <div class="absolute w-48 h-48 bg-gradient-to-br from-purple-200/20 to-pink-200/20 rounded-full top-20 right-10 animate-float-medium blur-2xl"></div>
+
+        <!-- Small circle - bottom left -->
+        <div class="absolute w-32 h-32 bg-gradient-to-br from-indigo-200/20 to-blue-200/20 rounded-full bottom-20 left-20 animate-float-fast blur-2xl"></div>
+
+        <!-- Small square - middle right -->
+        <div class="absolute w-24 h-24 bg-gradient-to-br from-cyan-200/15 to-blue-200/15 rounded-2xl top-1/2 right-1/4 animate-float-reverse blur-xl"></div>
+
+        <!-- Tiny circle - center -->
+        <div class="absolute w-20 h-20 bg-gradient-to-br from-violet-200/20 to-purple-200/20 rounded-full top-1/3 left-1/3 animate-float-slow blur-xl"></div>
+      </div>
 
       <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
         <div class="text-center max-w-3xl mx-auto">
@@ -264,3 +285,82 @@ useSeoMeta({
   twitterImage: 'https://images.pexels.com/photos/11035471/pexels-photo-11035471.jpeg?auto=compress&cs=tinysrgb&w=1200',
 })
 </script>
+
+<style scoped>
+@keyframes float-slow {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  33% {
+    transform: translate(30px, -30px) rotate(120deg);
+  }
+  66% {
+    transform: translate(-20px, 20px) rotate(240deg);
+  }
+}
+
+@keyframes float-medium {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate(-40px, 40px) rotate(180deg);
+  }
+}
+
+@keyframes float-fast {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(20px, -20px) scale(1.1);
+  }
+  50% {
+    transform: translate(-20px, -10px) scale(0.9);
+  }
+  75% {
+    transform: translate(10px, 20px) scale(1.05);
+  }
+}
+
+@keyframes float-reverse {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  33% {
+    transform: translate(-25px, 25px) rotate(-120deg);
+  }
+  66% {
+    transform: translate(15px, -15px) rotate(-240deg);
+  }
+}
+
+@keyframes gradient-shift {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.animate-float-slow {
+  animation: float-slow 20s ease-in-out infinite;
+}
+
+.animate-float-medium {
+  animation: float-medium 15s ease-in-out infinite;
+}
+
+.animate-float-fast {
+  animation: float-fast 10s ease-in-out infinite;
+}
+
+.animate-float-reverse {
+  animation: float-reverse 18s ease-in-out infinite;
+}
+
+.animate-gradient-shift {
+  animation: gradient-shift 8s ease-in-out infinite;
+}
+</style>

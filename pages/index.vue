@@ -8,25 +8,54 @@
       <!-- Dot pattern -->
       <div class="absolute inset-0" style="background-image: radial-gradient(circle at 1px 1px, rgb(148 163 184 / 0.1) 1px, transparent 0); background-size: 40px 40px;"></div>
 
-      <!-- Floating shapes -->
+      <!-- Animated lines background -->
       <div class="absolute inset-0 overflow-hidden pointer-events-none">
-        <!-- Large circle - top left -->
-        <div class="absolute w-96 h-96 bg-gradient-to-br from-blue-400/30 to-indigo-400/30 rounded-full -top-48 -left-48 animate-float-slow blur-2xl"></div>
+        <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="line-gradient-1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:rgb(59, 130, 246);stop-opacity:0.4" />
+              <stop offset="100%" style="stop-color:rgb(99, 102, 241);stop-opacity:0.1" />
+            </linearGradient>
+            <linearGradient id="line-gradient-2" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:rgb(139, 92, 246);stop-opacity:0.4" />
+              <stop offset="100%" style="stop-color:rgb(236, 72, 153);stop-opacity:0.1" />
+            </linearGradient>
+            <linearGradient id="line-gradient-3" x1="100%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style="stop-color:rgb(34, 211, 238);stop-opacity:0.4" />
+              <stop offset="100%" style="stop-color:rgb(59, 130, 246);stop-opacity:0.1" />
+            </linearGradient>
+          </defs>
 
-        <!-- Medium circle - top right -->
-        <div class="absolute w-80 h-80 bg-gradient-to-br from-purple-400/35 to-pink-400/35 rounded-full -top-20 -right-20 animate-float-medium blur-xl"></div>
+          <!-- Animated curved lines -->
+          <path class="animate-line-draw-1" d="M -100 150 Q 200 50, 500 200 T 1100 150" stroke="url(#line-gradient-1)" stroke-width="2" fill="none" opacity="0.6" />
+          <path class="animate-line-draw-2" d="M 0 300 Q 400 200, 800 350 T 1400 300" stroke="url(#line-gradient-2)" stroke-width="2" fill="none" opacity="0.5" />
+          <path class="animate-line-draw-3" d="M 200 -50 Q 500 150, 800 50 T 1400 100" stroke="url(#line-gradient-3)" stroke-width="2" fill="none" opacity="0.6" />
 
-        <!-- Large circle - bottom left -->
-        <div class="absolute w-72 h-72 bg-gradient-to-br from-indigo-400/30 to-cyan-400/30 rounded-full -bottom-36 -left-36 animate-float-fast blur-2xl"></div>
+          <!-- Animated dots along the lines -->
+          <circle class="animate-dot-1" r="4" fill="rgb(59, 130, 246)" opacity="0.8">
+            <animateMotion dur="10s" repeatCount="indefinite" path="M -100 150 Q 200 50, 500 200 T 1100 150" />
+          </circle>
+          <circle class="animate-dot-2" r="4" fill="rgb(139, 92, 246)" opacity="0.8">
+            <animateMotion dur="12s" repeatCount="indefinite" path="M 0 300 Q 400 200, 800 350 T 1400 300" />
+          </circle>
+          <circle class="animate-dot-3" r="4" fill="rgb(34, 211, 238)" opacity="0.8">
+            <animateMotion dur="15s" repeatCount="indefinite" path="M 200 -50 Q 500 150, 800 50 T 1400 100" />
+          </circle>
 
-        <!-- Medium square - middle right -->
-        <div class="absolute w-64 h-64 bg-gradient-to-br from-cyan-300/25 to-blue-300/25 rounded-3xl top-1/3 -right-32 animate-float-reverse blur-xl"></div>
+          <!-- Static grid lines that fade in/out -->
+          <g class="animate-grid-pulse" opacity="0.15">
+            <line x1="0" y1="100" x2="100%" y2="100" stroke="rgb(148, 163, 184)" stroke-width="1" stroke-dasharray="5,5" />
+            <line x1="0" y1="250" x2="100%" y2="250" stroke="rgb(148, 163, 184)" stroke-width="1" stroke-dasharray="5,5" />
+            <line x1="0" y1="400" x2="100%" y2="400" stroke="rgb(148, 163, 184)" stroke-width="1" stroke-dasharray="5,5" />
+            <line x1="200" y1="0" x2="200" y2="100%" stroke="rgb(148, 163, 184)" stroke-width="1" stroke-dasharray="5,5" />
+            <line x1="500" y1="0" x2="500" y2="100%" stroke="rgb(148, 163, 184)" stroke-width="1" stroke-dasharray="5,5" />
+            <line x1="800" y1="0" x2="800" y2="100%" stroke="rgb(148, 163, 184)" stroke-width="1" stroke-dasharray="5,5" />
+          </g>
+        </svg>
 
-        <!-- Small circle - center left -->
-        <div class="absolute w-48 h-48 bg-gradient-to-br from-violet-400/35 to-purple-400/35 rounded-full top-1/2 left-1/4 animate-float-slow blur-lg"></div>
-
-        <!-- Small circle - bottom right -->
-        <div class="absolute w-56 h-56 bg-gradient-to-br from-pink-300/30 to-rose-300/30 rounded-full bottom-10 right-1/3 animate-float-medium blur-xl"></div>
+        <!-- Floating gradient orbs for depth -->
+        <div class="absolute w-64 h-64 bg-gradient-to-br from-blue-400/10 to-indigo-400/5 rounded-full top-10 left-10 animate-float-slow blur-3xl"></div>
+        <div class="absolute w-96 h-96 bg-gradient-to-br from-purple-400/10 to-pink-400/5 rounded-full bottom-0 right-0 animate-float-medium blur-3xl"></div>
       </div>
 
       <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
@@ -290,15 +319,16 @@ useSeoMeta({
 </script>
 
 <style scoped>
+/* Floating orbs animations */
 @keyframes float-slow {
   0%, 100% {
     transform: translate(0, 0) rotate(0deg);
   }
   33% {
-    transform: translate(60px, -60px) rotate(120deg);
+    transform: translate(30px, -30px) rotate(120deg);
   }
   66% {
-    transform: translate(-40px, 40px) rotate(240deg);
+    transform: translate(-20px, 20px) rotate(240deg);
   }
 }
 
@@ -307,37 +337,55 @@ useSeoMeta({
     transform: translate(0, 0) rotate(0deg);
   }
   50% {
-    transform: translate(-80px, 80px) rotate(180deg);
+    transform: translate(-40px, 40px) rotate(180deg);
   }
 }
 
-@keyframes float-fast {
+/* Line drawing animations */
+@keyframes line-draw-1 {
   0%, 100% {
-    transform: translate(0, 0) scale(1);
-  }
-  25% {
-    transform: translate(50px, -50px) scale(1.2);
+    stroke-dashoffset: 0;
+    opacity: 0.6;
   }
   50% {
-    transform: translate(-50px, -30px) scale(0.8);
-  }
-  75% {
-    transform: translate(30px, 50px) scale(1.1);
+    stroke-dashoffset: 100;
+    opacity: 0.3;
   }
 }
 
-@keyframes float-reverse {
+@keyframes line-draw-2 {
   0%, 100% {
-    transform: translate(0, 0) rotate(0deg);
+    stroke-dashoffset: 0;
+    opacity: 0.5;
   }
-  33% {
-    transform: translate(-60px, 60px) rotate(-120deg);
-  }
-  66% {
-    transform: translate(40px, -40px) rotate(-240deg);
+  50% {
+    stroke-dashoffset: -100;
+    opacity: 0.2;
   }
 }
 
+@keyframes line-draw-3 {
+  0%, 100% {
+    stroke-dashoffset: 0;
+    opacity: 0.6;
+  }
+  50% {
+    stroke-dashoffset: 80;
+    opacity: 0.3;
+  }
+}
+
+/* Grid pulse animation */
+@keyframes grid-pulse {
+  0%, 100% {
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 0.05;
+  }
+}
+
+/* Gradient shift */
 @keyframes gradient-shift {
   0%, 100% {
     opacity: 1;
@@ -347,20 +395,32 @@ useSeoMeta({
   }
 }
 
+/* Apply animations */
 .animate-float-slow {
-  animation: float-slow 20s ease-in-out infinite;
+  animation: float-slow 25s ease-in-out infinite;
 }
 
 .animate-float-medium {
-  animation: float-medium 15s ease-in-out infinite;
+  animation: float-medium 20s ease-in-out infinite;
 }
 
-.animate-float-fast {
-  animation: float-fast 10s ease-in-out infinite;
+.animate-line-draw-1 {
+  stroke-dasharray: 1000;
+  animation: line-draw-1 20s ease-in-out infinite;
 }
 
-.animate-float-reverse {
-  animation: float-reverse 18s ease-in-out infinite;
+.animate-line-draw-2 {
+  stroke-dasharray: 1000;
+  animation: line-draw-2 25s ease-in-out infinite;
+}
+
+.animate-line-draw-3 {
+  stroke-dasharray: 1000;
+  animation: line-draw-3 18s ease-in-out infinite;
+}
+
+.animate-grid-pulse {
+  animation: grid-pulse 10s ease-in-out infinite;
 }
 
 .animate-gradient-shift {

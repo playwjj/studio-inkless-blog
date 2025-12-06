@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logo Preview - Studio Inkless Blog</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 50px;
+            font-size: 2.5rem;
+        }
+
+        .logo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        .logo-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease;
+        }
+
+        .logo-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .logo-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #1f2937;
+        }
+
+        .logo-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .logo-container img {
+            width: 150px;
+            height: 150px;
+        }
+
+        .logo-description {
+            color: #6b7280;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .preview-section {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .preview-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 30px;
+            color: #1f2937;
+        }
+
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .preview-item {
+            text-align: center;
+        }
+
+        .preview-item img {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 10px;
+        }
+
+        .preview-item-title {
+            font-size: 0.85rem;
+            color: #6b7280;
+        }
+
+        .instructions {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 20px;
+            margin-top: 30px;
+            border-radius: 8px;
+        }
+
+        .instructions h3 {
+            color: #92400e;
+            margin-bottom: 10px;
+        }
+
+        .instructions p {
+            color: #78350f;
+            line-height: 1.6;
+        }
+
+        .instructions code {
+            background: #fde68a;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Logo Design Options</h1>
+
+        <div class="logo-grid">
+            <div class="logo-card">
+                <div class="logo-title">Option 1: Modern Pen</div>
+                <div class="logo-container">
+                    <img src="/logo-modern.svg" alt="Modern Pen Logo">
+                </div>
+                <div class="logo-description">
+                    A sleek pen nib design with an ink drop, symbolizing traditional writing meeting modern digital. Features a gradient blue background with clean white elements.
+                </div>
+            </div>
+
+            <div class="logo-card">
+                <div class="logo-title">Option 2: Geometric Book</div>
+                <div class="logo-container">
+                    <img src="/logo-geometric.svg" alt="Geometric Book Logo">
+                </div>
+                <div class="logo-description">
+                    Abstract open book pages with text lines, representing knowledge and content. Geometric and professional with a modern gradient.
+                </div>
+            </div>
+
+            <div class="logo-card">
+                <div class="logo-title">Option 3: Abstract Flow</div>
+                <div class="logo-container">
+                    <img src="/logo-abstract.svg" alt="Abstract Flow Logo">
+                </div>
+                <div class="logo-description">
+                    Minimalist flowing "SI" letters with dots, representing digital and fluid content creation. Very modern and tech-forward.
+                </div>
+            </div>
+
+            <div class="logo-card">
+                <div class="logo-title">Option 4: Refined Quill</div>
+                <div class="logo-container">
+                    <img src="/logo-refined.svg" alt="Refined Quill Logo">
+                </div>
+                <div class="logo-description">
+                    Classic quill feather with "SI" text below, combining traditional writing heritage with modern aesthetics. Elegant and sophisticated.
+                </div>
+            </div>
+        </div>
+
+        <div class="preview-section">
+            <div class="preview-title">Size Preview</div>
+            <div class="preview-grid">
+                <div class="preview-item">
+                    <img src="/logo-modern.svg" style="width: 32px; height: 32px;" alt="Small">
+                    <div class="preview-item-title">Favicon (32px)</div>
+                </div>
+                <div class="preview-item">
+                    <img src="/logo-modern.svg" style="width: 64px; height: 64px;" alt="Medium">
+                    <div class="preview-item-title">Icon (64px)</div>
+                </div>
+                <div class="preview-item">
+                    <img src="/logo-modern.svg" style="width: 128px; height: 128px;" alt="Large">
+                    <div class="preview-item-title">App Icon (128px)</div>
+                </div>
+            </div>
+
+            <div class="instructions">
+                <h3>📝 How to Apply Your Choice</h3>
+                <p>
+                    To use your preferred logo, tell me which option you like (1-4), and I'll:
+                </p>
+                <ul style="margin-top: 10px; margin-left: 20px; color: #78350f;">
+                    <li>Update the favicon (<code>favicon.svg</code>)</li>
+                    <li>Update the header logo</li>
+                    <li>Update all meta tags and manifests</li>
+                    <li>Create additional sizes if needed</li>
+                </ul>
+                <p style="margin-top: 10px;">
+                    Or, if you'd like modifications to any design, just let me know!
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

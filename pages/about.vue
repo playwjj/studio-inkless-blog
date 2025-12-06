@@ -8,7 +8,7 @@
       <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
         <div class="text-center">
           <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-primary-500 to-indigo-600 shadow-lg shadow-primary-500/50 mb-8">
-            <img src="/favicon.svg" alt="Studio Inkless" class="w-12 h-12">
+            <img src="/favicon.svg" alt="Studio Inkless" class="w-12 h-12 brightness-0 invert">
           </div>
           <h1 class="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
             Studio Inkless Blog

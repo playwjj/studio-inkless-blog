@@ -1,41 +1,44 @@
 <template>
   <div class="min-h-screen">
-    <!-- Hero Section - Simplified -->
-    <section class="relative overflow-hidden bg-gradient-to-br from-primary-600 to-primary-700 text-white">
-      <!-- Subtle Background Elements -->
-      <div class="absolute inset-0 overflow-hidden opacity-30">
-        <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
-        <div class="absolute bottom-0 left-0 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
-      </div>
+    <!-- Hero Section - Lightweight -->
+    <section class="relative overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div class="absolute inset-0 bg-gradient-to-br from-primary-600/5 via-indigo-500/5 to-purple-600/5"></div>
+      <div class="absolute inset-0" style="background-image: radial-gradient(circle at 1px 1px, rgb(148 163 184 / 0.1) 1px, transparent 0); background-size: 40px 40px;"></div>
 
-      <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
+      <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
         <div class="text-center max-w-3xl mx-auto">
+          <!-- Badge -->
+          <div class="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full text-sm font-medium mb-8 border border-gray-200 shadow-sm">
+            <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+            <span class="text-gray-700">Welcome to our blog</span>
+          </div>
+
           <!-- Main Heading -->
-          <h1 class="text-3xl md:text-5xl font-bold mb-4 leading-tight">
+          <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 leading-tight text-gray-900">
             Modern Web Development
-            <span class="block mt-1 text-primary-100 text-2xl md:text-3xl font-normal">
+            <span class="block mt-2 bg-gradient-to-r from-primary-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
               Insights & Tutorials
             </span>
           </h1>
 
-          <p class="text-base md:text-lg text-primary-100 mb-8 leading-relaxed">
+          <p class="text-lg md:text-xl text-gray-600 mb-10 leading-relaxed">
             Learn Nuxt, Vue, TypeScript, and modern web technologies through practical tutorials and best practices.
           </p>
 
           <!-- CTA Buttons -->
-          <div class="flex flex-col sm:flex-row gap-3 justify-center items-center">
+          <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <NuxtLink
               to="/blog"
-              class="group inline-flex items-center gap-2 bg-white text-primary-600 px-6 py-3 rounded-lg font-semibold hover:bg-primary-50 transition-all shadow-lg hover:shadow-xl"
+              class="group inline-flex items-center gap-2 bg-primary-600 text-white px-8 py-4 rounded-xl font-semibold hover:bg-primary-700 transition-all shadow-lg hover:shadow-xl hover:scale-105"
             >
               Explore Articles
-              <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
               </svg>
             </NuxtLink>
             <NuxtLink
               to="/about"
-              class="inline-flex items-center gap-2 text-white hover:text-primary-100 px-6 py-3 rounded-lg font-semibold transition-colors"
+              class="inline-flex items-center gap-2 text-gray-700 hover:text-gray-900 px-8 py-4 rounded-xl font-semibold transition-colors border-2 border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50"
             >
               About Us
             </NuxtLink>
@@ -205,32 +208,32 @@
     </section>
 
     <!-- Stats Section -->
-    <section class="bg-gradient-to-r from-primary-600 to-primary-700 py-12">
+    <section class="bg-white py-16">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-          <div>
-            <div class="text-3xl md:text-4xl font-bold text-white mb-2">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 text-center border border-blue-100 hover:shadow-lg transition-shadow">
+            <div class="text-3xl md:text-4xl font-bold text-primary-600 mb-2">
               {{ data?.posts?.length || 0 }}
             </div>
-            <div class="text-primary-100 text-sm md:text-base">Articles Published</div>
+            <div class="text-gray-600 text-sm md:text-base font-medium">Articles Published</div>
           </div>
-          <div>
-            <div class="text-3xl md:text-4xl font-bold text-white mb-2">
+          <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 text-center border border-purple-100 hover:shadow-lg transition-shadow">
+            <div class="text-3xl md:text-4xl font-bold text-purple-600 mb-2">
               {{ categories?.length || 0 }}
             </div>
-            <div class="text-primary-100 text-sm md:text-base">Categories</div>
+            <div class="text-gray-600 text-sm md:text-base font-medium">Categories</div>
           </div>
-          <div>
-            <div class="text-3xl md:text-4xl font-bold text-white mb-2">
+          <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 text-center border border-green-100 hover:shadow-lg transition-shadow">
+            <div class="text-3xl md:text-4xl font-bold text-green-600 mb-2">
               50K+
             </div>
-            <div class="text-primary-100 text-sm md:text-base">Monthly Readers</div>
+            <div class="text-gray-600 text-sm md:text-base font-medium">Monthly Readers</div>
           </div>
-          <div>
-            <div class="text-3xl md:text-4xl font-bold text-white mb-2">
+          <div class="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-6 text-center border border-orange-100 hover:shadow-lg transition-shadow">
+            <div class="text-3xl md:text-4xl font-bold text-orange-600 mb-2">
               100%
             </div>
-            <div class="text-primary-100 text-sm md:text-base">Free Content</div>
+            <div class="text-gray-600 text-sm md:text-base font-medium">Free Content</div>
           </div>
         </div>
       </div>

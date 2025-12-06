@@ -1,0 +1,82 @@
+<template>
+  <article class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300">
+    <NuxtLink :to="`/blog/${post.slug}`">
+      <div class="aspect-video w-full overflow-hidden">
+        <img
+          :src="post.coverImage"
+          :alt="post.title"
+          class="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+        />
+      </div>
+    </NuxtLink>
+
+    <div class="p-6">
+      <div class="flex items-center gap-4 mb-3">
+        <span class="inline-block px-3 py-1 text-xs font-semibold text-primary-600 bg-primary-50 rounded-full">
+          {{ post.category }}
+        </span>
+        <span class="text-sm text-gray-500">{{ post.readTime }} min read</span>
+      </div>
+
+      <NuxtLink :to="`/blog/${post.slug}`">
+        <h2 class="text-xl font-bold text-gray-900 mb-2 hover:text-primary-600 transition-colors">
+          {{ post.title }}
+        </h2>
+      </NuxtLink>
+
+      <p class="text-gray-600 mb-4 line-clamp-2">
+        {{ post.excerpt }}
+      </p>
+
+      <div class="flex flex-wrap gap-2 mb-4">
+        <span
+          v-for="tag in post.tags"
+          :key="tag"
+          class="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded"
+        >
+          #{{ tag }}
+        </span>
+      </div>
+
+      <div class="flex items-center justify-between pt-4 border-t border-gray-200">
+        <div class="flex items-center gap-3">
+          <img
+            :src="post.author.avatar"
+            :alt="post.author.name"
+            class="w-10 h-10 rounded-full object-cover"
+          />
+          <div>
+            <p class="text-sm font-medium text-gray-900">{{ post.author.name }}</p>
+            <p class="text-xs text-gray-500">{{ formatDate(post.publishedAt) }}</p>
+          </div>
+        </div>
+
+        <NuxtLink
+          :to="`/blog/${post.slug}`"
+          class="text-primary-600 hover:text-primary-700 font-medium text-sm"
+        >
+          Read more →
+        </NuxtLink>
+      </div>
+    </div>
+  </article>
+</template>
+
+<script setup lang="ts">
+import type { BlogListItem } from '~/types/blog'
+
+interface Props {
+  post: BlogListItem
+}
+
+defineProps<Props>()
+
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString)
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  })
+}
+</script>

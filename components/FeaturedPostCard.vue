@@ -35,13 +35,15 @@
         </p>
 
         <div class="flex flex-wrap gap-2 mb-6">
-          <span
+          <NuxtLink
             v-for="tag in post.tags.slice(0, 3)"
             :key="tag"
-            class="text-sm text-primary-700 bg-primary-50 px-3 py-1 rounded-lg font-medium"
+            :to="`/blog/tag/${tag.toLowerCase().replace(/\s+/g, '-')}`"
+            class="text-sm text-primary-700 bg-primary-50 px-3 py-1 rounded-lg font-medium hover:bg-purple-100 hover:text-purple-700 transition-colors"
+            @click.stop
           >
             #{{ tag }}
-          </span>
+          </NuxtLink>
         </div>
 
         <div class="flex items-center gap-4">

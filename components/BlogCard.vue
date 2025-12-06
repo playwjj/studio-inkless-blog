@@ -32,13 +32,14 @@
       </p>
 
       <div class="flex flex-wrap gap-2 mb-4">
-        <span
+        <NuxtLink
           v-for="tag in post.tags"
           :key="tag"
-          class="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded"
+          :to="`/blog/tag/${tag.toLowerCase().replace(/\s+/g, '-')}`"
+          class="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded hover:bg-purple-100 hover:text-purple-700 transition-colors"
         >
           #{{ tag }}
-        </span>
+        </NuxtLink>
       </div>
 
       <div class="flex items-center justify-between pt-4 border-t border-gray-200">

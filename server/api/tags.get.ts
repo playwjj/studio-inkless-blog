@@ -6,6 +6,7 @@ export default defineEventHandler(() => {
 
   return uniqueTags.map(tag => ({
     name: tag,
+    slug: tag.toLowerCase().replace(/\s+/g, '-'),
     count: allTags.filter(t => t === tag).length
-  }))
+  })).sort((a, b) => b.count - a.count)
 })

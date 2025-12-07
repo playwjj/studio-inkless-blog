@@ -137,3 +137,76 @@ export async function fetchByField<T>(
     throw error
   }
 }
+
+export async function createRow<T>(
+  table: string,
+  data: Record<string, any>
+): Promise<T> {
+  const config = useRuntimeConfig()
+  const apiUrl = config.dbApiUrl
+  const apiKey = config.dbApiKey
+
+  if (!apiUrl || !apiKey) {
+    throw new Error('DB API configuration is missing')
+  }
+
+  const url = `${apiUrl}/api/tables/${table}/rows`
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    })
+
+    if (!response.ok) {
+      throw new Error(`DB API error: ${response.status} ${response.statusText}`)
+    }
+
+    const result = await response.json()
+    return result.data || result
+  } catch (error) {
+    console.error(`Failed to create row in ${table}:`, error)
+    throw error
+  }
+}
+
+export async function updateRow<T>(
+  table: string,
+  id: number | string,
+  data: Record<string, any>
+): Promise<T> {
+  const config = useRuntimeConfig()
+  const apiUrl = config.dbApiUrl
+  const apiKey = config.dbApiKey
+
+  if (!apiUrl || !apiKey) {
+    throw new Error('DB API configuration is missing')
+  }
+
+  const url = `${apiUrl}/api/tables/${table}/rows/${id}`
+
+  try {
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    })
+
+    if (!response.ok) {
+      throw new Error(`DB API error: ${response.status} ${response.statusText}`)
+    }
+
+    const result = await response.json()
+    return result.data || result
+  } catch (error) {
+    console.error(`Failed to update row in ${table}:`, error)
+    throw error
+  }
+}

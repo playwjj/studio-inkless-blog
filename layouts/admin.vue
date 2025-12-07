@@ -19,13 +19,22 @@
           <NuxtLink to="/" target="_blank" class="text-xs text-gray-500 hover:text-gray-900 transition-colors">
             View Site →
           </NuxtLink>
-          <div class="relative">
+          <div class="relative" v-click-outside="() => profileMenuOpen = false">
             <button
               @click="profileMenuOpen = !profileMenuOpen"
               class="flex items-center space-x-2 text-xs text-gray-700 hover:text-gray-900 transition-colors"
             >
-              <div class="w-6 h-6 bg-gray-900 rounded-full flex items-center justify-center text-white text-xs font-medium">
-                A
+              <img
+                v-if="currentUser?.avatar_url"
+                :src="currentUser.avatar_url"
+                :alt="currentUser.username"
+                class="w-6 h-6 rounded-full object-cover border border-gray-200"
+              />
+              <div
+                v-else
+                class="w-6 h-6 bg-gray-900 rounded-full flex items-center justify-center text-white text-xs font-medium"
+              >
+                {{ getUserInitial(currentUser?.username || 'A') }}
               </div>
             </button>
 
@@ -34,8 +43,24 @@
               v-if="profileMenuOpen"
               class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 shadow-lg py-1"
             >
-              <a href="#" class="block px-4 py-2 text-xs text-gray-700 hover:bg-gray-50">Profile</a>
-              <a href="#" class="block px-4 py-2 text-xs text-red-600 hover:bg-gray-50">Logout</a>
+              <div class="px-4 py-2 border-b border-gray-100">
+                <p class="text-xs font-medium text-gray-900">{{ currentUser?.username || 'Admin' }}</p>
+                <p class="text-xs text-gray-500">{{ currentUser?.email || '' }}</p>
+              </div>
+              <NuxtLink
+                to="/admin/profile"
+                class="block px-4 py-2 text-xs text-gray-700 hover:bg-gray-50"
+                @click="profileMenuOpen = false"
+              >
+                Profile
+              </NuxtLink>
+              <button
+                @click="handleLogout"
+                :disabled="loggingOut"
+                class="w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {{ loggingOut ? 'Logging out...' : 'Logout' }}
+              </button>
             </div>
           </div>
         </div>
@@ -82,6 +107,61 @@
 <script setup lang="ts">
 const sidebarOpen = ref(false)
 const profileMenuOpen = ref(false)
+const loggingOut = ref(false)
+const currentUser = ref<any>(null)
+
+// Fetch current user
+onMounted(async () => {
+  try {
+    const { data } = await useFetch('/api/auth/user')
+    if (data.value?.user) {
+      currentUser.value = data.value.user
+    }
+  } catch (error) {
+    console.error('Failed to fetch user:', error)
+  }
+})
+
+// Handle logout
+const handleLogout = async () => {
+  if (loggingOut.value) return
+
+  loggingOut.value = true
+
+  try {
+    await $fetch('/api/auth/logout', {
+      method: 'POST'
+    })
+
+    // Redirect to login page
+    await navigateTo('/admin/login')
+  } catch (error) {
+    console.error('Logout error:', error)
+    alert('Failed to logout. Please try again.')
+  } finally {
+    loggingOut.value = false
+  }
+}
+
+// Get user initial for avatar
+const getUserInitial = (username: string) => {
+  return username.charAt(0).toUpperCase()
+}
+
+// Click outside directive
+const vClickOutside = {
+  mounted(el: any, binding: any) {
+    el.clickOutsideEvent = (event: Event) => {
+      if (!(el === event.target || el.contains(event.target))) {
+        binding.value()
+      }
+    }
+    document.addEventListener('click', el.clickOutsideEvent)
+  },
+  unmounted(el: any) {
+    document.removeEventListener('click', el.clickOutsideEvent)
+  }
+}
 
 const menuItems = [
   {

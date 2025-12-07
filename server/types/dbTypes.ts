@@ -120,3 +120,17 @@ export interface DbPageBlock {
   created_at: string
   updated_at: string
 }
+
+export interface DbUser {
+  id: number
+  username: string
+  email: string
+  password_hash: string
+  full_name?: string
+  avatar_url?: string
+  role: 'admin' | 'editor' | 'viewer'
+  is_active: number
+  last_login_at?: string
+  created_at: string
+  updated_at: string
+}

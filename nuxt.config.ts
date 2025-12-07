@@ -59,6 +59,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     dbApiKey: process.env.DB_API_KEY,
-    dbApiUrl: process.env.DB_API_URL || 'https://db.404401.xyz'
+    dbApiUrl: process.env.DB_API_URL || 'https://db.404401.xyz',
+    sessionSecret: process.env.SESSION_SECRET || 'change-this-secret-in-production-min-32-chars-required'
   }
 })

@@ -46,3 +46,22 @@ export interface DbArticleTag {
   article_id: number
   tag_id: number
 }
+
+export interface DbSite {
+  id: number
+  name: string
+  title: string
+  description: string
+  logo_url?: string
+  favicon_url?: string
+  keywords?: string
+  copyright_text?: string
+  og_site_name: string
+  og_title: string
+  og_description: string
+  og_image: string
+  og_url: string
+  twitter_title: string
+  twitter_description: string
+  twitter_image: string
+}

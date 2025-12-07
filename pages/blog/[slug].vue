@@ -315,6 +315,7 @@ const slug = route.params.slug
 const { data, pending, error } = await useFetch(`/api/posts/${slug}`)
 
 const { formatDate } = useFormatDate()
+const { getTitle, siteConfig } = useSiteConfig()
 
 const linkCopied = ref(false)
 
@@ -364,18 +365,18 @@ const scrollToTop = () => {
 }
 
 useSeoMeta({
-  title: () => data.value ? `${data.value.title} - Studio Inkless Blog` : 'Post - Studio Inkless Blog',
-  ogTitle: () => data.value?.title || 'Blog Post',
-  description: () => data.value?.excerpt || 'Read this post on Studio Inkless Blog',
-  ogDescription: () => data.value?.excerpt || 'Read this post on Studio Inkless Blog',
-  ogImage: () => data.value?.coverImage || 'https://images.pexels.com/photos/11035471/pexels-photo-11035471.jpeg?auto=compress&cs=tinysrgb&w=1200',
+  title: () => data.value ? getTitle(data.value.title) : getTitle('Post'),
+  ogTitle: () => data.value?.title || siteConfig.value?.og_title || 'Blog Post',
+  description: () => data.value?.excerpt || siteConfig.value?.description || '',
+  ogDescription: () => data.value?.excerpt || siteConfig.value?.og_description || '',
+  ogImage: () => data.value?.coverImage || siteConfig.value?.og_image || '',
   ogType: 'article',
   articlePublishedTime: () => data.value?.publishedAt,
   articleAuthor: () => data.value?.author.name,
   articleTag: () => data.value?.tags,
   twitterCard: 'summary_large_image',
-  twitterTitle: () => data.value?.title,
-  twitterDescription: () => data.value?.excerpt,
-  twitterImage: () => data.value?.coverImage,
+  twitterTitle: () => data.value?.title || siteConfig.value?.twitter_title || '',
+  twitterDescription: () => data.value?.excerpt || siteConfig.value?.twitter_description || '',
+  twitterImage: () => data.value?.coverImage || siteConfig.value?.twitter_image || '',
 })
 </script>

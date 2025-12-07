@@ -304,6 +304,8 @@
 </template>
 
 <script setup lang="ts">
+const { siteConfig } = useSiteConfig()
+
 // Fetch posts
 const { data, pending, error } = await useFetch('/api/posts', {
   query: { limit: 10 }
@@ -312,18 +314,18 @@ const { data, pending, error } = await useFetch('/api/posts', {
 // Fetch categories
 const { data: categories, pending: categoriesPending } = await useFetch('/api/categories')
 
-// SEO Meta
+// SEO Meta - Home page uses site config directly
 useSeoMeta({
-  title: 'Studio Inkless Blog - Web Development & Technology Articles',
-  ogTitle: 'Studio Inkless Blog',
-  description: 'Discover articles about web development, design, and technology. Learn Nuxt 3, Vue, Tailwind CSS, and modern web development practices.',
-  ogDescription: 'Discover articles about web development, design, and technology. Learn Nuxt 3, Vue, Tailwind CSS, and modern web development practices.',
-  ogImage: 'https://images.pexels.com/photos/11035471/pexels-photo-11035471.jpeg?auto=compress&cs=tinysrgb&w=1200',
-  ogUrl: 'https://studio-inkless-blog.pages.dev',
+  title: () => siteConfig.value?.og_title || 'Studio Inkless Blog',
+  ogTitle: () => siteConfig.value?.og_title || 'Studio Inkless Blog',
+  description: () => siteConfig.value?.description || '',
+  ogDescription: () => siteConfig.value?.og_description || '',
+  ogImage: () => siteConfig.value?.og_image || '',
+  ogUrl: () => siteConfig.value?.og_url || '',
   twitterCard: 'summary_large_image',
-  twitterTitle: 'Studio Inkless Blog',
-  twitterDescription: 'Discover articles about web development, design, and technology.',
-  twitterImage: 'https://images.pexels.com/photos/11035471/pexels-photo-11035471.jpeg?auto=compress&cs=tinysrgb&w=1200',
+  twitterTitle: () => siteConfig.value?.twitter_title || '',
+  twitterDescription: () => siteConfig.value?.twitter_description || '',
+  twitterImage: () => siteConfig.value?.twitter_image || '',
 })
 </script>
 

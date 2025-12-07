@@ -5,12 +5,20 @@
         <!-- About Section -->
         <div class="lg:col-span-1">
           <div class="flex items-center gap-2 mb-4">
-            <div class="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg flex items-center justify-center shadow-md">
+            <NuxtImg
+              v-if="siteConfig?.logo_url"
+              :src="siteConfig.logo_url"
+              :alt="siteConfig.name"
+              class="w-8 h-8"
+              width="32"
+              height="32"
+            />
+            <div v-else class="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg flex items-center justify-center shadow-md">
               <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
-            <h3 class="text-lg font-bold text-gray-900">Studio Inkless</h3>
+            <h3 class="text-lg font-bold text-gray-900">{{ siteConfig?.name || 'Studio Inkless' }}</h3>
           </div>
           <p class="text-gray-600 text-sm leading-relaxed mb-4">
             A modern blog built with Nuxt 3, Vue 3, and Tailwind CSS. Exploring web development, design, and technology.
@@ -109,7 +117,7 @@
       <div class="mt-12 pt-8 border-t border-gray-200">
         <div class="flex flex-col md:flex-row justify-between items-center gap-4">
           <p class="text-center md:text-left text-gray-500 text-sm">
-            &copy; {{ currentYear }} Studio Inkless Blog. All rights reserved.
+            {{ getCopyright() || `© ${new Date().getFullYear()} Studio Inkless Blog. All rights reserved.` }}
           </p>
           <div class="flex items-center gap-6 text-sm">
             <a href="https://github.com/playwjj/studio-inkless-blog" target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-gray-900 transition-colors">
@@ -130,7 +138,7 @@
 </template>
 
 <script setup lang="ts">
-const currentYear = new Date().getFullYear()
+const { siteConfig, getCopyright } = useSiteConfig()
 
 // Fetch categories for footer
 const { data: categories } = await useFetch('/api/categories')

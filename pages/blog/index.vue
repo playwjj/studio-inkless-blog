@@ -266,6 +266,8 @@
 <script setup lang="ts">
 import type { BlogListItem } from '~/types/blog'
 
+const { getTitle, siteConfig } = useSiteConfig()
+
 const selectedCategory = ref<string | null>(null)
 const selectedTags = ref<string[]>([])
 const currentPage = ref(1)
@@ -342,11 +344,14 @@ watch([selectedCategory, selectedTags, searchQuery], () => {
 })
 
 useSeoMeta({
-  title: 'Blog - Studio Inkless Blog',
-  ogTitle: 'Blog Articles - Studio Inkless Blog',
-  description: 'Explore our collection of articles on web development, design, and technology. Filter by categories and tags to find what interests you.',
-  ogDescription: 'Explore our collection of articles on web development, design, and technology.',
-  ogImage: 'https://images.pexels.com/photos/11035471/pexels-photo-11035471.jpeg?auto=compress&cs=tinysrgb&w=1200',
+  title: () => getTitle('Blog'),
+  ogTitle: () => siteConfig.value?.og_title || 'Blog Articles',
+  description: () => siteConfig.value?.description || 'Explore our collection of articles on web development, design, and technology.',
+  ogDescription: () => siteConfig.value?.og_description || 'Explore our collection of articles on web development, design, and technology.',
+  ogImage: () => siteConfig.value?.og_image || '',
   twitterCard: 'summary_large_image',
+  twitterTitle: () => siteConfig.value?.twitter_title || '',
+  twitterDescription: () => siteConfig.value?.twitter_description || '',
+  twitterImage: () => siteConfig.value?.twitter_image || '',
 })
 </script>

@@ -126,6 +126,14 @@ const { getTitle, siteConfig } = useSiteConfig()
 // Fetch page data
 const { data: page, pending, error } = await useFetch(`/api/pages/${slug}`)
 
+// Return 404 if page not found
+if (!pending.value && (error.value || !page.value)) {
+  throw createError({
+    status: 404,
+    statusText: 'Page not found'
+  })
+}
+
 // Fetch blocks if page exists
 const { data: blocksData } = await useFetch(`/api/pages/${page.value?.id}/blocks`, {
   lazy: true,

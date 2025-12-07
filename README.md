@@ -55,7 +55,7 @@ npm run preview
 
 Visit `http://localhost:3000` to see your blog in action!
 
-## � D1 SQL Studio (required)
+## D1 SQL Studio (required)
 
 This project requires D1 SQL Studio. The application relies on the REST API exposed by D1 SQL Studio for all data reads and writes (posts, pages, categories, tags, site config). You must run or deploy D1 SQL Studio and provide its API URL and API key to the site via environment variables.
 
@@ -76,7 +76,7 @@ Deployment note — Cloudflare Pages / other platforms:
 - If you deploy to Cloudflare Pages, add `DB_API_KEY` and `DB_API_URL` in your Pages project settings (Settings → Environment variables) and scope them to the correct environment (Preview/Production). See: https://developers.cloudflare.com/pages/platform/environment-variables/
 
 
-## �📁 Project Structure
+## Project Structure
 
 ```
 .

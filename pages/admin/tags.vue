@@ -1,16 +1,16 @@
 <template>
-  <div>
+  <div class="px-8 py-6">
     <!-- Page title -->
     <div class="flex items-center justify-between mb-8">
       <div>
-        <h1 class="text-3xl font-bold text-gray-900">Tags</h1>
-        <p class="mt-2 text-gray-600">Manage blog post tags</p>
+        <h1 class="text-2xl font-semibold text-gray-900">Tags</h1>
+        <p class="mt-1 text-sm text-gray-500">Manage blog post tags</p>
       </div>
       <button
         @click="showCreateModal = true"
-        class="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
+        class="inline-flex items-center px-3 py-1.5 bg-gray-900 text-white text-sm hover:bg-gray-800 transition-colors"
       >
-        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
         </svg>
         New Tag
@@ -18,37 +18,37 @@
     </div>
 
     <!-- Search -->
-    <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+    <div class="border border-gray-200 p-4 mb-6">
       <input
         v-model="searchQuery"
         type="text"
         placeholder="Search tags..."
-        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+        class="w-full px-3 py-1.5 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none"
       />
     </div>
 
     <!-- Tags list -->
-    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+    <div class="border border-gray-200">
       <div class="overflow-x-auto">
         <table class="w-full">
           <thead class="bg-gray-50 border-b border-gray-200">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Tag Name
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Slug
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Description
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Usage Count
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Created
               </th>
-              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -59,42 +59,42 @@
               :key="tag.id"
               class="hover:bg-gray-50 transition-colors"
             >
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary-100 text-primary-800">
+              <td class="px-4 py-3 whitespace-nowrap">
+                <span class="text-sm font-medium text-gray-900">
                   {{ tag.name }}
                 </span>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <code class="text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded">
+              <td class="px-4 py-3 whitespace-nowrap">
+                <code class="text-xs text-gray-600">
                   {{ tag.slug }}
                 </code>
               </td>
-              <td class="px-6 py-4">
-                <span class="text-sm text-gray-500">{{ tag.description || '-' }}</span>
+              <td class="px-4 py-3">
+                <span class="text-xs text-gray-500">{{ tag.description || '-' }}</span>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span class="text-sm text-gray-900">{{ tag.usage_count }}</span>
+              <td class="px-4 py-3 whitespace-nowrap">
+                <span class="text-xs text-gray-900">{{ tag.usage_count }}</span>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              <td class="px-4 py-3 whitespace-nowrap text-xs text-gray-500">
                 {{ formatDate(tag.created_at) }}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+              <td class="px-4 py-3 whitespace-nowrap text-right">
                 <div class="flex items-center justify-end space-x-2">
                   <button
                     @click="editTag(tag)"
-                    class="text-primary-600 hover:text-primary-900"
+                    class="text-gray-400 hover:text-gray-900"
                     title="Edit"
                   >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
                   </button>
                   <button
                     @click="deleteTag(tag.id)"
-                    class="text-red-600 hover:text-red-900"
+                    class="text-gray-400 hover:text-red-600"
                     title="Delete"
                   >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
                   </button>
@@ -112,16 +112,16 @@
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
       @click.self="closeModal"
     >
-      <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+      <div class="bg-white border border-gray-200 max-w-md w-full p-6">
         <div class="flex items-center justify-between mb-6">
-          <h2 class="text-2xl font-bold text-gray-900">
+          <h2 class="text-lg font-semibold text-gray-900">
             {{ editingTag ? 'Edit Tag' : 'New Tag' }}
           </h2>
           <button
             @click="closeModal"
-            class="text-gray-400 hover:text-gray-600"
+            class="text-gray-400 hover:text-gray-900"
           >
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -129,7 +129,7 @@
 
         <form @submit.prevent="handleSubmit" class="space-y-4">
           <div>
-            <label for="tag_name" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="tag_name" class="block text-sm font-medium text-gray-700 mb-1.5">
               Tag Name <span class="text-red-500">*</span>
             </label>
             <input
@@ -137,13 +137,13 @@
               v-model="tagForm.name"
               type="text"
               required
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+              class="w-full px-3 py-2 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none"
               placeholder="Vue.js"
             />
           </div>
 
           <div>
-            <label for="tag_slug" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="tag_slug" class="block text-sm font-medium text-gray-700 mb-1.5">
               URL Slug <span class="text-red-500">*</span>
             </label>
             <input
@@ -151,20 +151,20 @@
               v-model="tagForm.slug"
               type="text"
               required
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none font-mono text-sm"
+              class="w-full px-3 py-2 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none font-mono"
               placeholder="vuejs"
             />
           </div>
 
           <div>
-            <label for="tag_description" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="tag_description" class="block text-sm font-medium text-gray-700 mb-1.5">
               Description
             </label>
             <textarea
               id="tag_description"
               v-model="tagForm.description"
               rows="3"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none resize-none"
+              class="w-full px-3 py-2 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none resize-none"
               placeholder="Tag description (optional)"
             ></textarea>
           </div>
@@ -173,13 +173,13 @@
             <button
               type="button"
               @click="closeModal"
-              class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              class="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm hover:bg-gray-50 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
-              class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
+              class="px-3 py-1.5 bg-gray-900 text-white text-sm hover:bg-gray-800 transition-colors"
             >
               {{ editingTag ? 'Save' : 'Create' }}
             </button>

@@ -30,6 +30,24 @@ DB_API_URL=https://your-db-api.example.com</code></pre>
             <li>Click Retry below — the page will test <code class="px-1 py-0.5 bg-slate-100 dark:bg-slate-600 rounded">/api/site</code> and, if successful, let you continue to the site.</li>
           </ol>
         </div>
+
+        <div class="p-4 bg-slate-50 dark:bg-slate-700 border rounded">
+          <h2 class="font-medium">Cloudflare Pages — set environment variables</h2>
+          <p class="mt-2 text-slate-700 dark:text-slate-200">If you deploy this site on Cloudflare Pages, set <code class="px-1 py-0.5 bg-slate-100 dark:bg-slate-600 rounded">DB_API_KEY</code> and <code class="px-1 py-0.5 bg-slate-100 dark:bg-slate-600 rounded">DB_API_URL</code> in your Pages project settings:</p>
+          <ol class="mt-2 list-decimal list-inside text-slate-700 dark:text-slate-200 space-y-1">
+            <li>Open your Pages project in the Cloudflare dashboard.</li>
+            <li>Go to <strong>Settings → Environment variables</strong> (or <strong>Settings → Variables</strong> depending on UI version).</li>
+            <li>Click <strong>Add variable</strong> (or <strong>Add secret</strong>) and add two variables:
+              <ul class="list-disc list-inside ml-4 mt-1">
+                <li><code>DB_API_KEY</code> — the API key or secret used by the site to talk to your DB API.</li>
+                <li><code>DB_API_URL</code> — the full URL to your DB API (e.g. <code>https://your-db.example.com</code>).</li>
+              </ul>
+            </li>
+            <li>Choose the environment scope (Production / Preview) where the variables should apply. If you want the same values for both, add them for each scope or choose the <em>All environments</em> option if available.</li>
+            <li>Save the variables and trigger a new deployment (Pages reads env vars at build/runtime depending on your usage).</li>
+          </ol>
+          <p class="mt-3 text-sm text-slate-600 dark:text-slate-300">Cloudflare Pages docs: <a class="text-sky-600 dark:text-sky-400" href="https://developers.cloudflare.com/pages/platform/environment-variables/" target="_blank" rel="noreferrer">Environment variables on Cloudflare Pages</a></p>
+        </div>
       </div>
 
       <div class="mt-6 flex items-center gap-3">

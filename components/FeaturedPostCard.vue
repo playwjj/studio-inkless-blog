@@ -1,25 +1,19 @@
 <template>
-  <NuxtLink :to="`/blog/${post.slug}`" custom v-slot="{ navigate }">
-    <article
-      role="link"
-      :aria-label="post.title"
-      tabindex="0"
-      @click="navigate"
-      @keydown.enter="navigate"
-      class="group relative overflow-hidden rounded-2xl bg-white shadow-xl hover:shadow-2xl transition-all duration-500"
-    >
-      <div class="grid md:grid-cols-2 gap-0 min-h-[400px]">
+  <article class="group relative overflow-hidden rounded-2xl bg-white shadow-xl hover:shadow-2xl transition-all duration-500">
+    <div class="grid md:grid-cols-2 gap-0 min-h-[400px]">
       <!-- Image Section -->
       <div class="relative overflow-hidden order-2 md:order-1">
         <div class="absolute inset-0 bg-gradient-to-r from-primary-600/20 to-transparent z-10"></div>
-        <NuxtImg
-          :src="post.coverImage"
-          :alt="post.title"
-          class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-          loading="eager"
-          width="800"
-          height="600"
-        />
+        <NuxtLink :to="`/blog/${post.slug}`" class="block w-full h-full">
+          <NuxtImg
+            :src="post.coverImage"
+            :alt="post.title"
+            class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+            loading="eager"
+            width="800"
+            height="600"
+          />
+        </NuxtLink>
       </div>
 
       <!-- Content Section -->
@@ -31,8 +25,8 @@
           <span class="text-sm text-gray-500">{{ post.readTime }} min read</span>
         </div>
 
-        <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4 group-hover:text-primary-600 transition-colors line-clamp-2">
-          {{ post.title }}
+        <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4 transition-colors line-clamp-2">
+          <NuxtLink :to="`/blog/${post.slug}`" class="hover:text-primary-600">{{ post.title }}</NuxtLink>
         </h2>
 
         <p class="text-gray-600 text-lg mb-6 line-clamp-3">
@@ -65,16 +59,18 @@
           </div>
         </div>
 
-        <div class="mt-6 inline-flex items-center text-primary-600 font-semibold group-hover:gap-3 gap-2 transition-all">
-          Read article
-          <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <NuxtLink
+          :to="`/blog/${post.slug}`"
+          class="mt-6 inline-flex items-center text-primary-600 font-semibold gap-2 hover:gap-3 transition-all"
+        >
+          <span>Read article</span>
+          <svg class="w-5 h-5 translate-x-0 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
           </svg>
-        </div>
+        </NuxtLink>
       </div>
       </div>
-    </article>
-  </NuxtLink>
+  </article>
 </template>
 
 <script setup lang="ts">

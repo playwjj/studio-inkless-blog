@@ -55,7 +55,28 @@ npm run preview
 
 Visit `http://localhost:3000` to see your blog in action!
 
-## 📁 Project Structure
+## � D1 SQL Studio (required)
+
+This project requires D1 SQL Studio. The application relies on the REST API exposed by D1 SQL Studio for all data reads and writes (posts, pages, categories, tags, site config). You must run or deploy D1 SQL Studio and provide its API URL and API key to the site via environment variables.
+
+Quick steps:
+
+1. Install or deploy D1 SQL Studio. See the project on GitHub: https://github.com/playwjj/d1-sql-studio
+2. Follow the D1 SQL Studio README to start it locally or deploy to your hosting environment. After startup you will have a REST API endpoint and an API key/secret.
+3. Set environment variables for this project:
+
+```env
+DB_API_KEY=your_db_api_key
+DB_API_URL=https://your-d1-sql-studio.example.com
+```
+
+4. Restart your application so Nuxt picks up the runtime config.
+
+Deployment note — Cloudflare Pages / other platforms:
+- If you deploy to Cloudflare Pages, add `DB_API_KEY` and `DB_API_URL` in your Pages project settings (Settings → Environment variables) and scope them to the correct environment (Preview/Production). See: https://developers.cloudflare.com/pages/platform/environment-variables/
+
+
+## �📁 Project Structure
 
 ```
 .

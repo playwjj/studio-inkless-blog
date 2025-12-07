@@ -15,9 +15,17 @@
         </div>
 
         <div class="p-4 bg-slate-50 dark:bg-slate-700 border rounded">
-          <h2 class="font-medium">Install D1 SQL Studio (optional)</h2>
-          <p class="mt-2 text-slate-700 dark:text-slate-200">D1 SQL Studio helps you quickly create a D1 database and exposes a small API compatible with this project.</p>
-          <a class="inline-block mt-3 text-sm text-white bg-sky-600 hover:bg-sky-700 px-3 py-2 rounded" href="https://github.com/playwjj/d1-sql-studio" target="_blank" rel="noreferrer">Open D1 SQL Studio on GitHub</a>
+          <h2 class="font-medium">D1 SQL Studio — required</h2>
+          <p class="mt-2 text-slate-700 dark:text-slate-200">This project depends on <strong>D1 SQL Studio</strong> for data storage and retrieval. The site uses the REST API exposed by D1 SQL Studio for all reads and writes — it is not optional. You must run or deploy D1 SQL Studio and provide its API URL and API key as environment variables.</p>
+
+          <p class="mt-2 text-sm text-slate-700 dark:text-slate-200">Steps:</p>
+          <ol class="mt-2 list-decimal list-inside text-slate-700 dark:text-slate-200 space-y-1">
+            <li>Follow the D1 SQL Studio project README to install/run it locally or deploy it to a server.</li>
+            <li>Obtain the REST API endpoint URL (this will be used as <code class="px-1 py-0.5 bg-slate-100 dark:bg-slate-600 rounded">DB_API_URL</code>) and an API key/secret (used as <code class="px-1 py-0.5 bg-slate-100 dark:bg-slate-600 rounded">DB_API_KEY</code>).</li>
+            <li>Set those two environment variables (see Cloudflare Pages instructions below for deployment).</li>
+          </ol>
+
+          <a class="inline-block mt-3 text-sm text-white bg-sky-600 hover:bg-sky-700 px-3 py-2 rounded" href="https://github.com/playwjj/d1-sql-studio" target="_blank" rel="noreferrer">D1 SQL Studio on GitHub</a>
         </div>
 
         <div class="p-4 bg-slate-50 dark:bg-slate-700 border rounded">

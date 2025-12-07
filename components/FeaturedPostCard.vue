@@ -1,9 +1,14 @@
 <template>
-  <NuxtLink
-    :to="`/blog/${post.slug}`"
-    class="group relative overflow-hidden rounded-2xl bg-white shadow-xl hover:shadow-2xl transition-all duration-500"
-  >
-    <div class="grid md:grid-cols-2 gap-0 min-h-[400px]">
+  <NuxtLink :to="`/blog/${post.slug}`" custom v-slot="{ navigate }">
+    <article
+      role="link"
+      :aria-label="post.title"
+      tabindex="0"
+      @click="navigate"
+      @keydown.enter="navigate"
+      class="group relative overflow-hidden rounded-2xl bg-white shadow-xl hover:shadow-2xl transition-all duration-500"
+    >
+      <div class="grid md:grid-cols-2 gap-0 min-h-[400px]">
       <!-- Image Section -->
       <div class="relative overflow-hidden order-2 md:order-1">
         <div class="absolute inset-0 bg-gradient-to-r from-primary-600/20 to-transparent z-10"></div>
@@ -67,7 +72,8 @@
           </svg>
         </div>
       </div>
-    </div>
+      </div>
+    </article>
   </NuxtLink>
 </template>
 

@@ -31,10 +31,25 @@ export default defineEventHandler(async (event) => {
     }
 
     // Fetch related data
-    const [author, category] = await Promise.all([
+    const [author, category, tagsResponse] = await Promise.all([
       fetchOneFromDb<DbAuthor>('authors', article.author_id),
-      fetchOneFromDb<DbCategory>('categories', article.category_id)
+      fetchOneFromDb<DbCategory>('categories', article.category_id),
+      fetchFromDb<DbTag>('tags', { limit: 100 })
     ])
+
+    const tags = tagsResponse.data
+
+    // Parse tag_names field and match with tags from database
+    let articleTags: string[] = []
+    if (article.tag_names) {
+      const tagNames = article.tag_names.split(',').map(name => name.trim())
+      articleTags = tagNames
+        .map(name => {
+          const tag = tags.find(t => t.name.toLowerCase() === name.toLowerCase())
+          return tag ? tag.name : name
+        })
+        .filter(Boolean)
+    }
 
     // Map to BlogPost format
     const post: BlogPost = {
@@ -49,7 +64,7 @@ export default defineEventHandler(async (event) => {
       },
       coverImage: article.cover_image_url,
       category: category?.name || 'Uncategorized',
-      tags: [], // TODO: Fetch from article_tags table
+      tags: articleTags,
       publishedAt: article.published_at,
       readTime: article.read_time
     }

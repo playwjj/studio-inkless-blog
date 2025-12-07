@@ -8,6 +8,7 @@ export interface DbArticle {
   cover_image_url: string
   author_id: number
   category_id: number
+  tag_names?: string // Comma-separated tag names (e.g., "Nuxt,Vue,Web Development")
   published_at: string
   read_time: number
   created_at: string
@@ -35,6 +36,8 @@ export interface DbTag {
   id: number
   name: string
   slug: string
+  description?: string
+  usage_count: number
   created_at: string
   updated_at: string
 }

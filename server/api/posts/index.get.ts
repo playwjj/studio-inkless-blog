@@ -30,6 +30,18 @@ export default defineEventHandler(async (event) => {
       const author = authors.find(a => a.id === article.author_id)
       const category = categories.find(c => c.id === article.category_id)
 
+      // Parse tag_names field and match with tags from database
+      let articleTags: string[] = []
+      if (article.tag_names) {
+        const tagNames = article.tag_names.split(',').map(name => name.trim())
+        articleTags = tagNames
+          .map(name => {
+            const tag = tags.find(t => t.name.toLowerCase() === name.toLowerCase())
+            return tag ? tag.name : name
+          })
+          .filter(Boolean)
+      }
+
       return {
         id: article.id.toString(),
         title: article.title,
@@ -41,7 +53,7 @@ export default defineEventHandler(async (event) => {
         },
         coverImage: article.cover_image_url,
         category: category?.name || 'Uncategorized',
-        tags: [], // Will be filled later if needed
+        tags: articleTags,
         publishedAt: article.published_at,
         readTime: article.read_time
       }

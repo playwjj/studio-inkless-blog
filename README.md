@@ -159,6 +159,90 @@ Edit `server/utils/mockData.ts` to add new blog posts:
 }
 ```
 
+### Custom Pages Feature
+
+The blog supports custom pages with flexible content layouts and advanced customization options.
+
+#### Two Content Modes
+
+1. **HTML Content Mode**: Use the `content` field for simple pages with raw HTML
+2. **Block-Based Mode**: Build pages using reusable content blocks for complex layouts
+
+#### Available Block Types
+
+The system includes 10 pre-built block types:
+
+- **BlockHero** - Hero section with title, subtitle, and CTA buttons
+- **BlockFeatures** - Feature showcase grid
+- **BlockCta** - Call-to-action section
+- **BlockText** - Simple text/content block
+- **BlockGallery** - Image gallery
+- **BlockTestimonials** - Customer testimonials
+- **BlockFaq** - FAQ accordion
+- **BlockStats** - Statistics/metrics display
+- **BlockVideo** - Video embed
+- **BlockCustom** - Custom HTML block
+
+#### Page Customization Options
+
+**Layout & Theme:**
+- `layout`: `'wide'`, `'narrow'`, or `'default'` - Controls content width
+- `theme`: `'light'` or `'dark'` - Page color scheme
+- `template`: Page template name (e.g., 'minimal', 'standard')
+
+**Display Settings:**
+- `show_header` - Show/hide header
+- `show_footer` - Show/hide footer
+- `show_breadcrumb` - Show/hide breadcrumb navigation
+- `cover_image` - Hero cover image URL
+
+**Advanced Features:**
+- `custom_css` - Inject custom CSS styles
+- `custom_js` - Add custom JavaScript
+- `enable_comments` - Enable comment section
+- `enable_sharing` - Show social sharing buttons
+- `is_password_protected` - Protect page with password
+
+**SEO Optimization:**
+- `meta_title`, `meta_description`, `meta_keywords` - Standard SEO tags
+- `og_title`, `og_description`, `og_image` - Open Graph tags
+- `canonical_url` - Canonical URL
+
+#### API Endpoints for Pages
+
+**GET /api/pages**
+- List all pages with pagination
+- Query parameters:
+  - `page` - Page number (default: 1)
+  - `limit` - Results per page (default: 100)
+  - `status` - Filter by status: `'draft'`, `'published'`, or `'archived'`
+
+**GET /api/pages/[slug]**
+- Get single page by slug or ID
+- Add `?preview=true` to view draft pages
+
+**GET /api/pages/[id]/blocks**
+- Fetch all blocks for a specific page
+- Returns blocks sorted by display order
+
+#### Creating Custom Pages
+
+Pages are stored in the database and managed through the D1 SQL Studio REST API. Each page requires:
+
+```typescript
+{
+  title: 'Page Title',
+  slug: 'page-url-slug',
+  status: 'published', // 'draft', 'published', or 'archived'
+  template: 'standard',
+  theme: 'light',
+  layout: 'default',
+  // ... additional fields
+}
+```
+
+Pages are automatically accessible at `/{slug}` (e.g., `/about`, `/contact`).
+
 ### Styling
 
 Modify `tailwind.config.ts` to customize:

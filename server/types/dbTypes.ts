@@ -65,3 +65,58 @@ export interface DbSite {
   twitter_description: string
   twitter_image: string
 }
+
+export interface DbPage {
+  id: number
+  title: string
+  slug: string
+  description?: string
+  author_id?: number
+  status: 'draft' | 'published' | 'archived'
+  published_at?: string
+  content?: string
+  blocks?: string  // JSON
+  template: string
+  meta_title?: string
+  meta_description?: string
+  meta_keywords?: string
+  og_image?: string
+  og_title?: string
+  og_description?: string
+  canonical_url?: string
+  cover_image?: string
+  theme: string
+  layout: string
+  custom_css?: string
+  custom_js?: string
+  show_header: number
+  show_footer: number
+  show_breadcrumb: number
+  enable_comments: number
+  enable_sharing: number
+  is_password_protected: number
+  password_hash?: string
+  settings?: string  // JSON
+  cta_config?: string  // JSON
+  view_count: number
+  conversion_count: number
+  created_at: string
+  updated_at: string
+}
+
+export interface DbPageBlock {
+  id: number
+  page_id: number
+  block_type: string
+  block_order: number
+  title?: string
+  subtitle?: string
+  content?: string
+  config?: string  // JSON
+  background_color?: string
+  background_image?: string
+  text_color?: string
+  is_visible: number
+  created_at: string
+  updated_at: string
+}

@@ -12,11 +12,13 @@ export default defineNuxtConfig({
     quality: 80,
   },
 
-  // Cloudflare Pages configuration
-  nitro: {
-    preset: 'cloudflare-pages',
-    serveStatic: true
-  },
+  // Cloudflare Pages configuration (only for production)
+  ...(process.env.NODE_ENV === 'production' ? {
+    nitro: {
+      preset: 'cloudflare-pages',
+      serveStatic: true
+    }
+  } : {}),
 
   // App configuration
   app: {

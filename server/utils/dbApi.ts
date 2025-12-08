@@ -59,7 +59,8 @@ export async function fetchFromDb<T>(
 
 export async function fetchOneFromDb<T>(
   table: string,
-  id: number | string
+  id?: number | string,
+  where?: Record<string, any>
 ): Promise<T | null> {
   const config = useRuntimeConfig()
   const apiUrl = config.dbApiUrl
@@ -69,29 +70,40 @@ export async function fetchOneFromDb<T>(
     throw new Error('DB API configuration is missing')
   }
 
-  const url = `${apiUrl}/api/tables/${table}/rows/${id}`
+  // If id is provided, fetch by id
+  if (id !== undefined) {
+    const url = `${apiUrl}/api/tables/${table}/rows/${id}`
 
-  try {
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      }
-    })
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      })
 
-    if (!response.ok) {
-      if (response.status === 404) {
-        return null
+      if (!response.ok) {
+        if (response.status === 404) {
+          return null
+        }
+        throw new Error(`DB API error: ${response.status} ${response.statusText}`)
       }
-      throw new Error(`DB API error: ${response.status} ${response.statusText}`)
+
+      const data = await response.json()
+      return data.data || data
+    } catch (error) {
+      console.error(`Failed to fetch ${table}/${id}:`, error)
+      throw error
     }
-
-    const data = await response.json()
-    return data.data || data
-  } catch (error) {
-    console.error(`Failed to fetch ${table}/${id}:`, error)
-    throw error
   }
+
+  // If where clause is provided, fetch by field
+  if (where) {
+    const [field, value] = Object.entries(where)[0]
+    return fetchByField<T>(table, field, value)
+  }
+
+  throw new Error('Either id or where clause must be provided')
 }
 
 export async function fetchByField<T>(
@@ -242,4 +254,116 @@ export async function deleteRow(
     console.error(`Failed to delete row in ${table}:`, error)
     throw error
   }
+}
+
+export async function fetchAllFromDb<T>(
+  table: string,
+  where?: Record<string, any>
+): Promise<T[]> {
+  const config = useRuntimeConfig()
+  const apiUrl = config.dbApiUrl
+  const apiKey = config.dbApiKey
+
+  if (!apiUrl || !apiKey) {
+    throw new Error('DB API configuration is missing')
+  }
+
+  // Build query parameters
+  const params = new URLSearchParams()
+  params.set('limit', '1000')
+
+  // Add where conditions if provided
+  if (where) {
+    Object.entries(where).forEach(([key, value]) => {
+      params.set(key, String(value))
+    })
+  }
+
+  const url = `${apiUrl}/api/tables/${table}/rows?${params.toString()}`
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      }
+    })
+
+    if (!response.ok) {
+      // If 404, return empty array instead of throwing
+      if (response.status === 404) {
+        return []
+      }
+      throw new Error(`DB API error: ${response.status} ${response.statusText}`)
+    }
+
+    const result = await response.json()
+    // Handle both array response and paginated response
+    if (Array.isArray(result)) {
+      return result
+    }
+    return result.data || []
+  } catch (error) {
+    console.error(`Failed to fetch all from ${table}:`, error)
+    throw error
+  }
+}
+
+export async function insertRow(
+  table: string,
+  data: Record<string, any>
+): Promise<{ lastID: number }> {
+  const config = useRuntimeConfig()
+  const apiUrl = config.dbApiUrl
+  const apiKey = config.dbApiKey
+
+  if (!apiUrl || !apiKey) {
+    throw new Error('DB API configuration is missing')
+  }
+
+  const url = `${apiUrl}/api/tables/${table}/rows`
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    })
+
+    if (!response.ok) {
+      throw new Error(`DB API error: ${response.status} ${response.statusText}`)
+    }
+
+    const result = await response.json()
+    return { lastID: result.data?.id || result.id }
+  } catch (error) {
+    console.error(`Failed to insert row in ${table}:`, error)
+    throw error
+  }
+}
+
+export async function deleteRows(
+  table: string,
+  where: Record<string, any>
+): Promise<boolean> {
+  const config = useRuntimeConfig()
+  const apiUrl = config.dbApiUrl
+  const apiKey = config.dbApiKey
+
+  if (!apiUrl || !apiKey) {
+    throw new Error('DB API configuration is missing')
+  }
+
+  // First fetch all rows matching the where clause
+  const rows = await fetchAllFromDb<{ id: number }>(table, where)
+
+  // Delete each row
+  for (const row of rows) {
+    await deleteRow(table, row.id)
+  }
+
+  return true
 }

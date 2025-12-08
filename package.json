@@ -11,6 +11,11 @@
   },
   "dependencies": {
     "@nuxt/image": "^2.0.0",
+    "@tiptap/extension-image": "^3.13.0",
+    "@tiptap/extension-link": "^3.13.0",
+    "@tiptap/extension-placeholder": "^3.13.0",
+    "@tiptap/starter-kit": "^3.13.0",
+    "@tiptap/vue-3": "^3.13.0",
     "bcryptjs": "^3.0.3",
     "h3-session": "^0.2.5",
     "nuxt": "^3.13.0",

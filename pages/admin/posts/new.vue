@@ -17,7 +17,12 @@
       </NuxtLink>
     </div>
 
-    <form @submit.prevent="handleSubmit" class="space-y-6">
+    <!-- Error message -->
+    <div v-if="errorMessage" class="border border-red-200 bg-red-50 p-3 mb-6">
+      <p class="text-sm text-red-600">{{ errorMessage }}</p>
+    </div>
+
+    <form @submit.prevent="publish" class="space-y-6">
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Main content area -->
         <div class="lg:col-span-2 space-y-6">
@@ -74,49 +79,11 @@
             <label for="content" class="block text-xs font-medium text-gray-700 mb-1.5">
               Post Content <span class="text-red-500">*</span>
             </label>
-            <div class="border border-gray-200">
-              <!-- Editor toolbar -->
-              <div class="bg-gray-50 border-b border-gray-200 p-1.5 flex items-center space-x-1">
-                <button type="button" class="p-1.5 hover:bg-gray-200" title="Bold">
-                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M12.22 4h-2.44v12h2.44a4.5 4.5 0 100-9 3 3 0 000-3zm0 6a1.5 1.5 0 110 3H9.78v-3h2.44z" />
-                  </svg>
-                </button>
-                <button type="button" class="p-1.5 hover:bg-gray-200" title="Italic">
-                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M12.22 5l-1.5 10h-2l1.5-10h2z" />
-                  </svg>
-                </button>
-                <button type="button" class="p-1.5 hover:bg-gray-200" title="Link">
-                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" />
-                  </svg>
-                </button>
-                <div class="w-px h-5 bg-gray-300"></div>
-                <button type="button" class="p-1.5 hover:bg-gray-200 text-xs font-medium" title="Heading">H</button>
-                <button type="button" class="p-1.5 hover:bg-gray-200" title="List">
-                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" />
-                  </svg>
-                </button>
-                <button type="button" class="p-1.5 hover:bg-gray-200" title="Code">
-                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" />
-                  </svg>
-                </button>
-              </div>
-
-              <!-- Markdown editor -->
-              <textarea
-                id="content"
-                v-model="formData.content"
-                rows="20"
-                required
-                class="w-full px-3 py-2 outline-none resize-none font-mono text-sm"
-                placeholder="Write post content using Markdown..."
-              ></textarea>
-            </div>
-            <p class="mt-1.5 text-xs text-gray-500">Supports Markdown format</p>
+            <TiptapEditor
+              v-model="formData.content"
+              placeholder="Write your post content here..."
+            />
+            <p class="mt-1.5 text-xs text-gray-500">Rich text editor with formatting support</p>
           </div>
         </div>
 
@@ -248,21 +215,18 @@
             <div class="space-y-2">
               <button
                 type="submit"
-                class="w-full px-3 py-2 bg-gray-900 text-white text-sm hover:bg-gray-800 transition-colors"
+                :disabled="submitting"
+                class="w-full px-3 py-2 bg-gray-900 text-white text-sm hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Publish Post
+                {{ submitting ? 'Publishing...' : 'Publish Post' }}
               </button>
               <button
                 type="button"
-                class="w-full px-3 py-2 border border-gray-200 text-gray-700 text-sm hover:bg-gray-50 transition-colors"
+                :disabled="submitting"
+                @click="saveDraft"
+                class="w-full px-3 py-2 border border-gray-200 text-gray-700 text-sm hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Save Draft
-              </button>
-              <button
-                type="button"
-                class="w-full px-3 py-2 text-gray-600 text-sm hover:text-gray-900 transition-colors"
-              >
-                Preview
+                {{ submitting ? 'Saving...' : 'Save Draft' }}
               </button>
             </div>
           </div>
@@ -276,6 +240,10 @@
 definePageMeta({
   layout: 'admin'
 })
+
+const router = useRouter()
+const submitting = ref(false)
+const errorMessage = ref('')
 
 const formData = reactive({
   title: '',
@@ -291,8 +259,47 @@ const formData = reactive({
 })
 
 const handleSubmit = async () => {
-  // TODO: Implement submit logic
-  console.log('Submit form:', formData)
+  if (submitting.value) return
+
+  try {
+    submitting.value = true
+    errorMessage.value = ''
+
+    // Validate required fields
+    if (!formData.title || !formData.slug || !formData.content) {
+      errorMessage.value = 'Please fill in all required fields'
+      return
+    }
+
+    // Create article
+    const response = await $fetch('/api/admin/posts', {
+      method: 'POST',
+      body: formData
+    })
+
+    if (response.success) {
+      // Redirect to posts list
+      router.push('/admin/posts')
+    }
+  } catch (error: any) {
+    console.error('Failed to create post:', error)
+    errorMessage.value = error.data?.statusMessage || 'Failed to create post. Please try again.'
+  } finally {
+    submitting.value = false
+  }
+}
+
+const saveDraft = async () => {
+  formData.status = 'draft'
+  await handleSubmit()
+}
+
+const publish = async () => {
+  formData.status = 'published'
+  if (!formData.published_at) {
+    formData.published_at = new Date().toISOString().slice(0, 16)
+  }
+  await handleSubmit()
 }
 
 // Auto-generate slug
@@ -301,7 +308,7 @@ watch(() => formData.title, (newTitle) => {
     // Simple slug generation logic
     formData.slug = newTitle
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')
       .replace(/^-|-$/g, '')
   }
 })

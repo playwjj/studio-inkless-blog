@@ -48,8 +48,37 @@
       </div>
     </div>
 
+    <!-- Loading state -->
+    <div v-if="loading" class="flex items-center justify-center py-12 border border-gray-200">
+      <div class="text-center">
+        <svg class="animate-spin h-8 w-8 text-gray-900 mx-auto" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <p class="mt-4 text-gray-600 text-sm">Loading posts...</p>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div v-else-if="posts.length === 0" class="border border-gray-200 p-12 text-center">
+      <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+      <h3 class="text-lg font-medium text-gray-900 mb-2">No posts yet</h3>
+      <p class="text-sm text-gray-500 mb-4">Get started by creating your first blog post</p>
+      <NuxtLink
+        to="/admin/posts/new"
+        class="inline-flex items-center px-4 py-2 bg-gray-900 text-white text-sm hover:bg-gray-800 transition-colors"
+      >
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        Create First Post
+      </NuxtLink>
+    </div>
+
     <!-- Posts list -->
-    <div class="border border-gray-200">
+    <div v-else class="border border-gray-200">
       <div class="overflow-x-auto">
         <table class="w-full">
           <thead class="bg-gray-50 border-b border-gray-200">
@@ -101,7 +130,7 @@
                 </div>
               </td>
               <td class="px-4 py-3 whitespace-nowrap">
-                <span class="text-xs text-gray-600">{{ post.category }}</span>
+                <span class="text-xs text-gray-600">{{ post.category_name || 'Uncategorized' }}</span>
               </td>
               <td class="px-4 py-3 whitespace-nowrap">
                 <span
@@ -145,10 +174,15 @@
                   </NuxtLink>
                   <button
                     @click="deletePost(post.id)"
-                    class="text-gray-400 hover:text-red-600"
+                    :disabled="deleting === post.id"
+                    class="text-gray-400 hover:text-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Delete"
                   >
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg v-if="deleting === post.id" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
                   </button>
@@ -209,71 +243,49 @@ definePageMeta({
 const searchQuery = ref('')
 const filterStatus = ref('')
 const filterCategory = ref('')
+const loading = ref(true)
+const deleting = ref<number | null>(null)
 
-// 模拟数据
-const posts = ref([
-  {
-    id: 1,
-    title: '如何使用 Nuxt 3 构建现代化博客系统',
-    excerpt: '本文将介绍如何使用 Nuxt 3 框架从零开始构建一个功能完整的博客系统...',
-    slug: 'nuxt3-blog-system',
-    cover_image_url: 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=400',
-    category: '技术',
-    status: 'published',
-    published_at: '2024-01-15',
-    views: 1234
-  },
-  {
-    id: 2,
-    title: 'Tailwind CSS 最佳实践指南',
-    excerpt: '深入探讨 Tailwind CSS 在实际项目中的应用技巧和最佳实践...',
-    slug: 'tailwind-css-best-practices',
-    cover_image_url: 'https://images.unsplash.com/photo-1507721999472-8ed4421c4af2?w=400',
-    category: '设计',
-    status: 'published',
-    published_at: '2024-01-12',
-    views: 856
-  },
-  {
-    id: 3,
-    title: 'Vue 3 Composition API 深度解析',
-    excerpt: '全面解析 Vue 3 Composition API 的设计理念和使用方法...',
-    slug: 'vue3-composition-api',
-    cover_image_url: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=400',
-    category: '技术',
-    status: 'draft',
-    published_at: '2024-01-10',
-    views: 423
-  },
-  {
-    id: 4,
-    title: 'TypeScript 进阶技巧',
-    excerpt: '提升 TypeScript 开发效率的高级技巧和模式...',
-    slug: 'typescript-advanced-tips',
-    cover_image_url: 'https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=400',
-    category: '技术',
-    status: 'published',
-    published_at: '2024-01-08',
-    views: 965
-  },
-  {
-    id: 5,
-    title: '响应式设计的未来',
-    excerpt: '探索现代响应式设计的发展趋势和新技术...',
-    slug: 'future-of-responsive-design',
-    cover_image_url: 'https://images.unsplash.com/photo-1517134191118-9d595e4c8c2b?w=400',
-    category: '设计',
-    status: 'draft',
-    published_at: '2024-01-05',
-    views: 321
+interface Post {
+  id: number
+  title: string
+  excerpt: string
+  slug: string
+  cover_image_url: string
+  category_name: string
+  status: string
+  published_at: string
+  views: number
+}
+
+const posts = ref<Post[]>([])
+
+// Fetch posts from API
+const fetchPosts = async () => {
+  try {
+    loading.value = true
+    const response = await $fetch('/api/admin/posts')
+
+    if (response.success && response.articles) {
+      posts.value = response.articles
+    }
+  } catch (error) {
+    console.error('Failed to fetch posts:', error)
+  } finally {
+    loading.value = false
   }
-])
+}
+
+// Load posts on mount
+onMounted(() => {
+  fetchPosts()
+})
 
 const filteredPosts = computed(() => {
   return posts.value.filter(post => {
     const matchesSearch = !searchQuery.value ||
       post.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      post.excerpt.toLowerCase().includes(searchQuery.value.toLowerCase())
+      (post.excerpt && post.excerpt.toLowerCase().includes(searchQuery.value.toLowerCase()))
 
     const matchesStatus = !filterStatus.value || post.status === filterStatus.value
     const matchesCategory = !filterCategory.value // TODO: 实现分类过滤
@@ -283,14 +295,32 @@ const filteredPosts = computed(() => {
 })
 
 const formatDate = (dateString: string) => {
+  if (!dateString) return 'Not published'
   const date = new Date(dateString)
   return date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })
 }
 
-const deletePost = (id: number) => {
-  if (confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
-    // TODO: Implement delete functionality
-    console.log('Delete post:', id)
+const deletePost = async (id: number) => {
+  if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
+    return
+  }
+
+  try {
+    deleting.value = id
+
+    const response = await $fetch(`/api/admin/posts/${id}`, {
+      method: 'DELETE'
+    })
+
+    if (response.success) {
+      // Remove post from local list
+      posts.value = posts.value.filter(post => post.id !== id)
+    }
+  } catch (error: any) {
+    console.error('Failed to delete post:', error)
+    alert(error.data?.statusMessage || 'Failed to delete post. Please try again.')
+  } finally {
+    deleting.value = null
   }
 }
 </script>

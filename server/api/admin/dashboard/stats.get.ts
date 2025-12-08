@@ -1,4 +1,4 @@
-import type { DbArticle, DbCategory, DbTag, DbCustomPage } from '~/server/types/dbTypes'
+import type { DbArticle, DbCategory, DbTag, DbPage } from '~/server/types/dbTypes'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -6,18 +6,18 @@ export default defineEventHandler(async (event) => {
     await requireAuth(event)
 
     // Fetch all data in parallel
-    const [articlesResponse, categoriesResponse, tagsResponse, customPagesResponse] = await Promise.all([
+    const [articlesResponse, categoriesResponse, tagsResponse, pagesResponse] = await Promise.all([
       fetchFromDb<DbArticle>('articles'),
       fetchFromDb<DbCategory>('categories'),
       fetchFromDb<DbTag>('tags'),
-      fetchFromDb<DbCustomPage>('custom_pages')
+      fetchFromDb<DbPage>('pages')
     ])
 
     // Extract data arrays from responses
     const articles = articlesResponse.data || []
     const categories = categoriesResponse.data || []
     const tags = tagsResponse.data || []
-    const customPages = customPagesResponse.data || []
+    const pages = pagesResponse.data || []
 
     // Calculate total views
     const totalViews = articles.reduce((sum, article) => sum + (article.view_count || 0), 0)
@@ -58,7 +58,7 @@ export default defineEventHandler(async (event) => {
         totalViews: formatViews(totalViews),
         totalCategories: categories.length,
         totalTags: tags.length,
-        totalPages: customPages.length
+        totalPages: pages.length
       },
       recentArticles
     }

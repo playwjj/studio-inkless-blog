@@ -184,6 +184,14 @@ definePageMeta({
   layout: 'admin'
 })
 
+// Check authentication
+const { data: userData, error: authError } = await useFetch('/api/auth/user')
+
+if (authError.value) {
+  // Redirect to login if not authenticated
+  await navigateTo('/admin/login')
+}
+
 interface Token {
   id: number
   name: string

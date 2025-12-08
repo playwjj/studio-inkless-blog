@@ -29,7 +29,43 @@
 
     <!-- Tags list -->
     <div class="border border-gray-200">
-      <div class="overflow-x-auto">
+      <!-- Loading state -->
+      <div v-if="loading" class="py-12 text-center">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        <p class="mt-2 text-sm text-gray-500">Loading tags...</p>
+      </div>
+
+      <!-- Empty state -->
+      <div v-else-if="tags.length === 0" class="py-12 text-center">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+        </svg>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No tags</h3>
+        <p class="mt-1 text-sm text-gray-500">Get started by creating a new tag.</p>
+        <div class="mt-6">
+          <button
+            @click="showCreateModal = true"
+            class="inline-flex items-center px-3 py-1.5 bg-gray-900 text-white text-sm hover:bg-gray-800 transition-colors"
+          >
+            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            New Tag
+          </button>
+        </div>
+      </div>
+
+      <!-- No results state -->
+      <div v-else-if="filteredTags.length === 0" class="py-12 text-center">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No tags found</h3>
+        <p class="mt-1 text-sm text-gray-500">Try adjusting your search query.</p>
+      </div>
+
+      <!-- Tags table -->
+      <div v-else class="overflow-x-auto">
         <table class="w-full">
           <thead class="bg-gray-50 border-b border-gray-200">
             <tr>
@@ -173,15 +209,18 @@
             <button
               type="button"
               @click="closeModal"
-              class="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm hover:bg-gray-50 transition-colors"
+              :disabled="submitting"
+              class="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
             <button
               type="submit"
-              class="px-3 py-1.5 bg-gray-900 text-white text-sm hover:bg-gray-800 transition-colors"
+              :disabled="submitting"
+              class="px-3 py-1.5 bg-gray-900 text-white text-sm hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {{ editingTag ? 'Save' : 'Create' }}
+              <span v-if="!submitting">{{ editingTag ? 'Save' : 'Create' }}</span>
+              <span v-else>{{ editingTag ? 'Saving...' : 'Creating...' }}</span>
             </button>
           </div>
         </form>
@@ -195,9 +234,29 @@ definePageMeta({
   layout: 'admin'
 })
 
+// Check authentication
+const { data: userData, error: authError } = await useFetch('/api/auth/user')
+
+if (authError.value) {
+  // Redirect to login if not authenticated
+  await navigateTo('/admin/login')
+}
+
+interface Tag {
+  id: number
+  name: string
+  slug: string
+  description?: string
+  usage_count: number
+  created_at: string
+  updated_at: string
+}
+
 const searchQuery = ref('')
 const showCreateModal = ref(false)
-const editingTag = ref<any>(null)
+const editingTag = ref<Tag | null>(null)
+const loading = ref(false)
+const submitting = ref(false)
 
 const tagForm = reactive({
   name: '',
@@ -205,57 +264,25 @@ const tagForm = reactive({
   description: ''
 })
 
-// 模拟数据
-const tags = ref([
-  {
-    id: 1,
-    name: 'Vue.js',
-    slug: 'vuejs',
-    description: 'Vue.js 框架相关',
-    usage_count: 18,
-    created_at: '2024-01-01'
-  },
-  {
-    id: 2,
-    name: 'Nuxt',
-    slug: 'nuxt',
-    description: 'Nuxt 框架相关',
-    usage_count: 15,
-    created_at: '2024-01-02'
-  },
-  {
-    id: 3,
-    name: 'TypeScript',
-    slug: 'typescript',
-    description: 'TypeScript 编程语言',
-    usage_count: 22,
-    created_at: '2024-01-03'
-  },
-  {
-    id: 4,
-    name: 'Tailwind CSS',
-    slug: 'tailwind-css',
-    description: 'Tailwind CSS 框架',
-    usage_count: 12,
-    created_at: '2024-01-04'
-  },
-  {
-    id: 5,
-    name: 'JavaScript',
-    slug: 'javascript',
-    description: 'JavaScript 编程语言',
-    usage_count: 25,
-    created_at: '2024-01-05'
-  },
-  {
-    id: 6,
-    name: 'Web Design',
-    slug: 'web-design',
-    description: '网页设计相关',
-    usage_count: 8,
-    created_at: '2024-01-06'
+const tags = ref<Tag[]>([])
+
+// Load tags on mount
+onMounted(() => {
+  loadTags()
+})
+
+async function loadTags() {
+  loading.value = true
+  try {
+    const response = await $fetch('/api/admin/tags')
+    tags.value = response.tags || []
+  } catch (error) {
+    console.error('Failed to load tags:', error)
+    alert('Failed to load tags. Please try again.')
+  } finally {
+    loading.value = false
   }
-])
+}
 
 const filteredTags = computed(() => {
   if (!searchQuery.value) return tags.value
@@ -268,7 +295,7 @@ const filteredTags = computed(() => {
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString)
-  return date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })
+  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
 const closeModal = () => {
@@ -279,7 +306,7 @@ const closeModal = () => {
   tagForm.description = ''
 }
 
-const editTag = (tag: any) => {
+const editTag = (tag: Tag) => {
   editingTag.value = tag
   tagForm.name = tag.name
   tagForm.slug = tag.slug
@@ -287,24 +314,83 @@ const editTag = (tag: any) => {
 }
 
 const handleSubmit = async () => {
-  // TODO: Implement create/update logic
-  console.log('Submit tag:', tagForm)
-  closeModal()
-}
+  if (submitting.value) return
 
-const deleteTag = (id: number) => {
-  if (confirm('Are you sure you want to delete this tag? This action cannot be undone.')) {
-    // TODO: Implement delete logic
-    console.log('Delete tag:', id)
+  submitting.value = true
+
+  try {
+    if (editingTag.value) {
+      // Update existing tag
+      await $fetch(`/api/admin/tags/${editingTag.value.id}`, {
+        method: 'PUT',
+        body: {
+          name: tagForm.name,
+          slug: tagForm.slug,
+          description: tagForm.description
+        }
+      })
+
+      alert('Tag updated successfully!')
+    } else {
+      // Create new tag
+      await $fetch('/api/admin/tags', {
+        method: 'POST',
+        body: {
+          name: tagForm.name,
+          slug: tagForm.slug,
+          description: tagForm.description
+        }
+      })
+
+      alert('Tag created successfully!')
+    }
+
+    closeModal()
+    await loadTags()
+  } catch (error: any) {
+    if (error.statusCode === 409) {
+      alert(error.statusMessage || 'A tag with this slug already exists')
+    } else if (error.statusCode === 400) {
+      alert(error.statusMessage || 'Please fill in all required fields')
+    } else {
+      alert('Failed to save tag. Please try again.')
+    }
+    console.error('Submit tag error:', error)
+  } finally {
+    submitting.value = false
   }
 }
 
-// Auto-generate slug
+const deleteTag = async (id: number) => {
+  if (!confirm('Are you sure you want to delete this tag? This action cannot be undone.')) {
+    return
+  }
+
+  try {
+    await $fetch(`/api/admin/tags/${id}`, {
+      method: 'DELETE'
+    })
+
+    alert('Tag deleted successfully!')
+    await loadTags()
+  } catch (error: any) {
+    if (error.statusCode === 409) {
+      alert(error.statusMessage || 'Cannot delete tag that is being used')
+    } else if (error.statusCode === 404) {
+      alert('Tag not found')
+    } else {
+      alert('Failed to delete tag. Please try again.')
+    }
+    console.error('Delete tag error:', error)
+  }
+}
+
+// Auto-generate slug from name
 watch(() => tagForm.name, (newName) => {
   if (newName && !editingTag.value) {
     tagForm.slug = newName
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')
       .replace(/^-|-$/g, '')
   }
 })

@@ -5,12 +5,14 @@ export interface DbArticle {
   slug: string
   excerpt: string
   content: string
-  cover_image_url: string
+  cover_image?: string
   author_id: number
   category_id: number
   tag_names?: string // Comma-separated tag names (e.g., "Nuxt,Vue,Web Development")
-  published_at: string
+  status: 'draft' | 'published' | 'archived'
+  published_at?: string
   read_time: number
+  view_count: number
   created_at: string
   updated_at: string
 }

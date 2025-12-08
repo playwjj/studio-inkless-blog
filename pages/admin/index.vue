@@ -6,25 +6,28 @@
       <p class="mt-1 text-sm text-gray-500">Overview of your site's performance</p>
     </div>
 
+    <!-- Loading state -->
+    <div v-if="loading" class="py-12 text-center">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      <p class="mt-2 text-sm text-gray-500">Loading dashboard...</p>
+    </div>
+
     <!-- Stats Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
       <StatCard
         title="Total Posts"
         :value="stats.totalPosts"
         color="blue"
-        :trend="{ value: 12, isPositive: true }"
       />
       <StatCard
         title="Total Views"
         :value="stats.totalViews"
         color="green"
-        :trend="{ value: 8, isPositive: true }"
       />
       <StatCard
-        title="Comments"
-        :value="stats.totalComments"
+        title="Categories"
+        :value="stats.totalCategories"
         color="purple"
-        :trend="{ value: 3, isPositive: false }"
       />
       <StatCard
         title="Pages"
@@ -44,7 +47,15 @@
           </NuxtLink>
         </div>
 
-        <div class="space-y-px border border-gray-200">
+        <div v-if="!loading && recentPosts.length === 0" class="border border-gray-200 py-12 text-center">
+          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <h3 class="mt-2 text-sm font-medium text-gray-900">No posts yet</h3>
+          <p class="mt-1 text-sm text-gray-500">Get started by creating a new post.</p>
+        </div>
+
+        <div v-else class="space-y-px border border-gray-200">
           <div
             v-for="(post, index) in recentPosts"
             :key="post.id"
@@ -52,21 +63,27 @@
             :class="{ 'border-t border-gray-200': index > 0 }"
           >
             <img
-              v-if="post.cover_image_url"
-              :src="post.cover_image_url"
+              v-if="post.cover_image"
+              :src="post.cover_image"
               :alt="post.title"
-              class="w-16 h-16 object-cover"
+              class="w-16 h-16 object-cover bg-gray-100"
             />
+            <div
+              v-else
+              class="w-16 h-16 bg-gray-100 flex items-center justify-center"
+            >
+              <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
             <div class="flex-1 min-w-0">
               <p class="text-sm font-medium text-gray-900 truncate">{{ post.title }}</p>
               <div class="flex items-center gap-3 mt-1 text-xs text-gray-500">
-                <span>{{ formatDate(post.published_at) }}</span>
+                <span>{{ formatDate(post.created_at) }}</span>
                 <span>·</span>
-                <span>{{ post.read_time }} min read</span>
+                <span>{{ post.category }}</span>
                 <span>·</span>
-                <span :class="post.status === 'published' ? 'text-green-600' : 'text-yellow-600'">
-                  {{ post.status === 'published' ? 'Published' : 'Draft' }}
-                </span>
+                <span>{{ post.view_count }} views</span>
               </div>
             </div>
           </div>
@@ -142,43 +159,60 @@ definePageMeta({
   layout: 'admin'
 })
 
-// Mock data
-const stats = reactive({
-  totalPosts: 42,
-  totalViews: '12.5K',
-  totalComments: 186,
-  totalPages: 8
+// Check authentication
+const { data: userData, error: authError } = await useFetch('/api/auth/user')
+
+if (authError.value) {
+  // Redirect to login if not authenticated
+  await navigateTo('/admin/login')
+}
+
+interface DashboardStats {
+  totalPosts: number
+  totalViews: string
+  totalCategories: number
+  totalTags: number
+  totalPages: number
+}
+
+interface RecentArticle {
+  id: number
+  title: string
+  slug: string
+  cover_image?: string
+  view_count: number
+  created_at: string
+  category: string
+}
+
+const loading = ref(true)
+const stats = ref<DashboardStats>({
+  totalPosts: 0,
+  totalViews: '0',
+  totalCategories: 0,
+  totalTags: 0,
+  totalPages: 0
+})
+const recentPosts = ref<RecentArticle[]>([])
+
+// Load dashboard data
+onMounted(() => {
+  loadDashboardData()
 })
 
-const recentPosts = ref([
-  {
-    id: 1,
-    title: 'How to Build a Modern Blog with Nuxt 3',
-    excerpt: 'This article will introduce how to build a fully functional blog system from scratch using Nuxt 3 framework...',
-    cover_image_url: 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=400',
-    published_at: '2024-01-15',
-    read_time: 8,
-    status: 'published'
-  },
-  {
-    id: 2,
-    title: 'Tailwind CSS Best Practices Guide',
-    excerpt: 'In-depth discussion of Tailwind CSS application tips and best practices in real projects...',
-    cover_image_url: 'https://images.unsplash.com/photo-1507721999472-8ed4421c4af2?w=400',
-    published_at: '2024-01-12',
-    read_time: 6,
-    status: 'published'
-  },
-  {
-    id: 3,
-    title: 'Deep Dive into Vue 3 Composition API',
-    excerpt: 'Comprehensive analysis of Vue 3 Composition API design philosophy and usage methods...',
-    cover_image_url: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=400',
-    published_at: '2024-01-10',
-    read_time: 10,
-    status: 'draft'
+async function loadDashboardData() {
+  loading.value = true
+  try {
+    const response = await $fetch('/api/admin/dashboard/stats')
+    stats.value = response.stats
+    recentPosts.value = response.recentArticles
+  } catch (error) {
+    console.error('Failed to load dashboard data:', error)
+    alert('Failed to load dashboard data. Please try again.')
+  } finally {
+    loading.value = false
   }
-])
+}
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString)

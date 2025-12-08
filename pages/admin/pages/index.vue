@@ -1,43 +1,90 @@
 <template>
   <div class="px-8 py-6">
-    <!-- Page title and actions -->
+    <!-- Page title -->
     <div class="flex items-center justify-between mb-8">
       <div>
         <h1 class="text-2xl font-semibold text-gray-900">Pages</h1>
-        <p class="mt-1 text-sm text-gray-500">Manage your custom pages</p>
+        <p class="mt-1 text-sm text-gray-500">Manage custom pages</p>
       </div>
-      <NuxtLink
-        to="/admin/pages/new"
+      <button
+        @click="navigateTo('/admin/pages/new')"
         class="inline-flex items-center px-3 py-1.5 bg-gray-900 text-white text-sm hover:bg-gray-800 transition-colors"
       >
         <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
         </svg>
         New Page
-      </NuxtLink>
+      </button>
     </div>
 
-    <!-- Search -->
+    <!-- Filters and Search -->
     <div class="border border-gray-200 p-4 mb-6">
-      <input
-        v-model="searchQuery"
-        type="text"
-        placeholder="Search pages..."
-        class="w-full px-3 py-1.5 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none"
-      />
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Search -->
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="Search pages by title..."
+          class="w-full px-3 py-1.5 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none"
+        />
+
+        <!-- Status Filter -->
+        <select
+          v-model="statusFilter"
+          class="w-full px-3 py-1.5 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none"
+        >
+          <option value="all">All Status</option>
+          <option value="published">Published</option>
+          <option value="draft">Draft</option>
+          <option value="archived">Archived</option>
+        </select>
+      </div>
     </div>
 
     <!-- Pages list -->
     <div class="border border-gray-200">
-      <div class="overflow-x-auto">
+      <!-- Loading state -->
+      <div v-if="loading" class="py-12 text-center">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        <p class="mt-2 text-sm text-gray-500">Loading pages...</p>
+      </div>
+
+      <!-- Empty state -->
+      <div v-else-if="pages.length === 0" class="py-12 text-center">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No pages</h3>
+        <p class="mt-1 text-sm text-gray-500">Get started by creating a new page.</p>
+        <div class="mt-6">
+          <button
+            @click="navigateTo('/admin/pages/new')"
+            class="inline-flex items-center px-3 py-1.5 bg-gray-900 text-white text-sm hover:bg-gray-800 transition-colors"
+          >
+            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            New Page
+          </button>
+        </div>
+      </div>
+
+      <!-- No results state -->
+      <div v-else-if="filteredPages.length === 0" class="py-12 text-center">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No pages found</h3>
+        <p class="mt-1 text-sm text-gray-500">Try adjusting your search or filter.</p>
+      </div>
+
+      <!-- Pages table -->
+      <div v-else class="overflow-x-auto">
         <table class="w-full">
           <thead class="bg-gray-50 border-b border-gray-200">
             <tr>
               <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Page Title
-              </th>
-              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Path
+                Page
               </th>
               <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Template
@@ -46,7 +93,10 @@
                 Status
               </th>
               <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Updated
+                Views
+              </th>
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Created
               </th>
               <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
@@ -59,59 +109,74 @@
               :key="page.id"
               class="hover:bg-gray-50 transition-colors"
             >
+              <!-- Page (with cover image and title) -->
               <td class="px-4 py-3">
-                <div>
-                  <p class="text-sm font-medium text-gray-900">{{ page.title }}</p>
-                  <p class="text-xs text-gray-500">{{ page.description }}</p>
+                <div class="flex items-center gap-3">
+                  <img
+                    v-if="page.cover_image"
+                    :src="page.cover_image"
+                    :alt="page.title"
+                    class="w-12 h-12 object-cover bg-gray-100"
+                  />
+                  <div
+                    v-else
+                    class="w-12 h-12 bg-gray-100 flex items-center justify-center flex-shrink-0"
+                  >
+                    <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <div class="min-w-0">
+                    <p class="text-sm font-medium text-gray-900 truncate">{{ page.title }}</p>
+                    <p class="text-xs text-gray-500 truncate">{{ page.slug }}</p>
+                  </div>
                 </div>
               </td>
+
+              <!-- Template -->
               <td class="px-4 py-3 whitespace-nowrap">
-                <code class="text-xs text-gray-600">
-                  /{{ page.slug }}
-                </code>
+                <span class="text-xs text-gray-600">{{ page.template || 'default' }}</span>
               </td>
+
+              <!-- Status -->
               <td class="px-4 py-3 whitespace-nowrap">
-                <span class="text-xs text-gray-900">{{ page.template }}</span>
-              </td>
-              <td class="px-4 py-3 whitespace-nowrap">
-                <span
-                  :class="[
-                    'px-2 py-0.5 inline-flex text-xs font-medium border',
-                    page.status === 'published'
-                      ? 'border-green-200 text-green-700 bg-green-50'
-                      : 'border-yellow-200 text-yellow-700 bg-yellow-50'
-                  ]"
+                <button
+                  @click="toggleStatus(page)"
+                  class="inline-flex px-2 py-0.5 text-xs font-medium transition-colors"
+                  :class="{
+                    'bg-green-100 text-green-800 hover:bg-green-200': page.status === 'published',
+                    'bg-yellow-100 text-yellow-800 hover:bg-yellow-200': page.status === 'draft',
+                    'bg-gray-100 text-gray-800 hover:bg-gray-200': page.status === 'archived'
+                  }"
                 >
-                  {{ page.status === 'published' ? 'Published' : 'Draft' }}
-                </span>
+                  {{ page.status === 'published' ? 'Published' : page.status === 'draft' ? 'Draft' : 'Archived' }}
+                </button>
               </td>
+
+              <!-- Views -->
+              <td class="px-4 py-3 whitespace-nowrap text-xs text-gray-900">
+                {{ page.view_count }}
+              </td>
+
+              <!-- Created -->
               <td class="px-4 py-3 whitespace-nowrap text-xs text-gray-500">
-                {{ formatDate(page.updated_at) }}
+                {{ formatDate(page.created_at) }}
               </td>
+
+              <!-- Actions -->
               <td class="px-4 py-3 whitespace-nowrap text-right">
                 <div class="flex items-center justify-end space-x-2">
-                  <NuxtLink
-                    :to="`/${page.slug}`"
-                    target="_blank"
-                    class="text-gray-400 hover:text-gray-900"
-                    title="Preview"
-                  >
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                  </NuxtLink>
-                  <NuxtLink
-                    :to="`/admin/pages/${page.id}/edit`"
+                  <button
+                    @click="navigateTo(`/admin/pages/${page.id}`)"
                     class="text-gray-400 hover:text-gray-900"
                     title="Edit"
                   >
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
-                  </NuxtLink>
+                  </button>
                   <button
-                    @click="deletePage(page.id)"
+                    @click="deletePage(page.id, page.title)"
                     class="text-gray-400 hover:text-red-600"
                     title="Delete"
                   >
@@ -134,57 +199,113 @@ definePageMeta({
   layout: 'admin'
 })
 
-const searchQuery = ref('')
+// Check authentication
+const { data: userData, error: authError } = await useFetch('/api/auth/user')
 
-// 模拟数据
-const pages = ref([
-  {
-    id: 1,
-    title: '关于我们',
-    slug: 'about',
-    description: '了解我们的团队和使命',
-    template: 'default',
-    status: 'published',
-    updated_at: '2024-01-15'
-  },
-  {
-    id: 2,
-    title: '联系我们',
-    slug: 'contact',
-    description: '与我们取得联系',
-    template: 'minimal',
-    status: 'published',
-    updated_at: '2024-01-12'
-  },
-  {
-    id: 3,
-    title: '隐私政策',
-    slug: 'privacy',
-    description: '我们如何保护您的隐私',
-    template: 'default',
-    status: 'draft',
-    updated_at: '2024-01-10'
+if (authError.value) {
+  // Redirect to login if not authenticated
+  await navigateTo('/admin/login')
+}
+
+interface Page {
+  id: number
+  title: string
+  slug: string
+  description?: string
+  status: 'draft' | 'published' | 'archived'
+  template: string
+  cover_image?: string
+  view_count: number
+  created_at: string
+  updated_at: string
+}
+
+const searchQuery = ref('')
+const statusFilter = ref('all')
+const loading = ref(false)
+const pages = ref<Page[]>([])
+
+// Load pages on mount
+onMounted(() => {
+  loadPages()
+})
+
+async function loadPages() {
+  loading.value = true
+  try {
+    const response = await $fetch('/api/admin/pages')
+    pages.value = response.pages || []
+  } catch (error) {
+    console.error('Failed to load pages:', error)
+    alert('Failed to load pages. Please try again.')
+  } finally {
+    loading.value = false
   }
-])
+}
 
 const filteredPages = computed(() => {
-  if (!searchQuery.value) return pages.value
+  let filtered = pages.value
 
-  return pages.value.filter(page =>
-    page.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-    page.slug.toLowerCase().includes(searchQuery.value.toLowerCase())
-  )
+  // Filter by search query
+  if (searchQuery.value) {
+    filtered = filtered.filter(page =>
+      page.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      page.slug.toLowerCase().includes(searchQuery.value.toLowerCase())
+    )
+  }
+
+  // Filter by status
+  if (statusFilter.value !== 'all') {
+    filtered = filtered.filter(page => page.status === statusFilter.value)
+  }
+
+  return filtered
 })
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString)
-  return date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })
+  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
-const deletePage = (id: number) => {
-  if (confirm('Are you sure you want to delete this page? This action cannot be undone.')) {
-    // TODO: Implement delete functionality
-    console.log('Delete page:', id)
+async function toggleStatus(page: Page) {
+  // Cycle through statuses: draft -> published -> archived -> draft
+  const statusCycle: Record<string, 'draft' | 'published' | 'archived'> = {
+    'draft': 'published',
+    'published': 'archived',
+    'archived': 'draft'
+  }
+
+  const newStatus = statusCycle[page.status]
+
+  try {
+    await $fetch(`/api/admin/pages/${page.id}`, {
+      method: 'PUT',
+      body: { status: newStatus }
+    })
+
+    // Update local state
+    page.status = newStatus
+  } catch (error: any) {
+    alert('Failed to update page status. Please try again.')
+    console.error('Update status error:', error)
+  }
+}
+
+async function deletePage(id: number, title: string) {
+  if (!confirm(`Are you sure you want to delete "${title}"? This action cannot be undone.`)) {
+    return
+  }
+
+  try {
+    await $fetch(`/api/admin/pages/${id}`, {
+      method: 'DELETE'
+    })
+
+    alert('Page deleted successfully')
+    await loadPages()
+  } catch (error: any) {
+    alert('Failed to delete page. Please try again.')
+    console.error('Delete page error:', error)
   }
 }
 </script>

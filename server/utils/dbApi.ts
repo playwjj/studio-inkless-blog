@@ -210,3 +210,36 @@ export async function updateRow<T>(
     throw error
   }
 }
+
+export async function deleteRow(
+  table: string,
+  id: number | string
+): Promise<boolean> {
+  const config = useRuntimeConfig()
+  const apiUrl = config.dbApiUrl
+  const apiKey = config.dbApiKey
+
+  if (!apiUrl || !apiKey) {
+    throw new Error('DB API configuration is missing')
+  }
+
+  const url = `${apiUrl}/api/tables/${table}/rows/${id}`
+
+  try {
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`
+      }
+    })
+
+    if (!response.ok) {
+      throw new Error(`DB API error: ${response.status} ${response.statusText}`)
+    }
+
+    return true
+  } catch (error) {
+    console.error(`Failed to delete row in ${table}:`, error)
+    throw error
+  }
+}

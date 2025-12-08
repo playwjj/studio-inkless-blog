@@ -19,7 +19,34 @@
 
     <!-- Categories list -->
     <div class="border border-gray-200">
-      <div class="overflow-x-auto">
+      <!-- Loading state -->
+      <div v-if="loading" class="py-12 text-center">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        <p class="mt-2 text-sm text-gray-500">Loading categories...</p>
+      </div>
+
+      <!-- Empty state -->
+      <div v-else-if="categories.length === 0" class="py-12 text-center">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+        </svg>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No categories</h3>
+        <p class="mt-1 text-sm text-gray-500">Get started by creating a new category.</p>
+        <div class="mt-6">
+          <button
+            @click="showCreateModal = true"
+            class="inline-flex items-center px-3 py-1.5 bg-gray-900 text-white text-sm hover:bg-gray-800 transition-colors"
+          >
+            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            New Category
+          </button>
+        </div>
+      </div>
+
+      <!-- Categories table -->
+      <div v-else class="overflow-x-auto">
         <table class="w-full">
           <thead class="bg-gray-50 border-b border-gray-200">
             <tr>
@@ -159,15 +186,18 @@
             <button
               type="button"
               @click="closeModal"
-              class="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm hover:bg-gray-50 transition-colors"
+              :disabled="submitting"
+              class="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
             <button
               type="submit"
-              class="px-3 py-1.5 bg-gray-900 text-white text-sm hover:bg-gray-800 transition-colors"
+              :disabled="submitting"
+              class="px-3 py-1.5 bg-gray-900 text-white text-sm hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {{ editingCategory ? 'Save' : 'Create' }}
+              <span v-if="!submitting">{{ editingCategory ? 'Save' : 'Create' }}</span>
+              <span v-else>{{ editingCategory ? 'Saving...' : 'Creating...' }}</span>
             </button>
           </div>
         </form>
@@ -181,8 +211,20 @@ definePageMeta({
   layout: 'admin'
 })
 
+interface Category {
+  id: number
+  name: string
+  slug: string
+  description?: string
+  post_count: number
+  created_at: string
+  updated_at: string
+}
+
 const showCreateModal = ref(false)
-const editingCategory = ref<any>(null)
+const editingCategory = ref<Category | null>(null)
+const loading = ref(false)
+const submitting = ref(false)
 
 const categoryForm = reactive({
   name: '',
@@ -190,37 +232,29 @@ const categoryForm = reactive({
   description: ''
 })
 
-// 模拟数据
-const categories = ref([
-  {
-    id: 1,
-    name: '技术',
-    slug: 'tech',
-    description: '技术相关文章',
-    post_count: 24,
-    created_at: '2024-01-01'
-  },
-  {
-    id: 2,
-    name: '设计',
-    slug: 'design',
-    description: '设计相关文章',
-    post_count: 12,
-    created_at: '2024-01-05'
-  },
-  {
-    id: 3,
-    name: '生活',
-    slug: 'life',
-    description: '生活随笔',
-    post_count: 8,
-    created_at: '2024-01-10'
+const categories = ref<Category[]>([])
+
+// Load categories on mount
+onMounted(() => {
+  loadCategories()
+})
+
+async function loadCategories() {
+  loading.value = true
+  try {
+    const response = await $fetch('/api/admin/categories')
+    categories.value = response.categories || []
+  } catch (error) {
+    console.error('Failed to load categories:', error)
+    alert('Failed to load categories. Please try again.')
+  } finally {
+    loading.value = false
   }
-])
+}
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString)
-  return date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })
+  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
 const closeModal = () => {
@@ -231,7 +265,7 @@ const closeModal = () => {
   categoryForm.description = ''
 }
 
-const editCategory = (category: any) => {
+const editCategory = (category: Category) => {
   editingCategory.value = category
   categoryForm.name = category.name
   categoryForm.slug = category.slug
@@ -239,24 +273,83 @@ const editCategory = (category: any) => {
 }
 
 const handleSubmit = async () => {
-  // TODO: Implement create/update logic
-  console.log('Submit category:', categoryForm)
-  closeModal()
-}
+  if (submitting.value) return
 
-const deleteCategory = (id: number) => {
-  if (confirm('Are you sure you want to delete this category? This action cannot be undone.')) {
-    // TODO: Implement delete logic
-    console.log('Delete category:', id)
+  submitting.value = true
+
+  try {
+    if (editingCategory.value) {
+      // Update existing category
+      await $fetch(`/api/admin/categories/${editingCategory.value.id}`, {
+        method: 'PUT',
+        body: {
+          name: categoryForm.name,
+          slug: categoryForm.slug,
+          description: categoryForm.description
+        }
+      })
+
+      alert('Category updated successfully!')
+    } else {
+      // Create new category
+      await $fetch('/api/admin/categories', {
+        method: 'POST',
+        body: {
+          name: categoryForm.name,
+          slug: categoryForm.slug,
+          description: categoryForm.description
+        }
+      })
+
+      alert('Category created successfully!')
+    }
+
+    closeModal()
+    await loadCategories()
+  } catch (error: any) {
+    if (error.statusCode === 409) {
+      alert(error.statusMessage || 'A category with this slug already exists')
+    } else if (error.statusCode === 400) {
+      alert(error.statusMessage || 'Please fill in all required fields')
+    } else {
+      alert('Failed to save category. Please try again.')
+    }
+    console.error('Submit category error:', error)
+  } finally {
+    submitting.value = false
   }
 }
 
-// Auto-generate slug
+const deleteCategory = async (id: number) => {
+  if (!confirm('Are you sure you want to delete this category? This action cannot be undone.')) {
+    return
+  }
+
+  try {
+    await $fetch(`/api/admin/categories/${id}`, {
+      method: 'DELETE'
+    })
+
+    alert('Category deleted successfully!')
+    await loadCategories()
+  } catch (error: any) {
+    if (error.statusCode === 409) {
+      alert(error.statusMessage || 'Cannot delete category with articles')
+    } else if (error.statusCode === 404) {
+      alert('Category not found')
+    } else {
+      alert('Failed to delete category. Please try again.')
+    }
+    console.error('Delete category error:', error)
+  }
+}
+
+// Auto-generate slug from name
 watch(() => categoryForm.name, (newName) => {
   if (newName && !editingCategory.value) {
     categoryForm.slug = newName
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')
       .replace(/^-|-$/g, '')
   }
 })

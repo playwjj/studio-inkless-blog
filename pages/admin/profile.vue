@@ -356,6 +356,22 @@ if (error.value) {
   await navigateTo('/admin/login')
 }
 
+// Store original data for reset functionality
+const originalData = {
+  avatar_url: userData.value?.user?.avatar_url || '',
+  username: userData.value?.user?.username || '',
+  email: userData.value?.user?.email || '',
+  display_name: userData.value?.user?.full_name || '',
+  role: userData.value?.user?.role || 'admin',
+  bio: '',
+  website: '',
+  twitter: '',
+  github: '',
+  linkedin: '',
+  email_notifications: true,
+  two_factor_enabled: false
+}
+
 const formData = reactive({
   avatar_url: userData.value?.user?.avatar_url || '',
   username: userData.value?.user?.username || '',
@@ -479,16 +495,39 @@ const handlePasswordChange = async () => {
   }
 }
 
-const handleDeleteAccount = () => {
-  if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
-    // TODO: Implement account deletion
-    console.log('Delete account')
+const handleDeleteAccount = async () => {
+  const password = prompt('To delete your account, please enter your password:')
+
+  if (!password) {
+    return
+  }
+
+  if (!confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+    return
+  }
+
+  try {
+    await $fetch('/api/auth/account', {
+      method: 'DELETE',
+      body: { password }
+    })
+
+    alert('Account deleted successfully')
+    // Redirect to home page
+    await navigateTo('/')
+  } catch (error: any) {
+    if (error.statusCode === 401) {
+      alert('Incorrect password')
+    } else {
+      alert('Failed to delete account. Please try again.')
+    }
+    console.error('Delete account error:', error)
   }
 }
 
 const handleReset = () => {
-  // TODO: Reset form to original values
-  console.log('Reset form')
+  // Reset form to original values
+  Object.assign(formData, originalData)
 }
 
 const formatDate = (dateString: string) => {

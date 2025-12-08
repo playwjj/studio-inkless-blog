@@ -102,7 +102,7 @@
 
       <!-- Footer -->
       <div class="mt-6 text-center text-xs text-gray-500">
-        <p>&copy; 2024 Studio Inkless. All rights reserved.</p>
+        <p>&copy; {{ new Date().getFullYear() }} Studio Inkless. All rights reserved.</p>
       </div>
     </div>
   </div>

@@ -33,6 +33,12 @@ export async function getUserFromSession(event: H3Event) {
 }
 
 export async function requireAuth(event: H3Event) {
+  // Check if authenticated via API token first
+  if (event.context.apiUser) {
+    return event.context.apiUser
+  }
+
+  // Otherwise check session
   const user = await getUserFromSession(event)
 
   if (!user) {
@@ -43,6 +49,28 @@ export async function requireAuth(event: H3Event) {
   }
 
   return user
+}
+
+export function isApiRequest(event: H3Event): boolean {
+  return event.context.isApiRequest === true
+}
+
+export function requireScope(event: H3Event, requiredScope: string) {
+  if (!event.context.isApiRequest) {
+    // Not an API request, skip scope check
+    return true
+  }
+
+  const scopes = event.context.apiToken?.scopes || []
+
+  if (!scopes.includes(requiredScope) && !scopes.includes('*')) {
+    throw createError({
+      statusCode: 403,
+      statusMessage: `Missing required scope: ${requiredScope}`
+    })
+  }
+
+  return true
 }
 
 export async function setUserSession(event: H3Event, user: any) {

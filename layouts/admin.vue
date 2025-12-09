@@ -126,17 +126,16 @@
 const sidebarOpen = ref(false)
 const profileMenuOpen = ref(false)
 const loggingOut = ref(false)
-const currentUser = ref<any>(null)
+
+// Use centralized auth composable
+const { currentUser, fetchUser, logout } = useAuth()
 const { siteConfig } = useSiteConfig()
 const { error: showError } = useNotification()
 
 // Fetch current user
 onMounted(async () => {
   try {
-    const { data } = await useFetch('/api/auth/user')
-    if (data.value?.user) {
-      currentUser.value = data.value.user
-    }
+    await fetchUser()
   } catch (error) {
     console.error('Failed to fetch user:', error)
   }
@@ -149,9 +148,7 @@ const handleLogout = async () => {
   loggingOut.value = true
 
   try {
-    await $fetch('/api/auth/logout', {
-      method: 'POST'
-    })
+    await logout()
 
     // Redirect to login page
     await navigateTo('/admin/login')

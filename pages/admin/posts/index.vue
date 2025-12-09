@@ -24,7 +24,7 @@
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="Search posts by title or content..."
+            placeholder="Search posts by title or excerpt..."
             class="w-full px-3 py-1.5 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none"
           />
         </div>
@@ -41,10 +41,23 @@
           class="px-3 py-1.5 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none"
         >
           <option value="">All Categories</option>
-          <option value="1">Technology</option>
-          <option value="2">Design</option>
-          <option value="3">Life</option>
+          <option v-for="category in categories" :key="category.id" :value="category.id.toString()">
+            {{ category.name }}
+          </option>
         </select>
+      </div>
+
+      <!-- Clear filters button -->
+      <div v-if="hasActiveFilters" class="mt-3 flex items-center justify-between">
+        <p class="text-xs text-gray-600">
+          Showing {{ filteredPosts.length }} of {{ posts.length }} posts
+        </p>
+        <button
+          @click="clearFilters"
+          class="text-xs text-gray-600 hover:text-gray-900 underline"
+        >
+          Clear all filters
+        </button>
       </div>
     </div>
 
@@ -108,7 +121,7 @@
           </thead>
           <tbody class="divide-y divide-gray-200">
             <tr
-              v-for="post in filteredPosts"
+              v-for="post in paginatedPosts"
               :key="post.id"
               class="hover:bg-gray-50 transition-colors"
             >
@@ -196,35 +209,58 @@
       <!-- Pagination -->
       <div class="bg-gray-50 px-4 py-3 flex items-center justify-between border-t border-gray-200">
         <div class="flex-1 flex justify-between sm:hidden">
-          <button class="px-3 py-1.5 border border-gray-300 text-xs bg-white hover:bg-gray-50">
+          <button
+            @click="prevPage"
+            :disabled="currentPage === 1"
+            class="px-3 py-1.5 border border-gray-300 text-xs bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             Previous
           </button>
-          <button class="ml-3 px-3 py-1.5 border border-gray-300 text-xs bg-white hover:bg-gray-50">
+          <button
+            @click="nextPage"
+            :disabled="currentPage === totalPages"
+            class="ml-3 px-3 py-1.5 border border-gray-300 text-xs bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             Next
           </button>
         </div>
         <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
           <div>
             <p class="text-xs text-gray-500">
-              Showing <span class="font-medium">1</span> to <span class="font-medium">10</span> of
+              Showing <span class="font-medium">{{ paginationStart }}</span> to <span class="font-medium">{{ paginationEnd }}</span> of
               <span class="font-medium">{{ filteredPosts.length }}</span> results
             </p>
           </div>
-          <div>
+          <div v-if="totalPages > 1">
             <nav class="relative z-0 inline-flex -space-x-px">
-              <button class="px-3 py-1.5 border border-gray-200 bg-white text-xs text-gray-500 hover:bg-gray-50">
+              <button
+                @click="prevPage"
+                :disabled="currentPage === 1"
+                class="px-3 py-1.5 border border-gray-200 bg-white text-xs text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 Previous
               </button>
-              <button class="px-3 py-1.5 border border-gray-200 bg-gray-50 text-xs text-gray-900">
-                1
+              <button
+                v-for="(page, index) in pageNumbers"
+                :key="index"
+                @click="typeof page === 'number' ? goToPage(page) : null"
+                :disabled="page === '...'"
+                :class="[
+                  'px-3 py-1.5 border border-gray-200 text-xs',
+                  page === currentPage
+                    ? 'bg-gray-900 text-white'
+                    : page === '...'
+                    ? 'bg-white text-gray-400 cursor-default'
+                    : 'bg-white text-gray-500 hover:bg-gray-50'
+                ]"
+              >
+                {{ page }}
               </button>
-              <button class="px-3 py-1.5 border border-gray-200 bg-white text-xs text-gray-500 hover:bg-gray-50">
-                2
-              </button>
-              <button class="px-3 py-1.5 border border-gray-200 bg-white text-xs text-gray-500 hover:bg-gray-50">
-                3
-              </button>
-              <button class="px-3 py-1.5 border border-gray-200 bg-white text-xs text-gray-500 hover:bg-gray-50">
+              <button
+                @click="nextPage"
+                :disabled="currentPage === totalPages"
+                class="px-3 py-1.5 border border-gray-200 bg-white text-xs text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 Next
               </button>
             </nav>
@@ -245,6 +281,8 @@ const filterStatus = ref('')
 const filterCategory = ref('')
 const loading = ref(true)
 const deleting = ref<number | null>(null)
+const currentPage = ref(1)
+const pageSize = ref(10)
 
 interface Post {
   id: number
@@ -258,7 +296,14 @@ interface Post {
   views: number
 }
 
+interface Category {
+  id: number
+  name: string
+  slug: string
+}
+
 const posts = ref<Post[]>([])
+const categories = ref<Category[]>([])
 
 // Fetch posts from API
 const fetchPosts = async () => {
@@ -276,9 +321,23 @@ const fetchPosts = async () => {
   }
 }
 
-// Load posts on mount
+// Fetch categories from API
+const fetchCategories = async () => {
+  try {
+    const response = await $fetch('/api/admin/categories')
+
+    if (response.success && response.categories) {
+      categories.value = response.categories
+    }
+  } catch (error) {
+    console.error('Failed to fetch categories:', error)
+  }
+}
+
+// Load data on mount
 onMounted(() => {
   fetchPosts()
+  fetchCategories()
 })
 
 const filteredPosts = computed(() => {
@@ -288,11 +347,114 @@ const filteredPosts = computed(() => {
       (post.excerpt && post.excerpt.toLowerCase().includes(searchQuery.value.toLowerCase()))
 
     const matchesStatus = !filterStatus.value || post.status === filterStatus.value
-    const matchesCategory = !filterCategory.value // TODO: 实现分类过滤
+
+    // Match by category name
+    let matchesCategory = true
+    if (filterCategory.value) {
+      const selectedCategory = categories.value.find(c => c.id.toString() === filterCategory.value)
+      matchesCategory = selectedCategory ? post.category_name === selectedCategory.name : true
+    }
 
     return matchesSearch && matchesStatus && matchesCategory
   })
 })
+
+// Pagination
+const totalPages = computed(() => Math.ceil(filteredPosts.value.length / pageSize.value))
+
+const paginatedPosts = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  const end = start + pageSize.value
+  return filteredPosts.value.slice(start, end)
+})
+
+const paginationStart = computed(() => {
+  if (filteredPosts.value.length === 0) return 0
+  return (currentPage.value - 1) * pageSize.value + 1
+})
+
+const paginationEnd = computed(() => {
+  const end = currentPage.value * pageSize.value
+  return Math.min(end, filteredPosts.value.length)
+})
+
+const pageNumbers = computed(() => {
+  const pages = []
+  const maxVisible = 5
+
+  if (totalPages.value <= maxVisible) {
+    // Show all pages if total is less than max
+    for (let i = 1; i <= totalPages.value; i++) {
+      pages.push(i)
+    }
+  } else {
+    // Show smart pagination
+    if (currentPage.value <= 3) {
+      // Near the beginning
+      for (let i = 1; i <= Math.min(4, totalPages.value); i++) {
+        pages.push(i)
+      }
+      if (totalPages.value > 4) {
+        pages.push('...')
+        pages.push(totalPages.value)
+      }
+    } else if (currentPage.value >= totalPages.value - 2) {
+      // Near the end
+      pages.push(1)
+      pages.push('...')
+      for (let i = totalPages.value - 3; i <= totalPages.value; i++) {
+        pages.push(i)
+      }
+    } else {
+      // In the middle
+      pages.push(1)
+      pages.push('...')
+      pages.push(currentPage.value - 1)
+      pages.push(currentPage.value)
+      pages.push(currentPage.value + 1)
+      pages.push('...')
+      pages.push(totalPages.value)
+    }
+  }
+
+  return pages
+})
+
+const goToPage = (page: number) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
+  }
+}
+
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++
+  }
+}
+
+const prevPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--
+  }
+}
+
+// Reset to page 1 when filters change
+watch([searchQuery, filterStatus, filterCategory], () => {
+  currentPage.value = 1
+})
+
+// Check if any filters are active
+const hasActiveFilters = computed(() => {
+  return !!(searchQuery.value || filterStatus.value || filterCategory.value)
+})
+
+// Clear all filters
+const clearFilters = () => {
+  searchQuery.value = ''
+  filterStatus.value = ''
+  filterCategory.value = ''
+  currentPage.value = 1
+}
 
 const formatDate = (dateString: string) => {
   if (!dateString) return 'Not published'
@@ -300,27 +462,41 @@ const formatDate = (dateString: string) => {
   return date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })
 }
 
+const { success: showSuccess, error: showError, confirm: showConfirm } = useNotification()
+
 const deletePost = async (id: number) => {
-  if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
-    return
-  }
+  const post = posts.value.find(p => p.id === id)
+  const postTitle = post?.title || 'this post'
 
-  try {
-    deleting.value = id
+  await showConfirm({
+    title: 'Delete Post',
+    message: `Are you sure you want to delete "${postTitle}"? This action cannot be undone.`,
+    confirmText: 'Delete',
+    cancelText: 'Cancel',
+    variant: 'danger',
+    onConfirm: async () => {
+      deleting.value = id
 
-    const response = await $fetch(`/api/admin/posts/${id}`, {
-      method: 'DELETE'
-    })
+      try {
+        const response = await $fetch(`/api/admin/posts/${id}`, {
+          method: 'DELETE'
+        })
 
-    if (response.success) {
-      // Remove post from local list
-      posts.value = posts.value.filter(post => post.id !== id)
+        if (response.success) {
+          // Remove post from local list
+          posts.value = posts.value.filter(post => post.id !== id)
+          showSuccess('Post deleted successfully')
+        }
+      } catch (error: any) {
+        console.error('Failed to delete post:', error)
+        showError(
+          'Failed to delete post',
+          error.data?.statusMessage || 'Please try again.'
+        )
+      } finally {
+        deleting.value = null
+      }
     }
-  } catch (error: any) {
-    console.error('Failed to delete post:', error)
-    alert(error.data?.statusMessage || 'Failed to delete post. Please try again.')
-  } finally {
-    deleting.value = null
-  }
+  })
 }
 </script>

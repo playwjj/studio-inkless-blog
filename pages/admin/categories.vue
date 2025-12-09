@@ -211,6 +211,8 @@ definePageMeta({
   layout: 'admin'
 })
 
+const { success, error: showError, confirm: showConfirm } = useNotification()
+
 // Check authentication
 const { data: userData, error: authError } = await useFetch('/api/auth/user')
 
@@ -254,7 +256,7 @@ async function loadCategories() {
     categories.value = response.categories || []
   } catch (error) {
     console.error('Failed to load categories:', error)
-    alert('Failed to load categories. Please try again.')
+    showError('Failed to load categories', 'Please try again.')
   } finally {
     loading.value = false
   }
@@ -297,7 +299,7 @@ const handleSubmit = async () => {
         }
       })
 
-      alert('Category updated successfully!')
+      success('Category updated successfully!')
     } else {
       // Create new category
       await $fetch('/api/admin/categories', {
@@ -309,18 +311,18 @@ const handleSubmit = async () => {
         }
       })
 
-      alert('Category created successfully!')
+      success('Category created successfully!')
     }
 
     closeModal()
     await loadCategories()
   } catch (error: any) {
     if (error.statusCode === 409) {
-      alert(error.statusMessage || 'A category with this slug already exists')
+      showError('Duplicate category', error.statusMessage || 'A category with this slug already exists')
     } else if (error.statusCode === 400) {
-      alert(error.statusMessage || 'Please fill in all required fields')
+      showError('Invalid input', error.statusMessage || 'Please fill in all required fields')
     } else {
-      alert('Failed to save category. Please try again.')
+      showError('Failed to save category', 'Please try again.')
     }
     console.error('Submit category error:', error)
   } finally {
@@ -329,27 +331,35 @@ const handleSubmit = async () => {
 }
 
 const deleteCategory = async (id: number) => {
-  if (!confirm('Are you sure you want to delete this category? This action cannot be undone.')) {
-    return
-  }
+  const category = categories.value.find(c => c.id === id)
+  const categoryName = category?.name || 'this category'
 
-  try {
-    await $fetch(`/api/admin/categories/${id}`, {
-      method: 'DELETE'
-    })
+  await showConfirm({
+    title: 'Delete Category',
+    message: `Are you sure you want to delete "${categoryName}"? This action cannot be undone.`,
+    confirmText: 'Delete',
+    cancelText: 'Cancel',
+    variant: 'danger',
+    onConfirm: async () => {
+      try {
+        await $fetch(`/api/admin/categories/${id}`, {
+          method: 'DELETE'
+        })
 
-    alert('Category deleted successfully!')
-    await loadCategories()
-  } catch (error: any) {
-    if (error.statusCode === 409) {
-      alert(error.statusMessage || 'Cannot delete category with articles')
-    } else if (error.statusCode === 404) {
-      alert('Category not found')
-    } else {
-      alert('Failed to delete category. Please try again.')
+        success('Category deleted successfully!')
+        await loadCategories()
+      } catch (error: any) {
+        if (error.statusCode === 409) {
+          showError('Cannot delete category', error.statusMessage || 'This category has articles')
+        } else if (error.statusCode === 404) {
+          showError('Category not found', 'The category may have been deleted already')
+        } else {
+          showError('Failed to delete category', 'Please try again.')
+        }
+        console.error('Delete category error:', error)
+      }
     }
-    console.error('Delete category error:', error)
-  }
+  })
 }
 
 // Auto-generate slug from name

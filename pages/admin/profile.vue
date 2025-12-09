@@ -344,6 +344,8 @@ definePageMeta({
   layout: 'admin'
 })
 
+const { success, error: showError, warning, confirm: showConfirm } = useNotification()
+
 const fileInput = ref<HTMLInputElement | null>(null)
 const loading = ref(false)
 const passwordLoading = ref(false)
@@ -435,12 +437,12 @@ const handleSubmit = async () => {
       }
     })
 
-    alert('Profile updated successfully!')
+    success('Profile updated successfully!')
   } catch (error: any) {
     if (error.statusCode === 409) {
-      alert(error.statusMessage || 'Username or email already taken')
+      showError('Failed to update profile', error.statusMessage || 'Username or email already taken')
     } else {
-      alert('Failed to update profile. Please try again.')
+      showError('Failed to update profile', 'Please try again.')
     }
     console.error('Update profile error:', error)
   } finally {
@@ -450,17 +452,17 @@ const handleSubmit = async () => {
 
 const handlePasswordChange = async () => {
   if (!passwordForm.current_password || !passwordForm.new_password || !passwordForm.confirm_password) {
-    alert('Please fill in all password fields')
+    warning('Please fill in all password fields')
     return
   }
 
   if (passwordForm.new_password !== passwordForm.confirm_password) {
-    alert('New passwords do not match')
+    showError('Passwords do not match', 'The new passwords you entered do not match')
     return
   }
 
   if (passwordForm.new_password.length < 8) {
-    alert('New password must be at least 8 characters long')
+    showError('Password too short', 'New password must be at least 8 characters long')
     return
   }
 
@@ -475,7 +477,7 @@ const handlePasswordChange = async () => {
       }
     })
 
-    alert('Password updated successfully!')
+    success('Password updated successfully!')
 
     // Reset password form
     passwordForm.current_password = ''
@@ -483,11 +485,11 @@ const handlePasswordChange = async () => {
     passwordForm.confirm_password = ''
   } catch (error: any) {
     if (error.statusCode === 401) {
-      alert('Current password is incorrect')
+      showError('Incorrect password', 'The current password you entered is incorrect')
     } else if (error.statusCode === 400) {
-      alert(error.statusMessage || 'Invalid password')
+      showError('Invalid password', error.statusMessage || 'Please check your password')
     } else {
-      alert('Failed to update password. Please try again.')
+      showError('Failed to update password', 'Please try again.')
     }
     console.error('Change password error:', error)
   } finally {
@@ -502,27 +504,33 @@ const handleDeleteAccount = async () => {
     return
   }
 
-  if (!confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
-    return
-  }
+  await showConfirm({
+    title: 'Delete Account',
+    message: 'Are you sure you want to delete your account? This action cannot be undone. All your data will be permanently deleted.',
+    confirmText: 'Delete Account',
+    cancelText: 'Cancel',
+    variant: 'danger',
+    loadingText: 'Deleting...',
+    onConfirm: async () => {
+      try {
+        await $fetch('/api/auth/account', {
+          method: 'DELETE',
+          body: { password }
+        })
 
-  try {
-    await $fetch('/api/auth/account', {
-      method: 'DELETE',
-      body: { password }
-    })
-
-    alert('Account deleted successfully')
-    // Redirect to home page
-    await navigateTo('/')
-  } catch (error: any) {
-    if (error.statusCode === 401) {
-      alert('Incorrect password')
-    } else {
-      alert('Failed to delete account. Please try again.')
+        success('Account deleted successfully')
+        // Redirect to home page
+        await navigateTo('/')
+      } catch (error: any) {
+        if (error.statusCode === 401) {
+          showError('Incorrect password', 'The password you entered is incorrect')
+        } else {
+          showError('Failed to delete account', 'Please try again.')
+        }
+        console.error('Delete account error:', error)
+      }
     }
-    console.error('Delete account error:', error)
-  }
+  })
 }
 
 const handleReset = () => {

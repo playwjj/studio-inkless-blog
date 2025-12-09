@@ -30,7 +30,8 @@ export default defineEventHandler(async (event) => {
       views: 0,
       likes: 0,
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      tag_names: body.tags || null  // Store tags as comma-separated string
     }
 
     // Set published_at if status is published
@@ -41,31 +42,9 @@ export default defineEventHandler(async (event) => {
     // Insert article into database
     const result = await insertRow('articles', articleData)
 
-    // Handle tags if provided
-    if (body.tags && result.lastID) {
-      const tagNames = body.tags.split(',').map((tag: string) => tag.trim()).filter(Boolean)
-
-      for (const tagName of tagNames) {
-        // Find or create tag
-        let tag = await fetchOneFromDb<{ id: number, name: string }>('tags', undefined, { name: tagName })
-
-        if (!tag) {
-          const tagResult = await insertRow('tags', {
-            name: tagName,
-            slug: tagName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
-            created_at: new Date().toISOString()
-          })
-          tag = { id: tagResult.lastID, name: tagName }
-        }
-
-        // Create article-tag relationship
-        if (tag && tag.id) {
-          await insertRow('article_tags', {
-            article_id: result.lastID,
-            tag_id: tag.id
-          })
-        }
-      }
+    // Sync tags to tags table
+    if (body.tags) {
+      await syncTagsToTable(body.tags)
     }
 
     return {
@@ -87,3 +66,43 @@ export default defineEventHandler(async (event) => {
     })
   }
 })
+
+// Helper function to sync tags to tags table
+async function syncTagsToTable(tagsString: string) {
+  if (!tagsString) return
+
+  const tagNames = tagsString
+    .split(',')
+    .map(tag => tag.trim())
+    .filter(Boolean)
+
+  for (const tagName of tagNames) {
+    try {
+      // Check if tag exists
+      let tag = await fetchOneFromDb<{ id: number, name: string, usage_count: number }>(
+        'tags',
+        undefined,
+        { name: tagName }
+      )
+
+      if (!tag) {
+        // Create new tag
+        await insertRow('tags', {
+          name: tagName,
+          slug: tagName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+          usage_count: 1,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+      } else {
+        // Update usage count
+        await updateRow('tags', tag.id, {
+          usage_count: (tag.usage_count || 0) + 1,
+          updated_at: new Date().toISOString()
+        })
+      }
+    } catch (error) {
+      console.error(`Failed to sync tag "${tagName}":`, error)
+    }
+  }
+}

@@ -25,31 +25,11 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // Fetch article tags - handle case where no tags exist
-    let tags: string[] = []
-    try {
-      const articleTags = await fetchAllFromDb<{ tag_id: number }>(
-        'article_tags',
-        { article_id: articleId }
-      )
-
-      if (articleTags.length > 0) {
-        const tagIds = articleTags.map(at => at.tag_id)
-        const tagRecords = await Promise.all(
-          tagIds.map(id => fetchOneFromDb<{ id: number, name: string }>('tags', id))
-        )
-        tags = tagRecords.filter(Boolean).map(tag => tag!.name)
-      }
-    } catch (tagError) {
-      // If tags fetch fails, just continue without tags
-      console.warn('Failed to fetch tags for article:', tagError)
-    }
-
     return {
       success: true,
       data: {
         ...article,
-        tags: tags.join(', ')
+        tags: article.tag_names || ''
       }
     }
   } catch (error: any) {

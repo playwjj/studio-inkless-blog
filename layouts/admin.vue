@@ -101,6 +101,12 @@
         <slot />
       </main>
     </div>
+
+    <!-- Toast Notifications -->
+    <AdminToast />
+
+    <!-- Confirm Dialog -->
+    <AdminConfirmDialog />
   </div>
 </template>
 

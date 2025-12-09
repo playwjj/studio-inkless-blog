@@ -184,6 +184,8 @@ definePageMeta({
   layout: 'admin'
 })
 
+const { success, error: showError, confirm: showConfirm } = useNotification()
+
 // Check authentication
 const { data: userData, error: authError } = await useFetch('/api/auth/user')
 
@@ -229,7 +231,7 @@ async function loadTokens() {
     tokens.value = response.tokens || []
   } catch (error) {
     console.error('Failed to load tokens:', error)
-    alert('Failed to load tokens. Please try again.')
+    showError('Failed to load tokens', 'Please try again.')
   }
 }
 
@@ -258,7 +260,7 @@ async function createToken() {
     newToken.description = ''
     newToken.expires_in_days = 0
   } catch (error: any) {
-    alert('Failed to create token. Please try again.')
+    showError('Failed to create token', 'Please try again.')
     console.error('Create token error:', error)
   } finally {
     creating.value = false
@@ -291,21 +293,26 @@ async function copyToken() {
 }
 
 async function confirmDelete(token: Token) {
-  if (!confirm(`Are you sure you want to delete the token "${token.name}"? This action cannot be undone.`)) {
-    return
-  }
+  await showConfirm({
+    title: 'Delete API Token',
+    message: `Are you sure you want to delete the token "${token.name}"? This action cannot be undone.`,
+    confirmText: 'Delete',
+    cancelText: 'Cancel',
+    variant: 'danger',
+    onConfirm: async () => {
+      try {
+        await $fetch(`/api/tokens/${token.id}`, {
+          method: 'DELETE'
+        })
 
-  try {
-    await $fetch(`/api/tokens/${token.id}`, {
-      method: 'DELETE'
-    })
-
-    alert('Token deleted successfully')
-    await loadTokens()
-  } catch (error: any) {
-    alert('Failed to delete token. Please try again.')
-    console.error('Delete token error:', error)
-  }
+        success('Token deleted successfully')
+        await loadTokens()
+      } catch (error: any) {
+        showError('Failed to delete token', 'Please try again.')
+        console.error('Delete token error:', error)
+      }
+    }
+  })
 }
 
 function formatDate(dateString: string) {

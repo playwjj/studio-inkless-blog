@@ -199,6 +199,8 @@ definePageMeta({
   layout: 'admin'
 })
 
+const { success, error: showError, confirm: showConfirm } = useNotification()
+
 // Check authentication
 const { data: userData, error: authError } = await useFetch('/api/auth/user')
 
@@ -237,7 +239,7 @@ async function loadPages() {
     pages.value = response.pages || []
   } catch (error) {
     console.error('Failed to load pages:', error)
-    alert('Failed to load pages. Please try again.')
+    showError('Failed to load pages. Please try again.')
   } finally {
     loading.value = false
   }
@@ -286,26 +288,31 @@ async function toggleStatus(page: Page) {
     // Update local state
     page.status = newStatus
   } catch (error: any) {
-    alert('Failed to update page status. Please try again.')
+    showError('Failed to update page status. Please try again.')
     console.error('Update status error:', error)
   }
 }
 
 async function deletePage(id: number, title: string) {
-  if (!confirm(`Are you sure you want to delete "${title}"? This action cannot be undone.`)) {
-    return
-  }
+  await showConfirm({
+    title: 'Delete Page',
+    message: `Are you sure you want to delete "${title}"? This action cannot be undone.`,
+    confirmText: 'Delete',
+    cancelText: 'Cancel',
+    variant: 'danger',
+    onConfirm: async () => {
+      try {
+          await $fetch(`/api/admin/pages/${id}`, {
+            method: 'DELETE'
+          })
 
-  try {
-    await $fetch(`/api/admin/pages/${id}`, {
-      method: 'DELETE'
-    })
-
-    alert('Page deleted successfully')
-    await loadPages()
-  } catch (error: any) {
-    alert('Failed to delete page. Please try again.')
-    console.error('Delete page error:', error)
-  }
+          success('Page deleted successfully')
+          await loadPages()
+        } catch (error: any) {
+          showError('Failed to delete page. Please try again.')
+          console.error('Delete page error:', error)
+        }
+    }
+  }) 
 }
 </script>

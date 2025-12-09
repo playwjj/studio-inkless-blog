@@ -59,40 +59,18 @@ export default defineEventHandler(async (event) => {
       updateData.published_at = body.published_at
     }
 
-    // Update the article
-    await updateRow('articles', articleId, updateData)
-
     // Handle tags if provided
     if (body.tags !== undefined) {
-      // Remove existing tags
-      await deleteRows('article_tags', { article_id: articleId })
+      updateData.tag_names = body.tags || null
 
+      // Sync tags to tags table
       if (body.tags) {
-        const tagNames = body.tags.split(',').map((tag: string) => tag.trim()).filter(Boolean)
-
-        for (const tagName of tagNames) {
-          // Find or create tag
-          let tag = await fetchOneFromDb<{ id: number, name: string }>('tags', undefined, { name: tagName })
-
-          if (!tag) {
-            const tagResult = await insertRow('tags', {
-              name: tagName,
-              slug: tagName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
-              created_at: new Date().toISOString()
-            })
-            tag = { id: tagResult.lastID, name: tagName }
-          }
-
-          // Create article-tag relationship
-          if (tag && tag.id) {
-            await insertRow('article_tags', {
-              article_id: parseInt(articleId),
-              tag_id: tag.id
-            })
-          }
-        }
+        await syncTagsToTable(body.tags, article.tag_names)
       }
     }
+
+    // Update the article
+    await updateRow('articles', articleId, updateData)
 
     return {
       success: true,
@@ -110,3 +88,75 @@ export default defineEventHandler(async (event) => {
     })
   }
 })
+
+// Helper function to sync tags to tags table
+async function syncTagsToTable(newTagsString: string, oldTagsString?: string | null) {
+  const newTagNames = newTagsString
+    ? newTagsString.split(',').map(tag => tag.trim()).filter(Boolean)
+    : []
+
+  const oldTagNames = oldTagsString
+    ? oldTagsString.split(',').map(tag => tag.trim()).filter(Boolean)
+    : []
+
+  // Find tags to add (in new but not in old)
+  const tagsToAdd = newTagNames.filter(
+    tag => !oldTagNames.some(oldTag => oldTag.toLowerCase() === tag.toLowerCase())
+  )
+
+  // Find tags to remove (in old but not in new)
+  const tagsToRemove = oldTagNames.filter(
+    tag => !newTagNames.some(newTag => newTag.toLowerCase() === tag.toLowerCase())
+  )
+
+  // Add/increment new tags
+  for (const tagName of tagsToAdd) {
+    try {
+      let tag = await fetchOneFromDb<{ id: number, name: string, usage_count: number }>(
+        'tags',
+        undefined,
+        { name: tagName }
+      )
+
+      if (!tag) {
+        // Create new tag
+        await insertRow('tags', {
+          name: tagName,
+          slug: tagName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+          usage_count: 1,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+      } else {
+        // Increment usage count
+        await updateRow('tags', tag.id, {
+          usage_count: (tag.usage_count || 0) + 1,
+          updated_at: new Date().toISOString()
+        })
+      }
+    } catch (error) {
+      console.error(`Failed to sync tag "${tagName}":`, error)
+    }
+  }
+
+  // Decrement removed tags
+  for (const tagName of tagsToRemove) {
+    try {
+      let tag = await fetchOneFromDb<{ id: number, name: string, usage_count: number }>(
+        'tags',
+        undefined,
+        { name: tagName }
+      )
+
+      if (tag && tag.usage_count > 0) {
+        // Decrement usage count
+        await updateRow('tags', tag.id, {
+          usage_count: tag.usage_count - 1,
+          updated_at: new Date().toISOString()
+        })
+      }
+    } catch (error) {
+      console.error(`Failed to update tag "${tagName}":`, error)
+    }
+  }
+}

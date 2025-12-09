@@ -73,8 +73,7 @@ export default defineEventHandler(async (event) => {
       const tagSlug = query.tag.toString().toLowerCase()
       const tag = tags.find(t => t.slug === tagSlug)
       if (tag) {
-        // Note: This requires article_tags junction table
-        // For now, we'll skip tag filtering until we have that data
+        // Filter posts that include this tag
         posts = posts.filter(post => post.tags.includes(tag.name))
       }
     }

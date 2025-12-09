@@ -165,19 +165,13 @@
                 </select>
               </div>
 
-              <div>
-                <label for="tags" class="block text-xs font-medium text-gray-700 mb-1.5">
-                  Tags
-                </label>
-                <input
-                  id="tags"
-                  v-model="formData.tags"
-                  type="text"
-                  class="w-full px-3 py-1.5 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none"
-                  placeholder="Enter tags separated by commas"
-                />
-                <p class="mt-1 text-xs text-gray-500">Example: Vue, Nuxt, TypeScript</p>
-              </div>
+              <TagInput
+                v-model="formData.tags"
+                label="Tags"
+                input-id="tags"
+                placeholder="Type and press Enter or comma to add tags"
+                help-text="Example: Vue, Nuxt, TypeScript"
+              />
             </div>
           </div>
 

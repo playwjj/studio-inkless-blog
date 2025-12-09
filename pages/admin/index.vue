@@ -59,33 +59,37 @@
           <div
             v-for="(post, index) in recentPosts"
             :key="post.id"
-            class="flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors cursor-pointer"
             :class="{ 'border-t border-gray-200': index > 0 }"
           >
-            <img
-              v-if="post.cover_image"
-              :src="post.cover_image"
-              :alt="post.title"
-              class="w-16 h-16 object-cover bg-gray-100"
-            />
-            <div
-              v-else
-              class="w-16 h-16 bg-gray-100 flex items-center justify-center"
+            <NuxtLink
+              :to="`/admin/posts/${post.id}/edit`"
+              class="flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors"
             >
-              <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            </div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium text-gray-900 truncate">{{ post.title }}</p>
-              <div class="flex items-center gap-3 mt-1 text-xs text-gray-500">
-                <span>{{ formatDate(post.created_at) }}</span>
-                <span>·</span>
-                <span>{{ post.category }}</span>
-                <span>·</span>
-                <span>{{ post.view_count }} views</span>
+              <img
+                v-if="post.cover_image_url"
+                :src="post.cover_image_url"
+                :alt="post.title"
+                class="w-16 h-16 object-cover bg-gray-100"
+              />
+              <div
+                v-else
+                class="w-16 h-16 bg-gray-100 flex items-center justify-center"
+              >
+                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
               </div>
-            </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-gray-900 truncate">{{ post.title }}</p>
+                <div class="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                  <span>{{ formatDate(post.created_at) }}</span>
+                  <span>·</span>
+                  <span>{{ post.category }}</span>
+                  <span>·</span>
+                  <span>{{ post.view_count }} views</span>
+                </div>
+              </div>
+            </NuxtLink>
           </div>
         </div>
       </div>
@@ -179,7 +183,7 @@ interface RecentArticle {
   id: number
   title: string
   slug: string
-  cover_image?: string
+  cover_image_url?: string
   view_count: number
   created_at: string
   category: string
@@ -195,6 +199,8 @@ const stats = ref<DashboardStats>({
 })
 const recentPosts = ref<RecentArticle[]>([])
 
+const { error: showError } = useNotification()
+
 // Load dashboard data
 onMounted(() => {
   loadDashboardData()
@@ -203,12 +209,12 @@ onMounted(() => {
 async function loadDashboardData() {
   loading.value = true
   try {
-    const response = await $fetch('/api/admin/dashboard/stats')
-    stats.value = response.stats
-    recentPosts.value = response.recentArticles
+  const response = await $fetch<any>('/api/admin/dashboard/stats')
+  stats.value = response.stats
+  recentPosts.value = response.recentArticles
   } catch (error) {
     console.error('Failed to load dashboard data:', error)
-    alert('Failed to load dashboard data. Please try again.')
+    showError('Failed to load dashboard data. Please try again.')
   } finally {
     loading.value = false
   }

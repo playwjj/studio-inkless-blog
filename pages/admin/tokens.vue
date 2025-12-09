@@ -79,7 +79,9 @@
               required
               class="w-full px-3 py-2 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none"
               placeholder="My API Token"
+              @blur="() => { setTouched('name'); validateField('name', newToken) }"
             />
+            <p v-if="touched.name && errors.name" class="mt-1 text-xs text-red-600">{{ errors.name }}</p>
           </div>
 
           <div>
@@ -104,7 +106,9 @@
               min="0"
               class="w-full px-3 py-2 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none"
               placeholder="0 = never expires"
+              @blur="() => { setTouched('expires_in_days'); validateField('expires_in_days', newToken) }"
             />
+            <p v-if="touched.expires_in_days && errors.expires_in_days" class="mt-1 text-xs text-red-600">{{ errors.expires_in_days }}</p>
             <p class="mt-1 text-xs text-gray-500">Leave as 0 for tokens that never expire</p>
           </div>
 
@@ -184,6 +188,18 @@ definePageMeta({
   layout: 'admin'
 })
 
+import { createValidation, required, minNumber } from '~/composables/useFormValidation'
+
+const { errors, touched, validateField, validateAll, setTouched } = createValidation<{
+  name: string
+  description?: string
+  expires_in_days: number
+}>({
+  name: [required('Please enter a token name')],
+  description: [],
+  expires_in_days: [minNumber(0, 'Expires in days must be 0 or greater')]
+})
+
 const { success, error: showError, confirm: showConfirm } = useNotification()
 
 // Check authentication
@@ -236,6 +252,13 @@ async function loadTokens() {
 }
 
 async function createToken() {
+  // mark fields touched and validate
+  setTouched('name')
+  setTouched('expires_in_days')
+  if (!validateAll(newToken as any)) {
+    return
+  }
+
   creating.value = true
 
   try {
@@ -248,7 +271,7 @@ async function createToken() {
       }
     })
 
-    createdToken.value = response.token
+    createdToken.value = (response as any).token
     showCreateModal.value = false
     showTokenModal.value = true
 

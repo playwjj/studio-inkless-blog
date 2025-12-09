@@ -45,7 +45,8 @@ export default defineEventHandler(async (event) => {
         id: article.id,
         title: article.title,
         slug: article.slug,
-        cover_image: article.cover_image,
+        // Normalize to `cover_image_url` (fall back to older `cover_image` if present)
+        cover_image_url: (article as any).cover_image_url || (article as any).cover_image || null,
         view_count: article.view_count || 0,
         created_at: article.created_at,
         category: category?.name || 'Uncategorized'

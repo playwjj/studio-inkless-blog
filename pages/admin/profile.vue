@@ -72,7 +72,9 @@
               required
               class="w-full px-3 py-2 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none"
               placeholder="johndoe"
+              @blur="() => { setTouched('username'); validateField('username', formData) }"
             />
+            <p v-if="touched.username && errors.username" class="mt-1 text-xs text-red-600">{{ errors.username }}</p>
           </div>
 
           <div>
@@ -86,7 +88,9 @@
               required
               class="w-full px-3 py-2 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none"
               placeholder="john@example.com"
+              @blur="() => { setTouched('email'); validateField('email', formData) }"
             />
+            <p v-if="touched.email && errors.email" class="mt-1 text-xs text-red-600">{{ errors.email }}</p>
           </div>
 
           <div>
@@ -344,6 +348,16 @@ definePageMeta({
   layout: 'admin'
 })
 
+import { createValidation, required, pattern, minLength } from '~/composables/useFormValidation'
+
+const { errors, touched, validateField, validateAll, setTouched } = createValidation<{
+  username: string
+  email: string
+}>({
+  username: [required('Please enter a username')],
+  email: [required('Please enter an email'), pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Please enter a valid email address')]
+})
+
 const { success, error: showError, warning, confirm: showConfirm } = useNotification()
 
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -424,6 +438,13 @@ const removeAvatar = () => {
 }
 
 const handleSubmit = async () => {
+  // validate fields first
+  setTouched('username')
+  setTouched('email')
+  if (!validateAll(formData as any)) {
+    return
+  }
+
   loading.value = true
 
   try {

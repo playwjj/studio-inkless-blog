@@ -37,10 +37,11 @@
                   id="title"
                   v-model="formData.title"
                   type="text"
-                  required
                   class="w-full px-3 py-2 border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none text-base"
                   placeholder="Enter post title"
+                  @blur="() => { setTouched('title'); validateField('title', formData) }"
                 />
+                <p v-if="touched.title && errors.title" class="mt-1 text-xs text-red-600">{{ errors.title }}</p>
               </div>
 
               <div>
@@ -51,10 +52,11 @@
                   id="slug"
                   v-model="formData.slug"
                   type="text"
-                  required
                   class="w-full px-3 py-1.5 border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none font-mono text-sm"
                   placeholder="url-friendly-slug"
+                  @blur="() => { setTouched('slug'); validateField('slug', formData) }"
                 />
+                <p v-if="touched.slug && errors.slug" class="mt-1 text-xs text-red-600">{{ errors.slug }}</p>
                 <p class="mt-1 text-xs text-gray-500">URL path for the post, use lowercase letters and hyphens</p>
               </div>
             </div>
@@ -169,11 +171,11 @@
             <h3 class="text-sm font-semibold text-gray-900 mb-4">Cover Image</h3>
             <div class="space-y-3">
               <div>
-                <label for="cover_image" class="block text-xs font-medium text-gray-700 mb-1.5">
+                <label for="cover_image_url" class="block text-xs font-medium text-gray-700 mb-1.5">
                   Image URL
                 </label>
                 <input
-                  id="cover_image"
+                  id="cover_image_url"
                   v-model="formData.cover_image_url"
                   type="url"
                   class="w-full px-3 py-1.5 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none"
@@ -235,6 +237,22 @@ definePageMeta({
   layout: 'admin'
 })
 
+import { createValidation, required, pattern, isUrl, minNumber, minLength } from '~/composables/useFormValidation'
+
+const { errors, touched, validateField, validateAll, setTouched } = createValidation<{
+  title: string
+  slug: string
+  content: string
+  cover_image_url: string
+  read_time: number
+}>({
+  title: [required('Please enter a title'), minLength(3, 'Title is too short')],
+  slug: [required('Please enter a slug'), pattern(/^[a-z0-9-]+$/, 'Slug may only contain lowercase letters, numbers and hyphens')],
+  content: [required('Please add post content')],
+  cover_image_url: [isUrl('Cover image must be a valid URL')],
+  read_time: [minNumber(1, 'Reading time must be at least 1 minute')]
+})
+
 const router = useRouter()
 const submitting = ref(false)
 const errorMessage = ref('')
@@ -255,15 +273,21 @@ const formData = reactive({
 const handleSubmit = async () => {
   if (submitting.value) return
 
+  // mark common fields as touched so errors will show
+  setTouched('title')
+  setTouched('slug')
+  setTouched('content')
+  setTouched('cover_image_url')
+  setTouched('read_time')
+
+  if (!validateAll(formData as any)) {
+    errorMessage.value = 'Please correct the highlighted fields.'
+    return
+  }
+
   try {
     submitting.value = true
     errorMessage.value = ''
-
-    // Validate required fields
-    if (!formData.title || !formData.slug || !formData.content) {
-      errorMessage.value = 'Please fill in all required fields'
-      return
-    }
 
     // Create article
     const response = await $fetch('/api/admin/posts', {
@@ -271,7 +295,7 @@ const handleSubmit = async () => {
       body: formData
     })
 
-    if (response.success) {
+    if ((response as any).success) {
       // Redirect to posts list
       router.push('/admin/posts')
     }
@@ -297,7 +321,7 @@ const publish = async () => {
 }
 
 // Auto-generate slug
-watch(() => formData.title, (newTitle) => {
+watch(() => formData.title, (newTitle: string) => {
   if (newTitle && !formData.slug) {
     // Simple slug generation logic
     formData.slug = newTitle
@@ -305,5 +329,10 @@ watch(() => formData.title, (newTitle) => {
       .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')
       .replace(/^-|-$/g, '')
   }
+})
+
+// validate content as it changes so editor errors clear
+watch(() => formData.content, () => {
+  validateField('content', formData as any)
 })
 </script>

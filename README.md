@@ -194,7 +194,7 @@ The system includes 10 pre-built block types:
 - `show_header` - Show/hide header
 - `show_footer` - Show/hide footer
 - `show_breadcrumb` - Show/hide breadcrumb navigation
-- `cover_image` - Hero cover image URL
+- `cover_image_url` - Hero cover image URL
 
 **Advanced Features:**
 - `custom_css` - Inject custom CSS styles

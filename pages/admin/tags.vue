@@ -163,7 +163,7 @@
           </button>
         </div>
 
-        <form @submit.prevent="handleSubmit" class="space-y-4">
+  <form @submit.prevent="handleSubmit" class="space-y-4">
           <div>
             <label for="tag_name" class="block text-sm font-medium text-gray-700 mb-1.5">
               Tag Name <span class="text-red-500">*</span>
@@ -175,7 +175,9 @@
               required
               class="w-full px-3 py-2 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none"
               placeholder="Vue.js"
+              @blur="() => { setTouched('name'); validateField('name', tagForm) }"
             />
+            <p v-if="touched.name && errors.name" class="mt-1 text-xs text-red-600">{{ errors.name }}</p>
           </div>
 
           <div>
@@ -189,7 +191,9 @@
               required
               class="w-full px-3 py-2 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none font-mono"
               placeholder="vuejs"
+              @blur="() => { setTouched('slug'); validateField('slug', tagForm) }"
             />
+            <p v-if="touched.slug && errors.slug" class="mt-1 text-xs text-red-600">{{ errors.slug }}</p>
           </div>
 
           <div>
@@ -232,6 +236,18 @@
 <script setup lang="ts">
 definePageMeta({
   layout: 'admin'
+})
+
+import { createValidation, required, pattern } from '~/composables/useFormValidation'
+
+const { errors, touched, validateField, validateAll, setTouched } = createValidation<{
+  name: string
+  slug: string
+  description?: string
+}>({
+  name: [required('Please enter a tag name')],
+  slug: [required('Please enter a slug'), pattern(/^[a-z0-9-]+$/, 'Slug may only contain lowercase letters, numbers and hyphens')],
+  description: []
 })
 
 const { success, error: showError, confirm: showConfirm } = useNotification()
@@ -317,6 +333,13 @@ const editTag = (tag: Tag) => {
 
 const handleSubmit = async () => {
   if (submitting.value) return
+
+  // mark fields as touched so errors show
+  setTouched('name')
+  setTouched('slug')
+  if (!validateAll(tagForm as any)) {
+    return
+  }
 
   submitting.value = true
 

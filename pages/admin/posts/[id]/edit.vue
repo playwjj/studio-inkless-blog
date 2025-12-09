@@ -51,7 +51,9 @@
                   required
                   class="w-full px-3 py-2 border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none text-base"
                   placeholder="Enter post title"
+                  @blur="() => { setTouched('title'); validateField('title', formData) }"
                 />
+                <p v-if="touched.title && errors.title" class="mt-1 text-xs text-red-600">{{ errors.title }}</p>
               </div>
 
               <div>
@@ -65,7 +67,9 @@
                   required
                   class="w-full px-3 py-1.5 border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none font-mono text-sm"
                   placeholder="url-friendly-slug"
+                  @blur="() => { setTouched('slug'); validateField('slug', formData) }"
                 />
+                <p v-if="touched.slug && errors.slug" class="mt-1 text-xs text-red-600">{{ errors.slug }}</p>
                 <p class="mt-1 text-xs text-gray-500">URL path for the post, use lowercase letters and hyphens</p>
               </div>
             </div>
@@ -94,7 +98,8 @@
               v-model="formData.content"
               placeholder="Write your post content here..."
             />
-            <p class="mt-1.5 text-xs text-gray-500">Rich text editor with formatting support</p>
+             <p v-if="touched.content && errors.content" class="mt-1 text-xs text-red-600">{{ errors.content }}</p>
+             <p class="mt-1.5 text-xs text-gray-500">Rich text editor with formatting support</p>
           </div>
         </div>
 
@@ -180,16 +185,18 @@
             <h3 class="text-sm font-semibold text-gray-900 mb-4">Cover Image</h3>
             <div class="space-y-3">
               <div>
-                <label for="cover_image" class="block text-xs font-medium text-gray-700 mb-1.5">
+                <label for="cover_image_url" class="block text-xs font-medium text-gray-700 mb-1.5">
                   Image URL
                 </label>
                 <input
-                  id="cover_image"
+                  id="cover_image_url"
                   v-model="formData.cover_image_url"
                   type="url"
                   class="w-full px-3 py-1.5 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none"
                   placeholder="https://example.com/image.jpg"
+                  @blur="() => { setTouched('cover_image_url'); validateField('cover_image_url', formData) }"
                 />
+                 <p v-if="touched.cover_image_url && errors.cover_image_url" class="mt-1 text-xs text-red-600">{{ errors.cover_image_url }}</p>
               </div>
 
               <div
@@ -205,8 +212,10 @@
 
               <button
                 type="button"
-                class="w-full px-3 py-2 border-2 border-dashed border-gray-200 text-sm text-gray-600 hover:border-gray-300 hover:text-gray-900 transition-colors"
+                     class="w-full px-3 py-1.5 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none"
+                     @blur="() => { setTouched('read_time'); validateField('read_time', formData) }"
               >
+                   <p v-if="touched.read_time && errors.read_time" class="mt-1 text-xs text-red-600">{{ errors.read_time }}</p>
                 <svg class="w-5 h-5 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
@@ -237,6 +246,22 @@
 <script setup lang="ts">
 definePageMeta({
   layout: 'admin'
+})
+
+import { createValidation, required, pattern, isUrl, minNumber, minLength } from '~/composables/useFormValidation'
+
+const { errors, touched, validateField, validateAll, setTouched } = createValidation<{
+  title: string
+  slug: string
+  content: string
+  cover_image_url: string
+  read_time: number
+}>({
+  title: [required('Please enter a title'), minLength(3, 'Title is too short')],
+  slug: [required('Please enter a slug'), pattern(/^[a-z0-9-]+$/, 'Slug may only contain lowercase letters, numbers and hyphens')],
+  content: [required('Please add post content')],
+  cover_image_url: [isUrl('Cover image must be a valid URL')],
+  read_time: [minNumber(1, 'Reading time must be at least 1 minute')]
 })
 
 const route = useRoute()
@@ -280,7 +305,7 @@ onMounted(async () => {
         read_time: data.read_time || 5,
         category_id: data.category_id?.toString() || '',
         tags: data.tags || '',
-        cover_image_url: data.cover_image_url || ''
+        cover_image_url: (data as any).cover_image_url || (data as any).cover_image || ''
       })
     }
   } catch (error: any) {
@@ -294,15 +319,20 @@ onMounted(async () => {
 const handleSubmit = async () => {
   if (submitting.value) return
 
+  // mark fields as touched and validate
+  setTouched('title')
+  setTouched('slug')
+  setTouched('content')
+  setTouched('cover_image_url')
+  setTouched('read_time')
+  if (!validateAll(formData as any)) {
+    errorMessage.value = 'Please correct the highlighted fields.'
+    return
+  }
+
   try {
     submitting.value = true
     errorMessage.value = ''
-
-    // Validate required fields
-    if (!formData.title || !formData.slug || !formData.content) {
-      errorMessage.value = 'Please fill in all required fields'
-      return
-    }
 
     // Update article
     const response = await $fetch(`/api/admin/posts/${postId}`, {
@@ -310,7 +340,7 @@ const handleSubmit = async () => {
       body: formData
     })
 
-    if (response.success) {
+    if ((response as any).success) {
       // Redirect to posts list
       router.push('/admin/posts')
     }
@@ -321,4 +351,9 @@ const handleSubmit = async () => {
     submitting.value = false
   }
 }
+
+// validate content as it changes so editor errors clear
+watch(() => formData.content, () => {
+  validateField('content', formData as any)
+})
 </script>

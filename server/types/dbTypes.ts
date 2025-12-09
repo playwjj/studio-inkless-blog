@@ -5,7 +5,7 @@ export interface DbArticle {
   slug: string
   excerpt: string
   content: string
-  cover_image?: string
+  cover_image_url?: string
   author_id: number
   category_id: number
   tag_names?: string // Comma-separated tag names (e.g., "Nuxt,Vue,Web Development")
@@ -86,7 +86,7 @@ export interface DbPage {
   og_title?: string
   og_description?: string
   canonical_url?: string
-  cover_image?: string
+  cover_image_url?: string
   theme: string
   layout: string
   custom_css?: string

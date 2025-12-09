@@ -152,7 +152,9 @@
               required
               class="w-full px-3 py-2 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none"
               placeholder="Technology"
+              @blur="() => { setTouched('name'); validateField('name', categoryForm) }"
             />
+            <p v-if="touched.name && errors.name" class="mt-1 text-xs text-red-600">{{ errors.name }}</p>
           </div>
 
           <div>
@@ -166,7 +168,9 @@
               required
               class="w-full px-3 py-2 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none font-mono"
               placeholder="technology"
+              @blur="() => { setTouched('slug'); validateField('slug', categoryForm) }"
             />
+            <p v-if="touched.slug && errors.slug" class="mt-1 text-xs text-red-600">{{ errors.slug }}</p>
           </div>
 
           <div>
@@ -209,6 +213,18 @@
 <script setup lang="ts">
 definePageMeta({
   layout: 'admin'
+})
+
+import { createValidation, required, pattern } from '~/composables/useFormValidation'
+
+const { errors, touched, validateField, validateAll, setTouched } = createValidation<{
+  name: string
+  slug: string
+  description?: string
+}>({
+  name: [required('Please enter a category name')],
+  slug: [required('Please enter a slug'), pattern(/^[a-z0-9-]+$/, 'Slug may only contain lowercase letters, numbers and hyphens')],
+  description: []
 })
 
 const { success, error: showError, confirm: showConfirm } = useNotification()
@@ -284,6 +300,13 @@ const editCategory = (category: Category) => {
 
 const handleSubmit = async () => {
   if (submitting.value) return
+
+  // mark fields as touched so errors show
+  setTouched('name')
+  setTouched('slug')
+  if (!validateAll(categoryForm as any)) {
+    return
+  }
 
   submitting.value = true
 

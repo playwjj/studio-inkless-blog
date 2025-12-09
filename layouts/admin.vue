@@ -2,7 +2,7 @@
   <div class="min-h-screen bg-white">
     <!-- Top Navigation Bar -->
     <header class="fixed top-0 left-0 right-0 z-30 bg-white border-b border-gray-200">
-      <div class="flex items-center justify-between px-6 h-14">
+  <div class="flex items-center justify-between px-3 h-14">
         <div class="flex items-center space-x-6">
           <button
             @click="sidebarOpen = !sidebarOpen"
@@ -12,7 +12,19 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <h1 class="text-sm font-semibold text-gray-900">Studio Inkless</h1>
+          <NuxtLink to="/" class="flex items-center gap-3" style="gap: 0.75rem;">
+            <NuxtImg
+              :src="siteConfig?.logo_url || '/favicon.svg'"
+              :alt="`${siteConfig?.name || 'Studio Inkless'} Logo`"
+              class="w-8 h-8 flex-shrink-0"
+              width="32"
+              height="32"
+              style="width: 2rem; height: 2rem;"
+            />
+            <span class="text-base font-bold text-gray-900 whitespace-nowrap" style="font-size: 1.125rem;">
+              {{ siteConfig?.name || 'Studio Inkless' }}
+            </span>
+          </NuxtLink>
         </div>
 
         <div class="flex items-center space-x-4">
@@ -71,11 +83,11 @@
       <!-- Sidebar -->
       <aside
         :class="[
-          'fixed lg:static inset-y-0 left-0 z-20 w-56 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out mt-14 lg:mt-0',
+          'fixed lg:static inset-y-0 left-0 z-20 w-44 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out mt-14 lg:mt-0',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         ]"
       >
-        <nav class="p-3 space-y-0.5">
+        <nav class="pl-3 pr-2 py-3 space-y-0.5">
           <NuxtLink
             v-for="item in menuItems"
             :key="item.path"
@@ -115,6 +127,8 @@ const sidebarOpen = ref(false)
 const profileMenuOpen = ref(false)
 const loggingOut = ref(false)
 const currentUser = ref<any>(null)
+const { siteConfig } = useSiteConfig()
+const { error: showError } = useNotification()
 
 // Fetch current user
 onMounted(async () => {
@@ -143,7 +157,7 @@ const handleLogout = async () => {
     await navigateTo('/admin/login')
   } catch (error) {
     console.error('Logout error:', error)
-    alert('Failed to logout. Please try again.')
+    showError('Failed to logout. Please try again.')
   } finally {
     loggingOut.value = false
   }

@@ -113,8 +113,8 @@
               <td class="px-4 py-3">
                 <div class="flex items-center gap-3">
                   <img
-                    v-if="page.cover_image"
-                    :src="page.cover_image"
+                    v-if="page.cover_image_url"
+                    :src="page.cover_image_url"
                     :alt="page.title"
                     class="w-12 h-12 object-cover bg-gray-100"
                   />
@@ -216,7 +216,7 @@ interface Page {
   description?: string
   status: 'draft' | 'published' | 'archived'
   template: string
-  cover_image?: string
+  cover_image_url?: string
   view_count: number
   created_at: string
   updated_at: string

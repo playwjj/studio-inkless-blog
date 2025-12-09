@@ -24,10 +24,11 @@
               id="username"
               v-model="formData.username"
               type="text"
-              required
               class="w-full px-3 py-2 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none"
               placeholder="Enter your username"
+              @blur="() => { setTouched('username'); validateField('username', formData) }"
             />
+            <p v-if="touched.username && errors.username" class="mt-1 text-xs text-red-600">{{ errors.username }}</p>
           </div>
 
           <!-- Password -->
@@ -40,10 +41,11 @@
                 id="password"
                 v-model="formData.password"
                 :type="showPassword ? 'text' : 'password'"
-                required
                 class="w-full px-3 py-2 pr-10 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none"
                 placeholder="Enter your password"
+                @blur="() => { setTouched('password'); validateField('password', formData) }"
               />
+              <p v-if="touched.password && errors.password" class="mt-1 text-xs text-red-600">{{ errors.password }}</p>
               <button
                 type="button"
                 @click="showPassword = !showPassword"
@@ -113,6 +115,13 @@ definePageMeta({
   layout: false
 })
 
+import { createValidation, required, minLength } from '~/composables/useFormValidation'
+
+const { errors, touched, validateField, validateAll, setTouched } = createValidation<{ username: string; password: string }>({
+  username: [required('Please enter your username')],
+  password: [required('Please enter your password'), minLength(6, 'Password must be at least 6 characters')]
+})
+
 const formData = reactive({
   username: '',
   password: '',
@@ -124,8 +133,15 @@ const loading = ref(false)
 const errorMessage = ref('')
 
 const handleLogin = async () => {
-  loading.value = true
+  // Run validation first
   errorMessage.value = ''
+  setTouched('username')
+  setTouched('password')
+  if (!validateAll(formData)) {
+    return
+  }
+
+  loading.value = true
 
   try {
     const response = await $fetch('/api/auth/login', {
@@ -136,7 +152,7 @@ const handleLogin = async () => {
       }
     })
 
-    if (response.success) {
+    if ((response as any).success) {
       // Redirect to admin panel
       await navigateTo('/admin')
     }

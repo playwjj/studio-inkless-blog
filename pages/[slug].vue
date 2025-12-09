@@ -37,9 +37,9 @@
       </component>
 
       <!-- Cover Image (if exists) -->
-      <div v-if="page.cover_image" class="relative h-64 md:h-96 overflow-hidden">
+      <div v-if="page.cover_image_url" class="relative h-64 md:h-96 overflow-hidden">
         <NuxtImg
-          :src="page.cover_image"
+          :src="page.cover_image_url"
           :alt="page.title"
           class="w-full h-full object-cover"
           loading="eager"
@@ -178,12 +178,12 @@ useSeoMeta({
   keywords: () => page.value?.meta_keywords || '',
   ogTitle: () => page.value?.og_title || page.value?.title || '',
   ogDescription: () => page.value?.og_description || page.value?.description || '',
-  ogImage: () => page.value?.og_image || page.value?.cover_image || siteConfig.value?.og_image || '',
+  ogImage: () => page.value?.og_image || page.value?.cover_image_url || siteConfig.value?.og_image || '',
   ogType: 'website',
   twitterCard: 'summary_large_image',
   twitterTitle: () => page.value?.og_title || page.value?.title || '',
   twitterDescription: () => page.value?.og_description || page.value?.description || '',
-  twitterImage: () => page.value?.og_image || page.value?.cover_image || ''
+  twitterImage: () => page.value?.og_image || page.value?.cover_image_url || ''
 })
 
 // Set canonical URL if specified

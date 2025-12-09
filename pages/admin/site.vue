@@ -28,7 +28,9 @@
               required
               class="w-full px-3 py-2 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none"
               placeholder="Studio Inkless"
+              @blur="() => { setTouched('name'); validateField('name', formData) }"
             />
+            <p v-if="touched.name && errors.name" class="mt-1 text-xs text-red-600">{{ errors.name }}</p>
           </div>
 
           <div class="md:col-span-2">
@@ -42,7 +44,9 @@
               required
               class="w-full px-3 py-2 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none"
               placeholder="Studio Inkless - Creative Design and Technology Blog"
+              @blur="() => { setTouched('title'); validateField('title', formData) }"
             />
+            <p v-if="touched.title && errors.title" class="mt-1 text-xs text-red-600">{{ errors.title }}</p>
           </div>
 
           <div class="md:col-span-2">
@@ -56,7 +60,9 @@
               required
               class="w-full px-3 py-2 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none resize-none"
               placeholder="Sharing insights on design, technology, and creativity..."
+              @blur="() => { setTouched('description'); validateField('description', formData) }"
             ></textarea>
+            <p v-if="touched.description && errors.description" class="mt-1 text-xs text-red-600">{{ errors.description }}</p>
           </div>
 
           <div>
@@ -273,6 +279,18 @@ definePageMeta({
   layout: 'admin'
 })
 
+import { createValidation, required } from '~/composables/useFormValidation'
+
+const { errors, touched, validateField, validateAll, setTouched } = createValidation<{
+  name: string
+  title: string
+  description: string
+}>({
+  name: [required('Please enter site name')],
+  title: [required('Please enter site title')],
+  description: [required('Please enter site description')]
+})
+
 // Check authentication
 const { data: userData, error: authError } = await useFetch('/api/auth/user')
 
@@ -280,6 +298,8 @@ if (authError.value) {
   // Redirect to login if not authenticated
   await navigateTo('/admin/login')
 }
+
+const { error: showError, success: showSuccess } = useNotification()
 
 interface SiteSettings {
   id?: number
@@ -342,7 +362,7 @@ async function loadSettings() {
     }
   } catch (error) {
     console.error('Failed to load site settings:', error)
-    alert('Failed to load site settings. Please try again.')
+    showError('Failed to load site settings. Please try again.')
   } finally {
     loading.value = false
   }
@@ -350,6 +370,15 @@ async function loadSettings() {
 
 const handleSubmit = async () => {
   if (submitting.value) return
+
+  // mark required fields touched and validate
+  setTouched('name')
+  setTouched('title')
+  setTouched('description')
+  if (!validateAll(formData as any)) {
+    showError('Please correct the highlighted fields')
+    return
+  }
 
   submitting.value = true
 
@@ -375,15 +404,15 @@ const handleSubmit = async () => {
       }
     })
 
-    alert('Site settings saved successfully!')
+    showSuccess('Site settings saved successfully!')
 
     // Reload settings to get updated data
     await loadSettings()
   } catch (error: any) {
     if (error.statusCode === 400) {
-      alert(error.statusMessage || 'Please fill in all required fields')
+      showError(error.statusMessage || 'Please fill in all required fields')
     } else {
-      alert('Failed to save settings. Please try again.')
+      showError('Failed to save settings. Please try again.')
     }
     console.error('Save settings error:', error)
   } finally {

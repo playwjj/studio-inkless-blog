@@ -33,6 +33,14 @@ export default defineEventHandler(async (event) => {
       updated_at: new Date().toISOString()
     }
 
+    // Validate required fields
+    if (!body.title || !body.slug || !body.content || !body.author_id || !body.category_id) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'Title, slug, content, author, and category are required'
+      })
+    }
+
     // Update allowed fields
     if (body.title) updateData.title = body.title
     if (body.slug) updateData.slug = body.slug
@@ -40,28 +48,24 @@ export default defineEventHandler(async (event) => {
     if (body.excerpt !== undefined) updateData.excerpt = body.excerpt
     if (body.cover_image_url !== undefined) updateData.cover_image_url = body.cover_image_url
     if (body.read_time) updateData.read_time = parseInt(body.read_time)
-    if (body.category_id !== undefined) {
-      updateData.category_id = body.category_id ? parseInt(body.category_id) : null
-    }
+    if (body.author_id) updateData.author_id = parseInt(body.author_id)
+    if (body.category_id) updateData.category_id = parseInt(body.category_id)
 
     // Allow updating status
     if (body.status && ['draft', 'published', 'archived'].includes(body.status)) {
       updateData.status = body.status
-
-      // Update published_at when publishing for the first time
-      if (body.status === 'published' && !article.published_at) {
-        updateData.published_at = new Date().toISOString()
-      }
     }
 
-    // Update published_at if provided
+    // Update published_at if provided, or set current time when publishing
     if (body.published_at) {
       updateData.published_at = body.published_at
+    } else if (body.status === 'published') {
+      updateData.published_at = new Date().toISOString()
     }
 
     // Handle tags if provided
     if (body.tags !== undefined) {
-      updateData.tag_names = body.tags || null
+      updateData.tag_names = body.tags || ''  // Default to empty string, matching database default
 
       // Sync tags to tags table
       if (body.tags) {

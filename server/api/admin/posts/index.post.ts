@@ -9,38 +9,39 @@ export default defineEventHandler(async (event) => {
     const body = await readBody(event)
 
     // Validate required fields
-    if (!body.title || !body.slug || !body.content) {
+    if (!body.title || !body.slug || !body.content || !body.author_id || !body.category_id) {
       throw createError({
         statusCode: 400,
-        statusMessage: 'Title, slug, and content are required'
+        statusMessage: 'Title, slug, content, author, and category are required'
       })
     }
 
+    // Generate UUID for article id (since id is text type in database)
+    const articleId = crypto.randomUUID()
+
     // Prepare article data
     const articleData: Partial<DbArticle> = {
+      id: articleId,  // UUID as text
       title: body.title,
       slug: body.slug,
       content: body.content,
       excerpt: body.excerpt || '',
       status: body.status || 'draft',
-      author_id: 1, // TODO: Get from session
-      category_id: body.category_id ? parseInt(body.category_id) : null,
+      author_id: parseInt(body.author_id),
+      category_id: parseInt(body.category_id),
       cover_image_url: body.cover_image_url || null,
       read_time: body.read_time ? parseInt(body.read_time) : 5,
-      views: 0,
-      likes: 0,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-      tag_names: body.tags || null  // Store tags as comma-separated string
-    }
-
-    // Set published_at if status is published
-    if (body.status === 'published') {
-      articleData.published_at = body.published_at || new Date().toISOString()
+      tag_names: body.tags || '',  // Store tags as comma-separated string, default to empty string
+      // published_at is required in database, set it based on status
+      published_at: body.status === 'published'
+        ? (body.published_at || new Date().toISOString())
+        : new Date().toISOString()  // Even for drafts, set a timestamp
     }
 
     // Insert article into database
-    const result = await insertRow('articles', articleData)
+    await insertRow('articles', articleData)
 
     // Sync tags to tags table
     if (body.tags) {
@@ -51,7 +52,7 @@ export default defineEventHandler(async (event) => {
       success: true,
       message: 'Article created successfully',
       data: {
-        id: result.lastID
+        id: articleId
       }
     }
   } catch (error: any) {

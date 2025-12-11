@@ -1,18 +1,17 @@
 // Database row types
 export interface DbArticle {
-  id: number
+  id: string  // UUID stored as text
   title: string
   slug: string
-  excerpt: string
+  excerpt?: string
   content: string
   cover_image_url?: string
   author_id: number
   category_id: number
   tag_names?: string // Comma-separated tag names (e.g., "Nuxt,Vue,Web Development")
   status: 'draft' | 'published' | 'archived'
-  published_at?: string
+  published_at: string  // NOT NULL in database
   read_time: number
-  view_count: number
   created_at: string
   updated_at: string
 }

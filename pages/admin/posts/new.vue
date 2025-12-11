@@ -48,14 +48,25 @@
                 <label for="slug" class="block text-xs font-medium text-gray-700 mb-1.5">
                   URL Slug <span class="text-red-500">*</span>
                 </label>
-                <input
-                  id="slug"
-                  v-model="formData.slug"
-                  type="text"
-                  class="w-full px-3 py-1.5 border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none font-mono text-sm"
-                  placeholder="url-friendly-slug"
-                  @blur="() => { setTouched('slug'); validateField('slug', formData) }"
-                />
+                <div class="flex gap-2">
+                  <input
+                    id="slug"
+                    v-model="formData.slug"
+                    type="text"
+                    class="flex-1 px-3 py-1.5 border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none font-mono text-sm"
+                    placeholder="url-friendly-slug"
+                    @input="onSlugInput"
+                    @blur="() => { setTouched('slug'); validateField('slug', formData) }"
+                  />
+                  <button
+                    type="button"
+                    @click="generateSlug"
+                    class="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm hover:bg-gray-50 transition-colors whitespace-nowrap"
+                    title="Generate slug from title"
+                  >
+                    Generate
+                  </button>
+                </div>
                 <p v-if="touched.slug && errors.slug" class="mt-1 text-xs text-red-600">{{ errors.slug }}</p>
                 <p class="mt-1 text-xs text-gray-500">URL path for the post, use lowercase letters and hyphens</p>
               </div>
@@ -136,24 +147,48 @@
             </div>
           </div>
 
+          <!-- Author selection -->
+          <div class="border border-gray-200 p-5">
+            <h3 class="text-sm font-semibold text-gray-900 mb-4">Author</h3>
+            <div>
+              <label for="author" class="block text-xs font-medium text-gray-700 mb-1.5">
+                Author <span class="text-red-500">*</span>
+              </label>
+              <select
+                id="author"
+                v-model="formData.author_id"
+                class="w-full px-3 py-1.5 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none"
+                @blur="() => { setTouched('author_id'); validateField('author_id', formData) }"
+              >
+                <option value="">Select author</option>
+                <option v-for="author in authors" :key="author.id" :value="author.id">
+                  {{ author.name }}
+                </option>
+              </select>
+              <p v-if="touched.author_id && errors.author_id" class="mt-1 text-xs text-red-600">{{ errors.author_id }}</p>
+            </div>
+          </div>
+
           <!-- Categories and tags -->
           <div class="border border-gray-200 p-5">
             <h3 class="text-sm font-semibold text-gray-900 mb-4">Categories and Tags</h3>
             <div class="space-y-3">
               <div>
                 <label for="category" class="block text-xs font-medium text-gray-700 mb-1.5">
-                  Category
+                  Category <span class="text-red-500">*</span>
                 </label>
                 <select
                   id="category"
                   v-model="formData.category_id"
                   class="w-full px-3 py-1.5 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none"
+                  @blur="() => { setTouched('category_id'); validateField('category_id', formData) }"
                 >
                   <option value="">Select category</option>
-                  <option value="1">Technology</option>
-                  <option value="2">Design</option>
-                  <option value="3">Life</option>
+                  <option v-for="category in categories" :key="category.id" :value="category.id">
+                    {{ category.name }}
+                  </option>
                 </select>
+                <p v-if="touched.category_id && errors.category_id" class="mt-1 text-xs text-red-600">{{ errors.category_id }}</p>
               </div>
 
               <TagInput
@@ -169,41 +204,14 @@
           <!-- Cover image -->
           <div class="border border-gray-200 p-5">
             <h3 class="text-sm font-semibold text-gray-900 mb-4">Cover Image</h3>
-            <div class="space-y-3">
-              <div>
-                <label for="cover_image_url" class="block text-xs font-medium text-gray-700 mb-1.5">
-                  Image URL
-                </label>
-                <input
-                  id="cover_image_url"
-                  v-model="formData.cover_image_url"
-                  type="url"
-                  class="w-full px-3 py-1.5 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none"
-                  placeholder="https://example.com/image.jpg"
-                />
-              </div>
-
-              <div
-                v-if="formData.cover_image_url"
-                class="relative aspect-video overflow-hidden bg-gray-100"
-              >
-                <img
-                  :src="formData.cover_image_url"
-                  alt="Cover preview"
-                  class="w-full h-full object-cover"
-                />
-              </div>
-
-              <button
-                type="button"
-                class="w-full px-3 py-2 border-2 border-dashed border-gray-200 text-sm text-gray-600 hover:border-gray-300 hover:text-gray-900 transition-colors"
-              >
-                <svg class="w-5 h-5 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                </svg>
-                Upload Image
-              </button>
-            </div>
+            <AdminImageUploader
+              v-model="formData.cover_image_url"
+              label="Image URL"
+              input-id="cover_image_url"
+              placeholder="https://example.com/image.jpg"
+              alt-text="Cover preview"
+              upload-button-text="Upload Image"
+            />
           </div>
 
           <!-- Action buttons -->
@@ -245,17 +253,44 @@ const { errors, touched, validateField, validateAll, setTouched } = createValida
   content: string
   cover_image_url: string
   read_time: number
+  author_id: string
+  category_id: string
 }>({
   title: [required('Please enter a title'), minLength(3, 'Title is too short')],
   slug: [required('Please enter a slug'), pattern(/^[a-z0-9-]+$/, 'Slug may only contain lowercase letters, numbers and hyphens')],
   content: [required('Please add post content')],
   cover_image_url: [isUrl('Cover image must be a valid URL')],
-  read_time: [minNumber(1, 'Reading time must be at least 1 minute')]
+  read_time: [minNumber(1, 'Reading time must be at least 1 minute')],
+  author_id: [required('Please select an author')],
+  category_id: [required('Please select a category')]
 })
 
 const router = useRouter()
 const submitting = ref(false)
 const errorMessage = ref('')
+const authors = ref<Array<{ id: number; name: string }>>([])
+const categories = ref<Array<{ id: number; name: string }>>([])
+const isSlugManuallyEdited = ref(false)
+
+// Fetch authors and categories
+onMounted(async () => {
+  try {
+    const [authorsResponse, categoriesResponse] = await Promise.all([
+      $fetch('/api/admin/authors'),
+      $fetch('/api/admin/categories')
+    ])
+
+    if (authorsResponse.success && authorsResponse.data) {
+      authors.value = authorsResponse.data
+    }
+
+    if (categoriesResponse.success && categoriesResponse.categories) {
+      categories.value = categoriesResponse.categories
+    }
+  } catch (error) {
+    console.error('Failed to fetch data:', error)
+  }
+})
 
 const formData = reactive({
   title: '',
@@ -265,6 +300,7 @@ const formData = reactive({
   status: 'draft',
   published_at: '',
   read_time: 5,
+  author_id: '',
   category_id: '',
   tags: '',
   cover_image_url: ''
@@ -279,6 +315,8 @@ const handleSubmit = async () => {
   setTouched('content')
   setTouched('cover_image_url')
   setTouched('read_time')
+  setTouched('author_id')
+  setTouched('category_id')
 
   if (!validateAll(formData as any)) {
     errorMessage.value = 'Please correct the highlighted fields.'
@@ -320,14 +358,41 @@ const publish = async () => {
   await handleSubmit()
 }
 
-// Auto-generate slug
+// Slug generation function
+const generateSlug = () => {
+  if (!formData.title) return
+
+  formData.slug = formData.title
+    .toLowerCase()
+    .trim()
+    // Remove special characters, keep only alphanumeric and spaces
+    .replace(/[^\w\s-]/g, '')
+    // Replace spaces and underscores with hyphens
+    .replace(/[\s_]+/g, '-')
+    // Remove consecutive hyphens
+    .replace(/-+/g, '-')
+    // Remove leading and trailing hyphens
+    .replace(/^-+|-+$/g, '')
+
+  // Reset manual edit flag when using generate button
+  isSlugManuallyEdited.value = false
+}
+
+// Mark slug as manually edited when user types in it
+const onSlugInput = () => {
+  isSlugManuallyEdited.value = true
+}
+
+// Auto-generate slug when title changes (only if not manually edited)
 watch(() => formData.title, (newTitle: string) => {
-  if (newTitle && !formData.slug) {
-    // Simple slug generation logic
+  if (newTitle && !isSlugManuallyEdited.value) {
     formData.slug = newTitle
       .toLowerCase()
-      .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')
-      .replace(/^-|-$/g, '')
+      .trim()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/[\s_]+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '')
   }
 })
 

@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Fetch files from database
-    const files = await fetchFromDb<DbFile>('files', {
+    const response = await fetchFromDb<DbFile>('files', {
       page,
       limit,
       sortBy: 'created_at',
@@ -29,12 +29,12 @@ export default defineEventHandler(async (event) => {
     })
 
     // Calculate total size
-    const totalSize = files.reduce((sum, file) => sum + file.file_size, 0)
+    const totalSize = response.data.reduce((sum, file) => sum + file.file_size, 0)
 
     return {
       success: true,
-      files,
-      total: files.length,
+      files: response.data,
+      total: response.meta.total,
       totalSize,
       page,
       limit

@@ -3,8 +3,7 @@ import type { DbFile } from '~/server/types/dbTypes'
 export default defineEventHandler(async (event) => {
   try {
     // Require authentication
-    await requireAuth(event)
-    const session = await getUserSession(event)
+    const user = await requireAuth(event)
 
     // Read multipart form data
     const files = await readMultipartFormData(event)
@@ -56,8 +55,8 @@ export default defineEventHandler(async (event) => {
       // Extract image dimensions if applicable
       const dimensions = await getImageDimensions(file.data, mimeType)
 
-      // Create database record
-      const dbFile = await createRow<DbFile>('files', {
+      // Prepare file data
+      const fileData = {
         file_name: file.filename,
         file_key: fileKey,
         file_size: fileSize,
@@ -65,11 +64,15 @@ export default defineEventHandler(async (event) => {
         url: fileUrl,
         width: dimensions?.width || null,
         height: dimensions?.height || null,
-        uploaded_by: session.user!.id,
+        uploaded_by: user.id,
         created_at: new Date().toISOString()
-      })
+      }
 
-      uploadedFiles.push(dbFile)
+      // Create database record
+      await createRow<DbFile>('files', fileData)
+
+      // Push the file data with all fields to the response
+      uploadedFiles.push(fileData as DbFile)
     }
 
     return {

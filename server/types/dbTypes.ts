@@ -150,3 +150,16 @@ export interface DbApiToken {
   created_at: string
   updated_at: string
 }
+
+export interface DbFile {
+  id: number
+  file_name: string
+  file_key: string
+  file_size: number
+  mime_type: string
+  url: string
+  width?: number
+  height?: number
+  uploaded_by: number
+  created_at: string
+}

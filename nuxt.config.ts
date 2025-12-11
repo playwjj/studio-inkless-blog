@@ -62,6 +62,12 @@ export default defineNuxtConfig({
   runtimeConfig: {
     dbApiKey: process.env.DB_API_KEY,
     dbApiUrl: process.env.DB_API_URL || 'https://db.404401.xyz',
-    sessionSecret: process.env.SESSION_SECRET || 'change-this-secret-in-production-min-32-chars-required'
+    sessionSecret: process.env.SESSION_SECRET || 'change-this-secret-in-production-min-32-chars-required',
+    // Cloudflare R2 Configuration
+    r2AccountId: process.env.R2_ACCOUNT_ID,
+    r2AccessKeyId: process.env.R2_ACCESS_KEY_ID,
+    r2SecretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+    r2BucketName: process.env.R2_BUCKET_NAME,
+    r2PublicUrl: process.env.R2_PUBLIC_URL
   }
 })

@@ -113,8 +113,8 @@
               <td class="px-4 py-3">
                 <div class="flex items-center gap-3">
                   <img
-                    v-if="page.cover_image_url"
-                    :src="page.cover_image_url"
+                    v-if="page.cover_image"
+                    :src="page.cover_image"
                     :alt="page.title"
                     class="w-12 h-12 object-cover bg-gray-100"
                   />
@@ -167,7 +167,7 @@
               <td class="px-4 py-3 whitespace-nowrap text-right">
                 <div class="flex items-center justify-end space-x-2">
                   <button
-                    @click="navigateTo(`/admin/pages/${page.id}`)"
+                    @click="navigateTo(`/admin/pages/${page.id}/edit`)"
                     class="text-gray-400 hover:text-gray-900"
                     title="Edit"
                   >

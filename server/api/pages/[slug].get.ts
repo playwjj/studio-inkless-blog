@@ -1,4 +1,4 @@
-import type { DbPage, DbAuthor } from '~/server/types/dbTypes'
+import type { DbPage, DbAuthor, DbPageBlock } from '~/server/types/dbTypes'
 
 export default defineEventHandler(async (event) => {
   const slug = getRouterParam(event, 'slug')
@@ -44,6 +44,15 @@ export default defineEventHandler(async (event) => {
       author = await fetchOneFromDb<DbAuthor>('authors', page.author_id)
     }
 
+    // Fetch page blocks (only visible ones)
+    const blocksResponse = await fetchFromDb<DbPageBlock>('page_blocks', {
+      where: { page_id: page.id, is_visible: 1 },
+      sortBy: 'block_order',
+      sortOrder: 'asc',
+      limit: 100
+    })
+    const blocks = blocksResponse.data || []
+
     // Increment view count (fire and forget)
     // Note: This would need a custom update endpoint in your DB API
     // For now, we'll skip this or implement it later
@@ -54,7 +63,8 @@ export default defineEventHandler(async (event) => {
         name: author.name,
         avatar: author.avatar_url,
         bio: author.bio
-      } : null
+      } : null,
+      blocks: blocks
     }
   } catch (error) {
     if (error.statusCode) {

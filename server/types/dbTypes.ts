@@ -85,7 +85,7 @@ export interface DbPage {
   og_title?: string
   og_description?: string
   canonical_url?: string
-  cover_image_url?: string
+  cover_image?: string  // Note: database field is cover_image, not cover_image_url
   theme: string
   layout: string
   custom_css?: string

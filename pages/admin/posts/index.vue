@@ -459,7 +459,7 @@ const clearFilters = () => {
 const formatDate = (dateString: string) => {
   if (!dateString) return 'Not published'
   const date = new Date(dateString)
-  return date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })
+  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
 const { success: showSuccess, error: showError, confirm: showConfirm } = useNotification()

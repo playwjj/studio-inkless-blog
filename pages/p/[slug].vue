@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div>
     <!-- Loading state -->
     <div v-if="pending" class="min-h-screen flex items-center justify-center">
       <div class="text-center">
@@ -25,9 +25,9 @@
       <Header v-if="page.show_header" />
 
       <!-- Cover image -->
-      <div v-if="page.cover_image" class="w-full h-96 bg-gray-100">
+      <div v-if="page.cover_image_url" class="w-full h-96 bg-gray-100">
         <img
-          :src="page.cover_image"
+          :src="page.cover_image_url"
           :alt="page.title"
           class="w-full h-full object-cover"
         />
@@ -74,18 +74,11 @@
 
       <!-- Footer (if enabled) -->
       <Footer v-if="page.show_footer" />
-
-      <!-- Back to Top button -->
-      <BackToTop />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-definePageMeta({
-  layout: false
-})
-
 const route = useRoute()
 const slug = route.params.slug as string
 
@@ -96,7 +89,7 @@ const { data: page, pending, error } = await useFetch(`/api/pages/${slug}`)
 if (page.value) {
   const metaTitle = page.value.meta_title || page.value.title
   const metaDescription = page.value.meta_description || page.value.description
-  const ogImage = page.value.og_image || page.value.cover_image
+  const ogImage = page.value.og_image || page.value.cover_image_url
 
   useHead({
     title: metaTitle,

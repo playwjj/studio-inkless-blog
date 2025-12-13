@@ -31,7 +31,13 @@
           class="w-full px-3 py-1.5 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none"
         >
           <option value="">All Types</option>
-          <option value="image/">Images Only</option>
+          <option value="image/">Images</option>
+          <option value="application/pdf">PDF</option>
+          <option value="application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">Word Documents</option>
+          <option value="application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">Excel Spreadsheets</option>
+          <option value="application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation">PowerPoint Presentations</option>
+          <option value="text/">Text Files</option>
+          <option value="application/zip,application/x-rar-compressed,application/x-7z-compressed">Archives</option>
         </select>
       </div>
     </div>
@@ -105,7 +111,7 @@
               class="hover:bg-gray-50 transition-colors"
             >
               <td class="px-4 py-3">
-                <div class="w-16 h-16 border border-gray-200 flex items-center justify-center overflow-hidden">
+                <div class="w-16 h-16 border border-gray-200 flex items-center justify-center overflow-hidden bg-gray-50">
                   <img
                     v-if="file.mime_type.startsWith('image/')"
                     :src="file.url"
@@ -113,6 +119,31 @@
                     class="w-full h-full object-cover"
                     loading="lazy"
                   />
+                  <!-- PDF icon -->
+                  <svg v-else-if="getFileIcon(file.mime_type) === 'pdf'" class="w-8 h-8 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 2l5 5h-5V4zM8 18v-1h1v1H8zm0-2v-1h1v1H8zm0-2v-1h1v1H8zm2 4v-1h6v1h-6zm0-2v-1h6v1h-6zm0-2v-1h6v1h-6z"/>
+                  </svg>
+                  <!-- Word icon -->
+                  <svg v-else-if="getFileIcon(file.mime_type) === 'document'" class="w-8 h-8 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 2l5 5h-5V4zM8 18l1-4h1l1 4h-1l-.25-1h-1.5L8 18zm2.25-2h1l-.5-2-.5 2z"/>
+                  </svg>
+                  <!-- Excel icon -->
+                  <svg v-else-if="getFileIcon(file.mime_type) === 'spreadsheet'" class="w-8 h-8 text-green-600" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 2l5 5h-5V4zM8 12h8v2H8v-2zm0 4h8v2H8v-2z"/>
+                  </svg>
+                  <!-- PowerPoint icon -->
+                  <svg v-else-if="getFileIcon(file.mime_type) === 'presentation'" class="w-8 h-8 text-orange-500" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 2l5 5h-5V4zM8 12h2a2 2 0 012 2 2 2 0 01-2 2H9v2H8v-6zm1 3h1a1 1 0 001-1 1 1 0 00-1-1H9v2z"/>
+                  </svg>
+                  <!-- Text icon -->
+                  <svg v-else-if="getFileIcon(file.mime_type) === 'text'" class="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <!-- Archive icon -->
+                  <svg v-else-if="getFileIcon(file.mime_type) === 'archive'" class="w-8 h-8 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                  </svg>
+                  <!-- Default file icon -->
                   <svg v-else class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                   </svg>
@@ -252,14 +283,13 @@
                 ref="fileInput"
                 type="file"
                 multiple
-                accept="image/*"
                 class="hidden"
                 @change="handleFileSelect"
               />
             </label>
           </p>
           <p class="mt-1 text-xs text-gray-500">
-            Images only, up to 10MB each
+            Supports images, PDF, Word, Excel, PowerPoint, text files, and archives. Up to 10MB each.
           </p>
         </div>
 
@@ -366,8 +396,14 @@ const filteredFiles = computed(() => {
   }
 
   if (filterMimeType.value) {
+    // Support multiple MIME types separated by comma
+    const mimeTypes = filterMimeType.value.split(',')
     result = result.filter(file =>
-      file.mime_type.startsWith(filterMimeType.value)
+      mimeTypes.some(type =>
+        type.endsWith('/')
+          ? file.mime_type.startsWith(type)
+          : file.mime_type === type
+      )
     )
   }
 
@@ -406,6 +442,17 @@ const formatFileSize = (bytes: number): string => {
   if (bytes < 1024) return `${bytes}B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`
   return `${(bytes / 1024 / 1024).toFixed(1)}MB`
+}
+
+const getFileIcon = (mimeType: string): string => {
+  if (mimeType.startsWith('image/')) return 'image'
+  if (mimeType === 'application/pdf') return 'pdf'
+  if (mimeType.includes('word') || mimeType.includes('document')) return 'document'
+  if (mimeType.includes('excel') || mimeType.includes('spreadsheet')) return 'spreadsheet'
+  if (mimeType.includes('powerpoint') || mimeType.includes('presentation')) return 'presentation'
+  if (mimeType.startsWith('text/')) return 'text'
+  if (mimeType.includes('zip') || mimeType.includes('rar') || mimeType.includes('7z')) return 'archive'
+  return 'file'
 }
 
 const fetchFiles = async () => {
@@ -471,10 +518,6 @@ const addFilesToQueue = (newFiles: File[]) => {
   for (const file of newFiles) {
     if (file.size > 10 * 1024 * 1024) {
       showError('File too large', `${file.name} exceeds 10MB limit`)
-      continue
-    }
-    if (!file.type.startsWith('image/')) {
-      showError('Invalid file type', `${file.name} is not an image`)
       continue
     }
     uploadQueue.value.push({ file, status: 'pending' })

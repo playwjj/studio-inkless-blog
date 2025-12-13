@@ -17,12 +17,18 @@
     <!-- Image preview -->
     <div
       v-if="modelValue"
-      class="relative aspect-video overflow-hidden bg-gray-100"
+      :class="[
+        'relative overflow-hidden bg-gray-100',
+        compact ? 'h-32' : 'aspect-video'
+      ]"
     >
       <img
         :src="modelValue"
         :alt="altText"
-        class="w-full h-full object-cover"
+        :class="[
+          'w-full h-full',
+          compact ? 'object-contain' : 'object-cover'
+        ]"
         @error="handleImageError"
       />
       <button
@@ -79,20 +85,42 @@
       </button>
     </div>
 
+    <!-- Select from library button -->
+    <button
+      type="button"
+      @click="showFilePicker = true"
+      class="w-full px-3 py-2 border border-gray-200 text-gray-700 text-sm hover:bg-gray-50 transition-colors flex items-center justify-center"
+    >
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+      </svg>
+      Select from Library
+    </button>
+
+    <!-- File Picker Modal -->
+    <AdminFilePicker
+      :show="showFilePicker"
+      @close="showFilePicker = false"
+      @select="handleFileSelected"
+    />
+
     <!-- Error message -->
     <p v-if="uploadError" class="text-xs text-red-600">{{ uploadError }}</p>
   </div>
 </template>
 
 <script setup lang="ts">
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   modelValue: string
   label?: string
   inputId?: string
   placeholder?: string
   altText?: string
   uploadButtonText?: string
-}>()
+  compact?: boolean
+}>(), {
+  compact: false
+})
 
 const emit = defineEmits<{
   'update:modelValue': [value: string]
@@ -102,6 +130,7 @@ const fileInputRef = ref<HTMLInputElement | null>(null)
 const uploading = ref(false)
 const uploadError = ref('')
 const isDragging = ref(false)
+const showFilePicker = ref(false)
 
 // Use computed for two-way binding
 const imageUrl = computed({
@@ -186,5 +215,10 @@ const uploadFile = async (file: File) => {
       fileInputRef.value.value = ''
     }
   }
+}
+
+const handleFileSelected = (file: any) => {
+  imageUrl.value = file.url
+  uploadError.value = ''
 }
 </script>

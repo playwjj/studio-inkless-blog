@@ -10,50 +10,41 @@
       <!-- Profile Picture -->
       <div class="bg-white border border-gray-200 p-6">
         <h2 class="text-lg font-semibold text-gray-900 mb-6">Profile Picture</h2>
-        <div class="flex items-center space-x-6">
-          <div class="relative">
-            <img
-              v-if="formData.avatar_url"
-              :src="formData.avatar_url"
-              alt="Profile picture"
-              class="w-24 h-24 object-cover border border-gray-200"
-            />
-            <div
-              v-else
-              class="w-24 h-24 bg-gray-100 border border-gray-200 flex items-center justify-center"
-            >
-              <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            </div>
-          </div>
-          <div class="flex-1">
-            <div class="flex items-center space-x-3">
-              <button
-                type="button"
-                @click="triggerFileUpload"
-                class="px-3 py-1.5 bg-gray-900 text-white text-sm hover:bg-gray-800 transition-colors"
-              >
-                Upload Photo
-              </button>
-              <button
+        <div class="space-y-4">
+          <!-- Preview -->
+          <div class="flex items-center space-x-6">
+            <div class="relative">
+              <img
                 v-if="formData.avatar_url"
-                type="button"
-                @click="removeAvatar"
-                class="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm hover:bg-gray-50 transition-colors"
+                :src="formData.avatar_url"
+                alt="Profile picture"
+                class="w-24 h-24 object-cover border border-gray-200 rounded-full"
+              />
+              <div
+                v-else
+                class="w-24 h-24 bg-gray-100 border border-gray-200 rounded-full flex items-center justify-center"
               >
-                Remove
-              </button>
+                <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
             </div>
-            <p class="mt-2 text-xs text-gray-500">JPG, PNG or GIF. Max size 2MB.</p>
-            <input
-              ref="fileInput"
-              type="file"
-              accept="image/*"
-              class="hidden"
-              @change="handleFileChange"
-            />
+            <div class="flex-1">
+              <h3 class="text-sm font-medium text-gray-900 mb-1">Update your profile picture</h3>
+              <p class="text-xs text-gray-500">Recommended: Square image, at least 200x200px. JPG, PNG or GIF. Max size 10MB.</p>
+            </div>
           </div>
+
+          <!-- Image Uploader -->
+          <AdminImageUploader
+            v-model="formData.avatar_url"
+            label="Image URL"
+            input-id="avatar_url"
+            placeholder="https://example.com/avatar.jpg"
+            alt-text="Profile picture"
+            upload-button-text="Upload or Drag Image"
+            :compact="true"
+          />
         </div>
       </div>
 
@@ -360,7 +351,6 @@ const { errors, touched, validateField, validateAll, setTouched } = createValida
 
 const { success, error: showError, warning, confirm: showConfirm } = useNotification()
 
-const fileInput = ref<HTMLInputElement | null>(null)
 const loading = ref(false)
 const passwordLoading = ref(false)
 
@@ -415,27 +405,6 @@ const accountInfo = reactive({
   total_posts: 0,
   total_comments: 0
 })
-
-const triggerFileUpload = () => {
-  fileInput.value?.click()
-}
-
-const handleFileChange = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  const file = target.files?.[0]
-  if (file) {
-    // TODO: Implement file upload
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      formData.avatar_url = e.target?.result as string
-    }
-    reader.readAsDataURL(file)
-  }
-}
-
-const removeAvatar = () => {
-  formData.avatar_url = ''
-}
 
 const handleSubmit = async () => {
   // validate fields first

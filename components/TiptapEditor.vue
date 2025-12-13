@@ -133,7 +133,7 @@
         </button>
       </div>
 
-      <!-- Link & Image -->
+      <!-- Link, Image & File -->
       <div class="flex items-center gap-1 border-r border-gray-300 pr-2">
         <button
           type="button"
@@ -156,10 +156,20 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
           </svg>
         </button>
+        <button
+          type="button"
+          @click="addFile"
+          class="p-1.5 hover:bg-gray-200 transition-colors"
+          title="Insert File"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+          </svg>
+        </button>
       </div>
 
       <!-- Undo/Redo -->
-      <div class="flex items-center gap-1">
+      <div class="flex items-center gap-1 border-r border-gray-300 pr-2">
         <button
           type="button"
           @click="editor.chain().focus().undo().run()"
@@ -183,10 +193,71 @@
           </svg>
         </button>
       </div>
+
+      <!-- View Source -->
+      <div class="flex items-center">
+        <button
+          type="button"
+          @click="toggleSourceView"
+          :class="{ 'bg-gray-200': showSource }"
+          class="p-1.5 hover:bg-gray-200 transition-colors text-xs font-medium"
+          title="View Source"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </button>
+      </div>
     </div>
 
     <!-- Editor content -->
-    <EditorContent :editor="editor" class="prose prose-sm max-w-none p-4" />
+    <div v-show="!showSource">
+      <EditorContent :editor="editor" class="prose prose-sm max-w-none p-4" />
+    </div>
+
+    <!-- Source code view -->
+    <div v-show="showSource" class="p-4">
+      <textarea
+        v-model="sourceCode"
+        class="w-full min-h-[400px] px-3 py-2 font-mono text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none resize-y"
+        @input="updateFromSource"
+      ></textarea>
+      <p class="mt-2 text-xs text-gray-500">
+        Edit the HTML source code directly. Switch back to visual editor to see the changes.
+      </p>
+    </div>
+
+    <!-- Image Dialog -->
+    <AdminEditorImageDialog
+      :show="showImageDialog"
+      @close="showImageDialog = false"
+      @insert="handleImageInsert"
+      @open-file-picker="openFilePicker"
+      ref="imageDialogRef"
+    />
+
+    <!-- File Picker for Images -->
+    <AdminFilePicker
+      :show="showFilePicker"
+      @close="handleFilePickerClose"
+      @select="handleFileSelected"
+    />
+
+    <!-- File Dialog -->
+    <AdminEditorFileDialog
+      :show="showFileDialog"
+      @close="showFileDialog = false"
+      @insert="handleFileInsert"
+      @open-file-picker="openFilePickerForFile"
+      ref="fileDialogRef"
+    />
+
+    <!-- File Picker for Files -->
+    <AdminFilePicker
+      :show="showFilePickerForFile"
+      @close="handleFilePickerForFileClose"
+      @select="handleFileSelectedForLink"
+    />
   </div>
 </template>
 
@@ -209,6 +280,18 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   'update:modelValue': [value: string]
 }>()
+
+// State for dialogs
+const showImageDialog = ref(false)
+const showFilePicker = ref(false)
+const imageDialogRef = ref<any>(null)
+const showFileDialog = ref(false)
+const showFilePickerForFile = ref(false)
+const fileDialogRef = ref<any>(null)
+
+// State for source view
+const showSource = ref(false)
+const sourceCode = ref('')
 
 const editor = useEditor({
   extensions: [
@@ -261,13 +344,93 @@ const setLink = () => {
 // Add image
 const addImage = () => {
   if (!editor.value) return
+  showImageDialog.value = true
+}
 
-  const url = window.prompt('Image URL:')
-
-  if (url) {
+const handleImageInsert = (url: string) => {
+  if (editor.value && url) {
     editor.value.chain().focus().setImage({ src: url }).run()
   }
 }
+
+const openFilePicker = () => {
+  showImageDialog.value = false
+  showFilePicker.value = true
+}
+
+const handleFilePickerClose = () => {
+  showFilePicker.value = false
+}
+
+const handleFileSelected = (file: any) => {
+  if (file.mime_type.startsWith('image/')) {
+    // Set the URL in the image dialog and reopen it
+    nextTick(() => {
+      if (imageDialogRef.value) {
+        imageDialogRef.value.setImageUrl(file.url)
+      }
+      showImageDialog.value = true
+    })
+  }
+}
+
+// Add file
+const addFile = () => {
+  if (!editor.value) return
+  showFileDialog.value = true
+}
+
+const handleFileInsert = (text: string, url: string) => {
+  if (editor.value && text && url) {
+    editor.value.chain().focus().setLink({ href: url }).insertContent(text).run()
+  }
+}
+
+const openFilePickerForFile = () => {
+  showFileDialog.value = false
+  showFilePickerForFile.value = true
+}
+
+const handleFilePickerForFileClose = () => {
+  showFilePickerForFile.value = false
+}
+
+const handleFileSelectedForLink = (file: any) => {
+  // Set the file info in the file dialog and reopen it
+  nextTick(() => {
+    if (fileDialogRef.value) {
+      fileDialogRef.value.setFileInfo(file.file_name, file.url)
+    }
+    showFileDialog.value = true
+  })
+}
+
+// Source view
+const toggleSourceView = () => {
+  if (!editor.value) return
+
+  if (!showSource.value) {
+    // Switching to source view - get HTML from editor
+    sourceCode.value = editor.value.getHTML()
+  } else {
+    // Switching back to visual editor - set HTML from source
+    editor.value.commands.setContent(sourceCode.value, false)
+  }
+
+  showSource.value = !showSource.value
+}
+
+const updateFromSource = () => {
+  // Update is handled when switching back to visual editor
+  // This just keeps the sourceCode ref in sync with textarea
+}
+
+// Initialize source code when editor is ready
+watch(() => editor.value?.getHTML(), (html) => {
+  if (html && !showSource.value) {
+    sourceCode.value = html
+  }
+})
 
 // Cleanup
 onBeforeUnmount(() => {

@@ -66,31 +66,27 @@
           </div>
 
           <div>
-            <label for="logo_url" class="block text-sm font-medium text-gray-700 mb-1.5">
-              Logo URL
-            </label>
-            <input
-              id="logo_url"
+            <AdminImageUploader
               v-model="formData.logo_url"
-              type="text"
-              class="w-full px-3 py-2 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none"
+              label="Logo URL"
+              input-id="logo_url"
               placeholder="/images/logo.png or https://example.com/logo.png"
+              alt-text="Site logo"
+              upload-button-text="Upload or Drag Logo"
+              :compact="true"
             />
-            <p class="mt-1 text-xs text-gray-500">Supports both relative (/images/logo.png) and absolute URLs</p>
           </div>
 
           <div>
-            <label for="favicon_url" class="block text-sm font-medium text-gray-700 mb-1.5">
-              Favicon URL
-            </label>
-            <input
-              id="favicon_url"
+            <AdminImageUploader
               v-model="formData.favicon_url"
-              type="text"
-              class="w-full px-3 py-2 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none"
+              label="Favicon URL"
+              input-id="favicon_url"
               placeholder="/favicon.ico or https://example.com/favicon.ico"
+              alt-text="Site favicon"
+              upload-button-text="Upload or Drag Favicon"
+              :compact="true"
             />
-            <p class="mt-1 text-xs text-gray-500">Supports both relative and absolute URLs</p>
           </div>
 
           <div class="md:col-span-2">
@@ -180,27 +176,16 @@
           </div>
 
           <div>
-            <label for="og_image" class="block text-sm font-medium text-gray-700 mb-1.5">
-              OG Image
-            </label>
-            <input
-              id="og_image"
+            <AdminImageUploader
               v-model="formData.og_image"
-              type="text"
-              class="w-full px-3 py-2 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none"
+              label="OG Image"
+              input-id="og_image"
               placeholder="/images/og-image.jpg or https://example.com/og-image.jpg"
+              alt-text="OG image preview"
+              upload-button-text="Upload or Drag OG Image"
+              :compact="true"
             />
-            <p class="mt-1 text-xs text-gray-500">Recommended size: 1200x630 pixels. Supports relative and absolute URLs</p>
-            <div
-              v-if="formData.og_image"
-              class="mt-4 relative aspect-[1200/630] max-w-md rounded-lg overflow-hidden bg-gray-100"
-            >
-              <img
-                :src="formData.og_image"
-                alt="OG image preview"
-                class="w-full h-full object-cover"
-              />
-            </div>
+            <p class="mt-1 text-xs text-gray-500">Recommended size: 1200x630 pixels</p>
           </div>
         </div>
       </div>
@@ -236,17 +221,16 @@
           </div>
 
           <div>
-            <label for="twitter_image" class="block text-sm font-medium text-gray-700 mb-1.5">
-              Twitter Image
-            </label>
-            <input
-              id="twitter_image"
+            <AdminImageUploader
               v-model="formData.twitter_image"
-              type="text"
-              class="w-full px-3 py-2 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none"
+              label="Twitter Image"
+              input-id="twitter_image"
               placeholder="/images/twitter-image.jpg or https://example.com/twitter-image.jpg"
+              alt-text="Twitter image preview"
+              upload-button-text="Upload or Drag Twitter Image"
+              :compact="true"
             />
-            <p class="mt-1 text-xs text-gray-500">Recommended size: 1200x600 pixels. Supports relative and absolute URLs</p>
+            <p class="mt-1 text-xs text-gray-500">Recommended size: 1200x600 pixels</p>
           </div>
         </div>
       </div>

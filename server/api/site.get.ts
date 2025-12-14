@@ -18,8 +18,15 @@ export default defineEventHandler(async () => {
     }
 
     return siteResponse.data[0]
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to fetch site config:', error)
+    
+    // If it's already an error with statusCode, pass it through
+    if (error.statusCode) {
+      throw error
+    }
+    
+    // For other errors, return 500
     throw createError({
       statusCode: 500,
       statusMessage: 'Failed to fetch site configuration'

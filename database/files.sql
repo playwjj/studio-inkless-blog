@@ -1,0 +1,13 @@
+CREATE TABLE files (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    file_name VARCHAR(255) NOT NULL,
+    file_key VARCHAR(500) NOT NULL UNIQUE,
+    file_size INTEGER NOT NULL,
+    mime_type VARCHAR(100) NOT NULL,
+    url VARCHAR(1000) NOT NULL,
+    width INTEGER,
+    height INTEGER,
+    uploaded_by INTEGER NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE CASCADE
+  )

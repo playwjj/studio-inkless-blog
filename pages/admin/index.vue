@@ -147,10 +147,6 @@
               <span class="text-gray-500">Deploy Platform</span>
               <span class="font-medium text-gray-900">Cloudflare Pages</span>
             </div>
-            <div class="flex justify-between py-1.5">
-              <span class="text-gray-500">Last Update</span>
-              <span class="font-medium text-gray-900">2 hours ago</span>
-            </div>
           </div>
         </div>
       </div>

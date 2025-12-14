@@ -72,9 +72,9 @@
               />
               <span class="ml-2 text-sm text-gray-600">Remember me</span>
             </label>
-            <a href="#" class="text-sm text-gray-500 hover:text-gray-900">
+            <!-- <a href="#" class="text-sm text-gray-500 hover:text-gray-900">
               Forgot password?
-            </a>
+            </a> -->
           </div>
 
           <!-- Login Button -->

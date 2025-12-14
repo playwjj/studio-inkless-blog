@@ -120,9 +120,9 @@
             </div>
 
             <!-- Page Blocks Editor -->
-            <div class="border border-gray-200 p-5">
+            <!-- <div class="border border-gray-200 p-5">
               <AdminPageBlocksEditor v-model="pageBlocks" />
-            </div>
+            </div> -->
 
             <!-- SEO Settings -->
             <details class="border border-gray-200">
@@ -587,10 +587,10 @@ const handleSubmit = async () => {
 
     if ((response as any).success) {
       // Save page blocks
-      await savePageBlocks()
+      // await savePageBlocks()
 
-      // Redirect to pages list
-      router.push('/admin/pages')
+      // Show success notification and stay on current page
+      useNotification().success('Page updated successfully')
     }
   } catch (error: any) {
     console.error('Failed to update page:', error)
@@ -601,49 +601,49 @@ const handleSubmit = async () => {
 }
 
 // Save page blocks
-async function savePageBlocks() {
-  try {
-    // Get original blocks to compare
-    const originalBlocksResponse = await $fetch(`/api/admin/pages/${pageId}/blocks`)
-    const originalBlocks = originalBlocksResponse.blocks || []
-    const originalBlockIds = new Set(originalBlocks.map((b: any) => b.id))
-    const currentBlockIds = new Set(pageBlocks.value.filter(b => b.id).map(b => b.id))
+// async function savePageBlocks() {
+//   try {
+//     // Get original blocks to compare
+//     const originalBlocksResponse = await $fetch(`/api/admin/pages/${pageId}/blocks`)
+//     const originalBlocks = originalBlocksResponse.blocks || []
+//     const originalBlockIds = new Set(originalBlocks.map((b: any) => b.id))
+//     const currentBlockIds = new Set(pageBlocks.value.filter(b => b.id).map(b => b.id))
 
-    // Delete removed blocks
-    for (const originalBlock of originalBlocks) {
-      if (!currentBlockIds.has(originalBlock.id)) {
-        await $fetch(`/api/admin/pages/${pageId}/blocks/${originalBlock.id}`, {
-          method: 'DELETE'
-        })
-      }
-    }
+//     // Delete removed blocks
+//     for (const originalBlock of originalBlocks) {
+//       if (!currentBlockIds.has(originalBlock.id)) {
+//         await $fetch(`/api/admin/pages/${pageId}/blocks/${originalBlock.id}`, {
+//           method: 'DELETE'
+//         })
+//       }
+//     }
 
-    // Update or create blocks
-    for (const block of pageBlocks.value) {
-      const blockData = {
-        ...block,
-        is_visible: block.is_visible ? 1 : 0
-      }
+//     // Update or create blocks
+//     for (const block of pageBlocks.value) {
+//       const blockData = {
+//         ...block,
+//         is_visible: block.is_visible ? 1 : 0
+//       }
 
-      if (block.id && originalBlockIds.has(block.id)) {
-        // Update existing block
-        await $fetch(`/api/admin/pages/${pageId}/blocks/${block.id}`, {
-          method: 'PUT',
-          body: blockData
-        })
-      } else {
-        // Create new block
-        await $fetch(`/api/admin/pages/${pageId}/blocks`, {
-          method: 'POST',
-          body: blockData
-        })
-      }
-    }
-  } catch (error) {
-    console.error('Failed to save page blocks:', error)
-    throw error
-  }
-}
+//       if (block.id && originalBlockIds.has(block.id)) {
+//         // Update existing block
+//         await $fetch(`/api/admin/pages/${pageId}/blocks/${block.id}`, {
+//           method: 'PUT',
+//           body: blockData
+//         })
+//       } else {
+//         // Create new block
+//         await $fetch(`/api/admin/pages/${pageId}/blocks`, {
+//           method: 'POST',
+//           body: blockData
+//         })
+//       }
+//     }
+//   } catch (error) {
+//     console.error('Failed to save page blocks:', error)
+//     throw error
+//   }
+// }
 
 // Slug generation function
 const generateSlug = () => {

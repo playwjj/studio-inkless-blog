@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
     const currentUser = await requireAuth(event)
 
     const body = await readBody(event)
-    const { username, email, full_name, avatar_url } = body
+    const { username, email, full_name, avatar_url, bio } = body
 
     // Validate required fields
     if (!username || !email) {
@@ -44,11 +44,20 @@ export default defineEventHandler(async (event) => {
       email,
       full_name: full_name || null,
       avatar_url: avatar_url || null,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      bio
     })
 
     // Update session
-    const userSession = createUserSession(updatedUser)
+    const freshUser  = await fetchOneFromDb<DbUser>('users', currentUser.id)
+    if (!freshUser) {
+      throw createError({
+        statusCode: 404,
+        statusMessage: 'User not found after update'
+      })
+    }
+    
+    const userSession = createUserSession(freshUser)
     await setUserSession(event, userSession)
 
     return {

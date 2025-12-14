@@ -8,7 +8,7 @@
       <input
         :id="inputId"
         v-model="imageUrl"
-        type="url"
+        type="text"
         class="w-full px-3 py-1.5 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none"
         :placeholder="placeholder"
       />

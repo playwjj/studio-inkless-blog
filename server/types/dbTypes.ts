@@ -134,6 +134,7 @@ export interface DbUser {
   last_login_at?: string
   created_at: string
   updated_at: string
+  bio: string
 }
 
 export interface DbApiToken {

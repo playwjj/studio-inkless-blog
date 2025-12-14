@@ -127,7 +127,7 @@
       </div>
 
       <!-- Social Links -->
-      <div class="bg-white border border-gray-200 p-6">
+      <!-- <div class="bg-white border border-gray-200 p-6">
         <h2 class="text-lg font-semibold text-gray-900 mb-6">Social Links</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -182,6 +182,25 @@
             />
           </div>
         </div>
+      </div> -->
+
+            <!-- Save buttons -->
+      <div class="flex items-center justify-end space-x-3">
+        <button
+          type="button"
+          @click="handleReset"
+          class="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm hover:bg-gray-50 transition-colors"
+        >
+          Reset
+        </button>
+        <button
+          type="submit"
+          :disabled="loading"
+          class="px-3 py-1.5 bg-gray-900 text-white text-sm hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <span v-if="!loading">Save Changes</span>
+          <span v-else>Saving...</span>
+        </button>
       </div>
 
       <!-- Change Password -->
@@ -244,7 +263,7 @@
       </div>
 
       <!-- Account Settings -->
-      <div class="bg-white border border-gray-200 p-6">
+      <!-- <div class="bg-white border border-gray-200 p-6">
         <h2 class="text-lg font-semibold text-gray-900 mb-6">Account Settings</h2>
         <div class="space-y-4">
           <div class="flex items-center justify-between">
@@ -287,7 +306,7 @@
             </button>
           </div>
         </div>
-      </div>
+      </div> -->
 
       <!-- Account Info -->
       <div class="bg-white border border-gray-200 p-6">
@@ -298,37 +317,14 @@
             <span class="font-medium text-gray-900">{{ formatDate(accountInfo.created_at) }}</span>
           </div>
           <div class="flex justify-between py-1.5 border-b border-gray-100">
+            <span class="text-gray-500">Last Updated</span>
+            <span class="font-medium text-gray-900">{{ formatDate(accountInfo.updated_at) }}</span>
+          </div>
+          <div class="flex justify-between py-1.5 border-b border-gray-100">
             <span class="text-gray-500">Last Login</span>
             <span class="font-medium text-gray-900">{{ formatDate(accountInfo.last_login) }}</span>
           </div>
-          <div class="flex justify-between py-1.5 border-b border-gray-100">
-            <span class="text-gray-500">Total Posts</span>
-            <span class="font-medium text-gray-900">{{ accountInfo.total_posts }}</span>
-          </div>
-          <div class="flex justify-between py-1.5">
-            <span class="text-gray-500">Total Comments</span>
-            <span class="font-medium text-gray-900">{{ accountInfo.total_comments }}</span>
-          </div>
         </div>
-      </div>
-
-      <!-- Save buttons -->
-      <div class="flex items-center justify-end space-x-3">
-        <button
-          type="button"
-          @click="handleReset"
-          class="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm hover:bg-gray-50 transition-colors"
-        >
-          Reset
-        </button>
-        <button
-          type="submit"
-          :disabled="loading"
-          class="px-3 py-1.5 bg-gray-900 text-white text-sm hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <span v-if="!loading">Save Changes</span>
-          <span v-else>Saving...</span>
-        </button>
       </div>
     </form>
   </div>
@@ -354,13 +350,15 @@ const { success, error: showError, warning, confirm: showConfirm } = useNotifica
 const loading = ref(false)
 const passwordLoading = ref(false)
 
-// Fetch current user data
-const { data: userData, error } = await useFetch('/api/auth/user')
+// Fetch current user data (real-time from /api/auth/me)
+const { data: userData, error } = await useFetch('/api/auth/me')
 
 if (error.value) {
   // Redirect to login if not authenticated
   await navigateTo('/admin/login')
 }
+
+console.log('Fetched user data:', userData.value)
 
 // Store original data for reset functionality
 const originalData = {
@@ -369,13 +367,7 @@ const originalData = {
   email: userData.value?.user?.email || '',
   display_name: userData.value?.user?.full_name || '',
   role: userData.value?.user?.role || 'admin',
-  bio: '',
-  website: '',
-  twitter: '',
-  github: '',
-  linkedin: '',
-  email_notifications: true,
-  two_factor_enabled: false
+  bio: userData.value?.user?.bio || '',
 }
 
 const formData = reactive({
@@ -384,13 +376,7 @@ const formData = reactive({
   email: userData.value?.user?.email || '',
   display_name: userData.value?.user?.full_name || '',
   role: userData.value?.user?.role || 'admin',
-  bio: '',
-  website: '',
-  twitter: '',
-  github: '',
-  linkedin: '',
-  email_notifications: true,
-  two_factor_enabled: false
+  bio: userData.value?.user?.bio || '',
 })
 
 const passwordForm = reactive({
@@ -402,6 +388,7 @@ const passwordForm = reactive({
 const accountInfo = reactive({
   created_at: userData.value?.user?.created_at || '',
   last_login: userData.value?.user?.last_login_at || '',
+  updated_at: userData.value?.user?.updated_at || '',
   total_posts: 0,
   total_comments: 0
 })
@@ -423,7 +410,8 @@ const handleSubmit = async () => {
         username: formData.username,
         email: formData.email,
         full_name: formData.display_name,
-        avatar_url: formData.avatar_url
+        avatar_url: formData.avatar_url,
+        bio: formData.bio
       }
     })
 
@@ -487,49 +475,27 @@ const handlePasswordChange = async () => {
   }
 }
 
-const handleDeleteAccount = async () => {
-  const password = prompt('To delete your account, please enter your password:')
-
-  if (!password) {
-    return
-  }
-
-  await showConfirm({
-    title: 'Delete Account',
-    message: 'Are you sure you want to delete your account? This action cannot be undone. All your data will be permanently deleted.',
-    confirmText: 'Delete Account',
-    cancelText: 'Cancel',
-    variant: 'danger',
-    loadingText: 'Deleting...',
-    onConfirm: async () => {
-      try {
-        await $fetch('/api/auth/account', {
-          method: 'DELETE',
-          body: { password }
-        })
-
-        success('Account deleted successfully')
-        // Redirect to home page
-        await navigateTo('/')
-      } catch (error: any) {
-        if (error.statusCode === 401) {
-          showError('Incorrect password', 'The password you entered is incorrect')
-        } else {
-          showError('Failed to delete account', 'Please try again.')
-        }
-        console.error('Delete account error:', error)
-      }
-    }
-  })
-}
-
 const handleReset = () => {
   // Reset form to original values
   Object.assign(formData, originalData)
 }
 
 const formatDate = (dateString: string) => {
+  // Return empty string for falsy or invalid input
+  if (!dateString) return ''
   const date = new Date(dateString)
-  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+  if (isNaN(date.getTime())) return ''
+
+  // Show full date and time (year, month, day, hour:minute:second)
+  // Using 24-hour format (hour12: false). Change hour12 to true for AM/PM.
+  return date.toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  })
 }
 </script>

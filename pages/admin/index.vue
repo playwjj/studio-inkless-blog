@@ -14,22 +14,22 @@
 
     <!-- Stats Grid -->
     <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
-      <StatCard
+      <AdminStatCard
         title="Total Posts"
         :value="stats.totalPosts"
         color="blue"
       />
-      <StatCard
+      <AdminStatCard
         title="Total Views"
         :value="stats.totalViews"
         color="green"
       />
-      <StatCard
+      <AdminStatCard
         title="Categories"
         :value="stats.totalCategories"
         color="purple"
       />
-      <StatCard
+      <AdminStatCard
         title="Pages"
         :value="stats.totalPages"
         color="orange"

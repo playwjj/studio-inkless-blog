@@ -1,8 +1,39 @@
 <template>
   <div class="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 p-6">
     <div class="max-w-3xl w-full bg-white dark:bg-slate-800 rounded-xl shadow-md p-8">
-      <!-- Step 1: Missing Environment Variables -->
-      <template v-if="setupStep === 'missing-env'">
+      <!-- Step 1: Setup Disabled -->
+      <template v-if="setupStep === 'setup-disabled'">
+        <div class="text-center">
+          <div class="text-5xl mb-4">🔒</div>
+          <h1 class="text-3xl font-semibold text-slate-900 dark:text-slate-100">Setup Disabled</h1>
+          <p class="mt-3 text-slate-600 dark:text-slate-300">The setup functionality has been disabled for security reasons.</p>
+
+          <div class="mt-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded text-left">
+            <h2 class="font-medium text-amber-900 dark:text-amber-100">Why is setup disabled?</h2>
+            <ul class="mt-3 space-y-2 text-sm text-amber-800 dark:text-amber-200 list-disc list-inside">
+              <li>Your blog has been successfully configured</li>
+              <li>The setup page is now locked to prevent unauthorized modifications</li>
+              <li>This protects your database and admin credentials from exposure</li>
+            </ul>
+          </div>
+
+          <div class="mt-6 p-4 bg-slate-50 dark:bg-slate-700 border rounded text-left">
+            <h2 class="font-medium text-slate-900 dark:text-slate-100">To enable setup again:</h2>
+            <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">If you need to modify the setup, you must manually enable it by setting an environment variable:</p>
+            <pre class="mt-3 p-3 bg-slate-800 text-slate-100 rounded text-sm overflow-x-auto"><code>SETUP_DISABLED=false</code></pre>
+            <p class="mt-2 text-xs text-slate-600 dark:text-slate-400">After enabling, restart your application and the setup page will become accessible again.</p>
+          </div>
+
+          <div class="mt-6 flex items-center justify-center gap-3">
+            <NuxtLink to="/" class="px-4 py-2 border rounded hover:bg-slate-50 dark:hover:bg-slate-700">
+              Go to homepage
+            </NuxtLink>
+          </div>
+        </div>
+      </template>
+
+      <!-- Step 2: Missing Environment Variables -->
+      <template v-else-if="setupStep === 'missing-env'">
         <h1 class="text-3xl font-semibold text-slate-900 dark:text-slate-100">Environment Configuration Required</h1>
         <p class="mt-3 text-slate-600 dark:text-slate-300">Your database API credentials are not configured. Please add them to your environment variables.</p>
 
@@ -44,7 +75,7 @@ DB_API_URL=https://your-db-api.example.com</code></pre>
         </div>
       </template>
 
-      <!-- Step 2: Database Setup Needed -->
+      <!-- Step 3: Database Setup Needed -->
       <template v-else-if="setupStep === 'needs-setup'">
         <h1 class="text-3xl font-semibold text-slate-900 dark:text-slate-100">Initialize Database</h1>
         <p class="mt-3 text-slate-600 dark:text-slate-300">Your database is configured but the required tables don't exist yet. We'll create them all for you.</p>
@@ -70,7 +101,7 @@ DB_API_URL=https://your-db-api.example.com</code></pre>
         </div>
       </template>
 
-      <!-- Step 3: Site Configuration Form -->
+      <!-- Step 4: Site Configuration Form -->
       <template v-else-if="setupStep === 'configure-site'">
         <h1 class="text-3xl font-semibold text-slate-900 dark:text-slate-100">Configure Your Site</h1>
         <p class="mt-3 text-slate-600 dark:text-slate-300">Enter your site's basic information. You can edit these settings later.</p>
@@ -173,7 +204,7 @@ DB_API_URL=https://your-db-api.example.com</code></pre>
         </form>
       </template>
 
-      <!-- Step 4: Error State -->
+      <!-- Step 5: Error State -->
       <template v-else-if="setupStep === 'error'">
         <div class="text-center">
           <div class="text-5xl mb-4">⚠️</div>
@@ -193,7 +224,7 @@ DB_API_URL=https://your-db-api.example.com</code></pre>
         </div>
       </template>
 
-      <!-- Step 5: Setup Complete -->
+      <!-- Step 6: Setup Complete -->
       <template v-else-if="setupStep === 'ready'">
         <div class="text-center">
           <div class="text-5xl mb-4">✨</div>
@@ -206,7 +237,7 @@ DB_API_URL=https://your-db-api.example.com</code></pre>
         </div>
       </template>
 
-      <!-- Initial Loading State -->
+      <!-- Step 7: Initial Loading State -->
       <template v-else>
         <div class="text-center">
           <div class="inline-block animate-spin text-2xl mb-4">⏳</div>
@@ -234,7 +265,7 @@ const siteForm = ref({
   admin_password: ''
 })
 
-type SetupStep = 'checking' | 'missing-env' | 'needs-setup' | 'configure-site' | 'error' | 'ready'
+type SetupStep = 'checking' | 'missing-env' | 'needs-setup' | 'configure-site' | 'setup-disabled' | 'error' | 'ready'
 
 onMounted(() => {
   checkSetupStatus()
@@ -249,7 +280,9 @@ async function checkSetupStatus() {
       method: 'POST'
     })
 
-    if (response.status === 'missing-env') {
+    if (response.status === 'setup-disabled') {
+      setupStep.value = 'setup-disabled'
+    } else if (response.status === 'missing-env') {
       setupStep.value = 'missing-env'
     } else if (response.status === 'needs-setup') {
       setupStep.value = 'needs-setup'

@@ -11,12 +11,16 @@ export default defineEventHandler(async (event) => {
     pathname === '/setup' ||
     pathname.startsWith('/favicon') ||
     pathname.startsWith('/robots.txt') ||
+    pathname === '/sitemap.xml' ||
     pathname.startsWith('/.well-known')
   ) {
     return
   }
 
   const config = useRuntimeConfig()
+
+  // Skip check if setupDisabled flag is set
+  if (config.setupDisabled) { return }
 
   // If runtime config missing DB info, redirect to setup page
   if (!config.dbApiKey || !config.dbApiUrl) {

@@ -2,13 +2,30 @@
  * Setup check API endpoint
  * Checks if DB_API_KEY and DB_API_URL are configured
  * Checks if all required tables exist with proper schema using /api/tables and /api/tables/:tableName/schema
+ * 
+ * ⚠️ SECURITY: Setup operations are disabled by default in production.
+ * Set SETUP_DISABLED=false to enable setup functionality.
  */
 
 import { validateTableSchema, getTableSchema } from '~/server/utils/dbSchema'
 
 export default defineEventHandler(async (event) => {
   try {
+    // Security check: Allow disabling setup operations completely
     const config = useRuntimeConfig()
+    const setupDisabled = config.setupDisabled !== false // Default: true (disabled)
+    
+    if (setupDisabled) {
+      return {
+        status: 'setup-disabled',
+        message: 'Setup operations are disabled for security reasons',
+        details: {
+          reason: 'The setup functionality has been permanently disabled after successful initial configuration.',
+          instruction: 'If you need to enable setup again, set SETUP_DISABLED=false in your environment variables.'
+        }
+      }
+    }
+
     const apiUrl = config.dbApiUrl
     const apiKey = config.dbApiKey
 

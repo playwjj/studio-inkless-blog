@@ -3,4 +3,4 @@ User-agent: *
 Allow: /
 
 # Sitemap location
-Sitemap: https://studio-inkless-blog.pages.dev/sitemap.xml
+Sitemap: /sitemap.xml

@@ -2,6 +2,9 @@
  * Save site configuration and create initial admin user API endpoint
  * Saves the initial site configuration to the database
  * Creates the first admin user for the blog
+ * 
+ * ⚠️ SECURITY: Setup operations are disabled by default in production.
+ * Set SETUP_DISABLED=false to enable setup functionality.
  */
 
 import type { DbSite, DbUser } from '~/server/types/dbTypes'
@@ -19,6 +22,17 @@ interface SiteSetupData {
 export default defineEventHandler(async (event) => {
   try {
     const config = useRuntimeConfig()
+    
+    // Security check: Allow disabling setup operations completely
+    const setupDisabled = config.setupDisabled !== false // Default: true (disabled)
+    
+    if (setupDisabled) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: 'Setup operations are disabled for security reasons. Site configuration changes are not allowed.'
+      })
+    }
+
     const apiUrl = config.dbApiUrl
     const apiKey = config.dbApiKey
 

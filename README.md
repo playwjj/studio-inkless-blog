@@ -2,7 +2,7 @@
 
 A modern, feature-rich blog built with Nuxt 3, Tailwind CSS, and deployed on Cloudflare Pages.
 
-> **⚡ Quick Links**: [Features](#-features) • [Tech Stack](#-tech-stack) • [Getting Started](#-getting-started) • [Database Setup](#-database-setup-with-d1-sql-studio) • [File Management](#-file-management-with-cloudflare-r2) • [API Docs](#-api-endpoints) • [Deployment](#-deployment-to-cloudflare-pages) • [Contributing](#-contributing)
+> **⚡ Quick Links**: [Features](#-features) • [Tech Stack](#-tech-stack) • [Getting Started](#-getting-started) • [Database Setup](#-database-setup-with-d1-sql-studio) • [File Management](#-file-management-with-cloudflare-r2) • [API Docs](#-api-endpoints) • [Deployment](#-deployment-to-cloudflare-pages) • [Security](#-security) • [Contributing](#-contributing)
 
 ## ✨ Features
 

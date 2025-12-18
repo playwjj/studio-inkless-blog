@@ -367,3 +367,61 @@ export async function deleteRows(
 
   return true
 }
+
+export async function executeQuery<T = any>(
+  sql: string,
+  params: any[] = []
+): Promise<T[]> {
+  const config = useRuntimeConfig()
+  const apiUrl = config.dbApiUrl
+  const apiKey = config.dbApiKey
+
+  if (!apiUrl || !apiKey) {
+    throw new Error('DB API configuration is missing')
+  }
+
+  const url = `${apiUrl}/api/query`
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ sql, params })
+    })
+
+    if (!response.ok) {
+      throw new Error(`DB API error: ${response.status} ${response.statusText}`)
+    }
+
+    const result = await response.json()
+
+    // Handle different response formats
+    // For query API: { success: true, data: { results: [...] } }
+    if (result.data && result.data.results && Array.isArray(result.data.results)) {
+      return result.data.results
+    }
+    // Direct array
+    if (Array.isArray(result)) {
+      return result
+    }
+    // { data: [...] }
+    if (result.data && Array.isArray(result.data)) {
+      return result.data
+    }
+    // { results: [...] }
+    if (result.results && Array.isArray(result.results)) {
+      return result.results
+    }
+    // Single object
+    if (result.data) {
+      return [result.data]
+    }
+    return []
+  } catch (error) {
+    console.error('Failed to execute query:', error)
+    throw error
+  }
+}

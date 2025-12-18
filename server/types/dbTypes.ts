@@ -75,6 +75,11 @@ export interface DbPage {
   author_id?: number
   status: 'draft' | 'published' | 'archived'
   published_at?: string
+  type: 'page' | 'url'
+  show_to_header_menu: number
+  show_to_footer_menu: number
+  sort: number
+  target?: string
   content?: string
   blocks?: string  // JSON
   template: string

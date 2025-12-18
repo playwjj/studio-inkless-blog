@@ -34,29 +34,17 @@
         <!-- Quick Links -->
         <div>
           <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">Quick Links</h3>
-          <ul class="space-y-3">
-            <li>
-              <NuxtLink to="/" class="group inline-flex items-center text-gray-600 hover:text-primary-600 text-sm transition-colors">
+          <ul v-if="footerMenu && footerMenu.length > 0" class="space-y-3">
+            <li v-for="item in footerMenu" :key="item.id">
+              <NuxtLink
+                :to="item.url"
+                :target="item.target"
+                class="group inline-flex items-center text-gray-600 hover:text-primary-600 text-sm transition-colors"
+              >
                 <svg class="w-4 h-4 mr-2 opacity-0 group-hover:opacity-100 -ml-6 group-hover:ml-0 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                 </svg>
-                Home
-              </NuxtLink>
-            </li>
-            <li>
-              <NuxtLink to="/blog" class="group inline-flex items-center text-gray-600 hover:text-primary-600 text-sm transition-colors">
-                <svg class="w-4 h-4 mr-2 opacity-0 group-hover:opacity-100 -ml-6 group-hover:ml-0 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
-                Blog
-              </NuxtLink>
-            </li>
-            <li>
-              <NuxtLink to="/about" class="group inline-flex items-center text-gray-600 hover:text-primary-600 text-sm transition-colors">
-                <svg class="w-4 h-4 mr-2 opacity-0 group-hover:opacity-100 -ml-6 group-hover:ml-0 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
-                About
+                {{ item.title }}
               </NuxtLink>
             </li>
           </ul>
@@ -142,4 +130,8 @@ const { siteConfig, getCopyright } = useSiteConfig()
 
 // Fetch categories for footer
 const { data: categories } = await useFetch('/api/categories')
+
+// Fetch footer menu items
+const { data: menuData } = await useFetch('/api/menu?type=footer')
+const footerMenu = computed(() => menuData.value?.items || [])
 </script>

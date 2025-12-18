@@ -46,7 +46,7 @@
 
               <div>
                 <label for="slug" class="block text-xs font-medium text-gray-700 mb-1.5">
-                  URL Slug <span class="text-red-500">*</span>
+                  {{ formData.type === 'url' ? 'URL / Path' : 'URL Slug' }} <span class="text-red-500">*</span>
                 </label>
                 <div class="flex gap-2">
                   <input
@@ -54,11 +54,12 @@
                     v-model="formData.slug"
                     type="text"
                     class="flex-1 px-3 py-1.5 border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none font-mono text-sm"
-                    placeholder="url-friendly-slug"
+                    :placeholder="formData.type === 'url' ? '/ or /path or https://example.com' : 'url-friendly-slug'"
                     @input="onSlugInput"
                     @blur="() => { setTouched('slug'); validateField('slug', formData) }"
                   />
                   <button
+                    v-if="formData.type === 'page'"
                     type="button"
                     @click="generateSlug"
                     class="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm hover:bg-gray-50 transition-colors whitespace-nowrap"
@@ -68,9 +69,10 @@
                   </button>
                 </div>
                 <p v-if="touched.slug && errors.slug" class="mt-1 text-xs text-red-600">{{ errors.slug }}</p>
-                <p class="mt-1 text-xs text-gray-500">URL path for the page, use lowercase letters and hyphens</p>
+                <p v-if="formData.type === 'page'" class="mt-1 text-xs text-gray-500">URL path for the page, use lowercase letters and hyphens</p>
+                <p v-else class="mt-1 text-xs text-gray-500">Enter a path (/, /test1/test2) or full URL (https://example.com)</p>
                 <a
-                  v-if="formData.slug"
+                  v-if="formData.slug && formData.type === 'page'"
                   :href="`/${formData.slug}`"
                   target="_blank"
                   class="mt-2 inline-flex items-center text-xs text-blue-600 hover:text-blue-800"
@@ -98,7 +100,7 @@
           </div>
 
           <!-- Content editor -->
-          <div class="border border-gray-200 p-5">
+          <div v-if="formData.type === 'page'" class="border border-gray-200 p-5">
             <label for="content" class="block text-xs font-medium text-gray-700 mb-1.5">
               Page Content
             </label>
@@ -224,6 +226,20 @@
             <h3 class="text-sm font-semibold text-gray-900 mb-4">Publish Settings</h3>
             <div class="space-y-3">
               <div>
+                <label for="type" class="block text-xs font-medium text-gray-700 mb-1.5">
+                  Page Type
+                </label>
+                <select
+                  id="type"
+                  v-model="formData.type"
+                  class="w-full px-3 py-1.5 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none"
+                >
+                  <option value="page">Page</option>
+                  <option value="url">URL</option>
+                </select>
+              </div>
+
+              <div>
                 <label for="status" class="block text-xs font-medium text-gray-700 mb-1.5">
                   Status
                 </label>
@@ -252,6 +268,66 @@
             </div>
           </div>
 
+          <!-- Menu Display Settings -->
+          <div class="border border-gray-200 p-5">
+            <h3 class="text-sm font-semibold text-gray-900 mb-4">Menu Display</h3>
+            <div class="space-y-3">
+              <label class="flex items-center text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  v-model="formData.show_to_header_menu"
+                  class="mr-2"
+                />
+                Show in Header Menu
+              </label>
+              <label class="flex items-center text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  v-model="formData.show_to_footer_menu"
+                  class="mr-2"
+                />
+                Show in Footer Menu
+              </label>
+              <div>
+                <label for="sort" class="block text-xs font-medium text-gray-700 mb-1.5">
+                  Sort Order
+                </label>
+                <input
+                  id="sort"
+                  v-model.number="formData.sort"
+                  type="number"
+                  min="0"
+                  class="w-full px-3 py-1.5 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none"
+                  placeholder="0"
+                />
+                <p class="mt-1 text-xs text-gray-500">Lower numbers appear first (0 is default)</p>
+              </div>
+              <div>
+                <label for="target" class="block text-xs font-medium text-gray-700 mb-1.5">
+                  Link Target
+                </label>
+                <select
+                  id="target"
+                  v-model="formData.target"
+                  class="w-full px-3 py-1.5 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none"
+                >
+                  <option value="">Default</option>
+                  <option value="_self">_self (same window)</option>
+                  <option value="_blank">_blank (new window)</option>
+                  <option value="custom">Custom...</option>
+                </select>
+                <input
+                  v-if="formData.target === 'custom'"
+                  v-model="formData.target"
+                  type="text"
+                  class="w-full px-3 py-1.5 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none mt-2"
+                  placeholder="Enter custom target value"
+                />
+                <p class="mt-1 text-xs text-gray-500">How the link should open (leave empty for default)</p>
+              </div>
+            </div>
+          </div>
+
           <!-- Author selection -->
           <div class="border border-gray-200 p-5">
             <h3 class="text-sm font-semibold text-gray-900 mb-4">Author</h3>
@@ -273,7 +349,7 @@
           </div>
 
           <!-- Cover image -->
-          <div class="border border-gray-200 p-5">
+          <div v-if="formData.type === 'page'" class="border border-gray-200 p-5">
             <h3 class="text-sm font-semibold text-gray-900 mb-4">Cover Image</h3>
             <AdminImageUploader
               v-model="formData.cover_image"
@@ -286,7 +362,7 @@
           </div>
 
           <!-- Appearance -->
-          <div class="border border-gray-200 p-5">
+          <div v-if="formData.type === 'page'" class="border border-gray-200 p-5">
             <h3 class="text-sm font-semibold text-gray-900 mb-4">Appearance</h3>
             <div class="space-y-3">
               <div>
@@ -339,7 +415,7 @@
           </div>
 
           <!-- Page Options -->
-          <div class="border border-gray-200 p-5">
+          <div v-if="formData.type === 'page'" class="border border-gray-200 p-5">
             <h3 class="text-sm font-semibold text-gray-900 mb-4">Page Options</h3>
             <div class="space-y-2">
               <label class="flex items-center text-sm text-gray-700">
@@ -418,12 +494,38 @@ definePageMeta({
 
 import { createValidation, required, pattern, minLength } from '~/composables/useFormValidation'
 
+// Custom slug validator that changes based on page type
+const validateSlug = (value: string, formData: any) => {
+  if (!value) {
+    return 'Please enter a slug or URL'
+  }
+
+  if (formData.type === 'url') {
+    // For URL type, allow:
+    // 1. Paths starting with / (e.g., /, /test1/test2)
+    // 2. Full URLs (http:// or https://)
+    const isPath = /^\//.test(value)
+    const isFullUrl = /^https?:\/\/.+/.test(value)
+
+    if (!isPath && !isFullUrl) {
+      return 'URL must be a path starting with / or a full URL (http:// or https://)'
+    }
+  } else {
+    // For page type, use original validation
+    if (!/^[a-z0-9-]+$/.test(value)) {
+      return 'Slug may only contain lowercase letters, numbers and hyphens'
+    }
+  }
+
+  return null
+}
+
 const { errors, touched, validateField, validateAll, setTouched } = createValidation<{
   title: string
   slug: string
 }>({
   title: [required('Please enter a title'), minLength(3, 'Title is too short')],
-  slug: [required('Please enter a slug'), pattern(/^[a-z0-9-]+$/, 'Slug may only contain lowercase letters, numbers and hyphens')]
+  slug: [validateSlug]
 })
 
 const router = useRouter()
@@ -451,6 +553,11 @@ const formData = reactive({
   description: '',
   author_id: '',
   status: 'draft',
+  type: 'page',
+  show_to_header_menu: false,
+  show_to_footer_menu: false,
+  sort: 0,
+  target: '',
   published_at: '',
   content: '',
   template: 'default',

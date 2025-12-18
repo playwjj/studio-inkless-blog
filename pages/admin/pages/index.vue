@@ -4,7 +4,7 @@
     <div class="flex items-center justify-between mb-8">
       <div>
         <h1 class="text-2xl font-semibold text-gray-900">Pages</h1>
-        <p class="mt-1 text-sm text-gray-500">Manage custom pages</p>
+        <p class="mt-1 text-sm text-gray-500">Manage custom pages - Drag rows to reorder</p>
       </div>
       <button
         @click="navigateTo('/admin/pages/new')"
@@ -70,7 +70,7 @@
       </div>
 
       <!-- No results state -->
-      <div v-else-if="filteredPages.length === 0" class="py-12 text-center">
+      <div v-else-if="displayPages.length === 0" class="py-12 text-center">
         <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
@@ -83,14 +83,15 @@
         <table class="w-full">
           <thead class="bg-gray-50 border-b border-gray-200">
             <tr>
+              <th class="px-2 py-2 w-8"></th>
               <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Page
               </th>
               <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Template
+                Status
               </th>
               <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
+                Sort
               </th>
               <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Views
@@ -103,12 +104,25 @@
               </th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-200">
-            <tr
-              v-for="page in filteredPages"
-              :key="page.id"
-              class="hover:bg-gray-50 transition-colors"
-            >
+          <draggable
+            v-model="displayPages"
+            tag="tbody"
+            item-key="id"
+            handle=".drag-handle"
+            class="divide-y divide-gray-200"
+            @end="onDragEnd"
+          >
+            <template #item="{ element: page }">
+              <tr class="hover:bg-gray-50 transition-colors">
+              <!-- Drag Handle -->
+              <td class="px-2 py-3">
+                <div class="drag-handle cursor-move text-gray-400 hover:text-gray-600">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
+                  </svg>
+                </div>
+              </td>
+
               <!-- Page (with cover image and title) -->
               <td class="px-4 py-3">
                 <div class="flex items-center gap-3">
@@ -122,8 +136,13 @@
                     v-else
                     class="w-12 h-12 bg-gray-100 flex items-center justify-center flex-shrink-0"
                   >
-                    <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <!-- Page icon -->
+                    <svg v-if="page.type === 'page'" class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <!-- URL/Link icon -->
+                    <svg v-else class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                     </svg>
                   </div>
                   <div class="min-w-0">
@@ -131,11 +150,6 @@
                     <p class="text-xs text-gray-500 truncate">{{ page.slug }}</p>
                   </div>
                 </div>
-              </td>
-
-              <!-- Template -->
-              <td class="px-4 py-3 whitespace-nowrap">
-                <span class="text-xs text-gray-600">{{ page.template || 'default' }}</span>
               </td>
 
               <!-- Status -->
@@ -151,6 +165,11 @@
                 >
                   {{ page.status === 'published' ? 'Published' : page.status === 'draft' ? 'Draft' : 'Archived' }}
                 </button>
+              </td>
+
+              <!-- Sort -->
+              <td class="px-4 py-3 whitespace-nowrap text-xs text-gray-900">
+                {{ page.sort || 0 }}
               </td>
 
               <!-- Views -->
@@ -186,8 +205,9 @@
                   </button>
                 </div>
               </td>
-            </tr>
-          </tbody>
+              </tr>
+            </template>
+          </draggable>
         </table>
       </div>
     </div>
@@ -195,6 +215,8 @@
 </template>
 
 <script setup lang="ts">
+import draggable from 'vuedraggable'
+
 definePageMeta({
   layout: 'admin'
 })
@@ -215,8 +237,10 @@ interface Page {
   slug: string
   description?: string
   status: 'draft' | 'published' | 'archived'
+  type: 'page' | 'url'
   template: string
   cover_image_url?: string
+  sort: number
   view_count: number
   created_at: string
   updated_at: string
@@ -245,6 +269,9 @@ async function loadPages() {
   }
 }
 
+// Display pages for drag and drop
+const displayPages = ref<Page[]>([])
+
 const filteredPages = computed(() => {
   let filtered = pages.value
 
@@ -263,6 +290,11 @@ const filteredPages = computed(() => {
 
   return filtered
 })
+
+// Sync displayPages with filteredPages
+watch(filteredPages, (newFiltered) => {
+  displayPages.value = [...newFiltered]
+}, { immediate: true })
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString)
@@ -313,6 +345,50 @@ async function deletePage(id: number, title: string) {
           console.error('Delete page error:', error)
         }
     }
-  }) 
+  })
+}
+
+// Handle drag and drop reordering
+const isSorting = ref(false)
+
+async function onDragEnd() {
+  if (isSorting.value) return
+
+  try {
+    isSorting.value = true
+
+    // Update sort values based on new order (use index * 10 for spacing)
+    const updates = displayPages.value.map((page, index) => ({
+      id: page.id,
+      sort: index * 10
+    }))
+
+    // Update each page's sort value
+    await Promise.all(
+      updates.map(update =>
+        $fetch(`/api/admin/pages/${update.id}`, {
+          method: 'PUT',
+          body: { sort: update.sort }
+        })
+      )
+    )
+
+    // Update local state
+    updates.forEach(update => {
+      const page = pages.value.find(p => p.id === update.id)
+      if (page) {
+        page.sort = update.sort
+      }
+    })
+
+    success('Order updated successfully')
+  } catch (error: any) {
+    showError('Failed to update order. Please try again.')
+    console.error('Update order error:', error)
+    // Reload pages to restore original order
+    await loadPages()
+  } finally {
+    isSorting.value = false
+  }
 }
 </script>

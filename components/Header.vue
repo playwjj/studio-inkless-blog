@@ -18,22 +18,13 @@
 
         <div class="hidden md:flex items-center space-x-8">
           <NuxtLink
-            to="/"
+            v-for="item in headerMenu"
+            :key="item.id"
+            :to="item.url"
+            :target="item.target"
             class="text-gray-700 hover:text-primary-600 transition-colors"
           >
-            Home
-          </NuxtLink>
-          <NuxtLink
-            to="/blog"
-            class="text-gray-700 hover:text-primary-600 transition-colors"
-          >
-            Blog
-          </NuxtLink>
-          <NuxtLink
-            to="/about"
-            class="text-gray-700 hover:text-primary-600 transition-colors"
-          >
-            About
+            {{ item.title }}
           </NuxtLink>
         </div>
 
@@ -67,25 +58,14 @@
 
       <div v-if="mobileMenuOpen" class="md:hidden py-4 space-y-2">
         <NuxtLink
-          to="/"
+          v-for="item in headerMenu"
+          :key="item.id"
+          :to="item.url"
+          :target="item.target"
           class="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"
           @click="mobileMenuOpen = false"
         >
-          Home
-        </NuxtLink>
-        <NuxtLink
-          to="/blog"
-          class="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"
-          @click="mobileMenuOpen = false"
-        >
-          Blog
-        </NuxtLink>
-        <NuxtLink
-          to="/about"
-          class="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"
-          @click="mobileMenuOpen = false"
-        >
-          About
+          {{ item.title }}
         </NuxtLink>
       </div>
     </nav>
@@ -100,4 +80,8 @@ const mobileMenuOpen = ref(false)
 const toggleMobileMenu = () => {
   mobileMenuOpen.value = !mobileMenuOpen.value
 }
+
+// Fetch header menu items
+const { data: menuData } = await useFetch('/api/menu?type=header')
+const headerMenu = computed(() => menuData.value?.items || [])
 </script>

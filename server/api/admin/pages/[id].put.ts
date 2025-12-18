@@ -53,6 +53,13 @@ export default defineEventHandler(async (event) => {
     }
     if (body.published_at !== undefined) updateData.published_at = body.published_at || null
 
+    // Type and menu display
+    if (body.type !== undefined && ['page', 'url'].includes(body.type)) updateData.type = body.type
+    if (body.show_to_header_menu !== undefined) updateData.show_to_header_menu = body.show_to_header_menu ? 1 : 0
+    if (body.show_to_footer_menu !== undefined) updateData.show_to_footer_menu = body.show_to_footer_menu ? 1 : 0
+    if (body.sort !== undefined) updateData.sort = parseInt(body.sort)
+    if (body.target !== undefined) updateData.target = body.target || null
+
     // SEO fields
     if (body.meta_title !== undefined) updateData.meta_title = body.meta_title || null
     if (body.meta_description !== undefined) updateData.meta_description = body.meta_description || null

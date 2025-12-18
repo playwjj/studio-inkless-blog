@@ -5,11 +5,11 @@ export default defineEventHandler(async (event) => {
     // Require authentication
     await requireAuth(event)
 
-    // Fetch pages
+    // Fetch pages, sorted by sort order first, then by created_at
     const pagesResponse = await fetchFromDb<DbPage>('pages', {
       limit: 1000,
-      sortBy: 'created_at',
-      sortOrder: 'desc'
+      sortBy: 'sort',
+      sortOrder: 'asc'
     })
 
     const pages = pagesResponse.data || []

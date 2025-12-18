@@ -9,6 +9,12 @@ CREATE TABLE pages (
     status TEXT DEFAULT 'draft' CHECK(status IN ('draft', 'published', 'archived')),
     published_at TEXT,
 
+    type TEXT DEFAULT 'page' CHECK(type IN ('page', 'url')),
+    show_to_header_menu INTEGER DEFAULT 0,
+    show_to_footer_menu INTEGER DEFAULT 0,
+    sort INTEGER DEFAULT 0,
+    target TEXT,
+
     content TEXT,  
     blocks TEXT,   
     template TEXT DEFAULT 'default',  

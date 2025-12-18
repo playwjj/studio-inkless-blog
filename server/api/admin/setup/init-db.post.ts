@@ -244,7 +244,12 @@ export default defineEventHandler(async (event) => {
     view_count INTEGER DEFAULT 0,
     conversion_count INTEGER DEFAULT 0,
     created_at TEXT DEFAULT (datetime('now')),
-    "updated_at" TEXT DEFAULT (datetime('now'))
+    "updated_at" TEXT DEFAULT (datetime('now')),
+    type TEXT DEFAULT 'page' CHECK(type IN ('page', 'url')),
+    show_to_header_menu INTEGER DEFAULT 0,
+    show_to_footer_menu INTEGER DEFAULT 0,
+    sort INTEGER DEFAULT 0,
+    target TEXT
 )`
       },
       {

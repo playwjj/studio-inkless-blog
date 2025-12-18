@@ -66,7 +66,8 @@ export default defineEventHandler(async (event) => {
       category: category?.name || 'Uncategorized',
       tags: articleTags,
       publishedAt: article.published_at,
-      readTime: article.read_time
+      readTime: article.read_time,
+      viewCount: article.view_count || 0
     }
 
     return post

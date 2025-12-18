@@ -1,7 +1,7 @@
 import type { DbPage, DbAuthor, DbPageBlock } from '~/server/types/dbTypes'
 
 export default defineEventHandler(async (event) => {
-  const slug = getRouterParam(event, 'slug')
+  const slug = getQuery(event).slug as string
 
   if (!slug) {
     throw createError({

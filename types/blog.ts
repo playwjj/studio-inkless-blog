@@ -13,6 +13,7 @@ export interface BlogPost {
   category: string
   tags: string[]
   readTime: number
+  viewCount: number
 }
 
 export type BlogListItem = Omit<BlogPost, 'content'>

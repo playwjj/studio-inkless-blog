@@ -14,6 +14,16 @@ export default defineEventHandler(async (event) => {
       search: query.search ? String(query.search) : undefined
     })
 
+    // Fetch featured article (is_featured=1, most recent)
+    let featuredArticle: DbArticle | null = null
+    const featuredArticles = articlesResponse.data.filter(a => a.is_featured === 1 && a.status === 'published')
+    if (featuredArticles.length > 0) {
+      // Get the most recent featured article
+      featuredArticle = featuredArticles.sort((a, b) =>
+        new Date(b.published_at).getTime() - new Date(a.published_at).getTime()
+      )[0]
+    }
+
     // Fetch related data
     const [authorsResponse, categoriesResponse, tagsResponse] = await Promise.all([
       fetchFromDb<DbAuthor>('authors', { limit: 100 }),
@@ -25,8 +35,8 @@ export default defineEventHandler(async (event) => {
     const categories = categoriesResponse.data
     const tags = tagsResponse.data
 
-    // Map articles to BlogListItem format
-    let posts: BlogListItem[] = articlesResponse.data.map((article) => {
+    // Helper function to convert article to BlogListItem
+    const mapArticleToBlogItem = (article: DbArticle): BlogListItem => {
       const author = authors.find(a => a.id === article.author_id)
       const category = categories.find(c => c.id === article.category_id)
 
@@ -55,9 +65,18 @@ export default defineEventHandler(async (event) => {
         category: category?.name || 'Uncategorized',
         tags: articleTags,
         publishedAt: article.published_at,
-        readTime: article.read_time
+        readTime: article.read_time,
+        viewCount: article.view_count || 0
       }
-    })
+    }
+
+    // Map featured article if exists
+    const featuredPost = featuredArticle ? mapArticleToBlogItem(featuredArticle) : null
+
+    // Map all articles to BlogListItem format (excluding featured for regular posts)
+    let posts: BlogListItem[] = articlesResponse.data
+      .filter(article => !featuredArticle || article.id !== featuredArticle.id)
+      .map(mapArticleToBlogItem)
 
     // Filter by category
     if (query.category && typeof query.category === 'string') {
@@ -87,6 +106,7 @@ export default defineEventHandler(async (event) => {
     const paginatedPosts = posts.slice(startIndex, endIndex)
 
     return {
+      featuredPost,
       posts: paginatedPosts,
       pagination: {
         page,
@@ -99,6 +119,7 @@ export default defineEventHandler(async (event) => {
     console.error('Failed to fetch posts:', error)
     // Fallback to empty response
     return {
+      featuredPost: null,
       posts: [],
       pagination: {
         page: 1,

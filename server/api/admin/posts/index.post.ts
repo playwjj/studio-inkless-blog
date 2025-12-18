@@ -31,6 +31,8 @@ export default defineEventHandler(async (event) => {
       category_id: parseInt(body.category_id),
       cover_image_url: body.cover_image_url || null,
       read_time: body.read_time ? parseInt(body.read_time) : 5,
+      is_featured: body.is_featured ? parseInt(body.is_featured) : 0,
+      view_count: 0,  // Initialize view count
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       tag_names: body.tags || '',  // Store tags as comma-separated string, default to empty string

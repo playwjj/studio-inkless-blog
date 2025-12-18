@@ -48,6 +48,7 @@ export default defineEventHandler(async (event) => {
     if (body.excerpt !== undefined) updateData.excerpt = body.excerpt
     if (body.cover_image_url !== undefined) updateData.cover_image_url = body.cover_image_url
     if (body.read_time) updateData.read_time = parseInt(body.read_time)
+    if (body.is_featured !== undefined) updateData.is_featured = parseInt(body.is_featured)
     if (body.author_id) updateData.author_id = parseInt(body.author_id)
     if (body.category_id) updateData.category_id = parseInt(body.category_id)
 

@@ -12,6 +12,8 @@ export interface DbArticle {
   status: 'draft' | 'published' | 'archived'
   published_at: string  // NOT NULL in database
   read_time: number
+  is_featured: number  // 0 or 1 (SQLite boolean)
+  view_count: number  // Number of views
   created_at: string
   updated_at: string
 }

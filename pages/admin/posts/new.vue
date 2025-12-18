@@ -144,6 +144,23 @@
                   class="w-full px-3 py-1.5 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none"
                 />
               </div>
+
+              <div class="pt-3 border-t border-gray-200">
+                <label class="flex items-center cursor-pointer">
+                  <input
+                    id="is_featured"
+                    v-model="formData.is_featured"
+                    type="checkbox"
+                    :true-value="1"
+                    :false-value="0"
+                    class="w-4 h-4 text-gray-900 border-gray-300 focus:ring-gray-900"
+                  />
+                  <span class="ml-2 text-xs font-medium text-gray-700">
+                    Featured Article
+                  </span>
+                </label>
+                <p class="mt-1 ml-6 text-xs text-gray-500">Display this post as featured on the homepage</p>
+              </div>
             </div>
           </div>
 
@@ -300,6 +317,7 @@ const formData = reactive({
   status: 'draft',
   published_at: '',
   read_time: 5,
+  is_featured: 0,
   author_id: '',
   category_id: '',
   tags: '',

@@ -236,12 +236,61 @@
 </template>
 
 <script setup lang="ts">
-useSeoMeta({
-  title: 'About - Studio Inkless Blog',
-  ogTitle: 'About Studio Inkless Blog',
-  description: 'Learn about Studio Inkless Blog - a modern blogging platform built with Nuxt 3, Tailwind CSS, and cutting-edge technologies.',
-  ogDescription: 'A modern blogging platform built with Nuxt 3, Tailwind CSS, and deployed on Cloudflare Pages.',
-  ogImage: 'https://images.pexels.com/photos/11035471/pexels-photo-11035471.jpeg?auto=compress&cs=tinysrgb&w=1200',
-  twitterCard: 'summary_large_image',
-})
+const { siteConfig } = useSiteConfig()
+
+// Try to fetch page-specific data from pages table (slug = '/about')
+// If not found, will fall back to site config
+const { data: pageData } = await useFetch(`/api/pages/page?slug=${encodeURIComponent('/about')}`).catch(() => ({ data: null }))
+
+// Configure SEO Meta tags
+if (pageData.value) {
+  // Use page-specific SEO data from pages table
+  const metaTitle = pageData.value.meta_title || pageData.value.title || 'About - Studio Inkless Blog'
+  const metaDescription = pageData.value.meta_description || pageData.value.description || siteConfig.value?.description || 'Learn about Studio Inkless Blog'
+  const ogImage = pageData.value.og_image || pageData.value.cover_image || siteConfig.value?.og_image || 'https://images.pexels.com/photos/11035471/pexels-photo-11035471.jpeg?auto=compress&cs=tinysrgb&w=1200'
+
+  useSeoMeta({
+    title: () => metaTitle,
+    ogTitle: () => pageData.value?.og_title || metaTitle,
+    description: () => metaDescription,
+    ogDescription: () => pageData.value?.og_description || metaDescription,
+    ogImage: () => ogImage,
+    ogUrl: () => pageData.value?.canonical_url || siteConfig.value?.og_url || '',
+    twitterCard: 'summary_large_image',
+    twitterTitle: () => pageData.value?.og_title || metaTitle,
+    twitterDescription: () => pageData.value?.og_description || metaDescription,
+    twitterImage: () => ogImage,
+  })
+
+  // Add keywords meta tag if available
+  if (pageData.value.meta_keywords) {
+    useHead({
+      meta: [
+        { name: 'keywords', content: pageData.value.meta_keywords }
+      ]
+    })
+  }
+
+  // Add canonical URL if specified
+  if (pageData.value.canonical_url) {
+    useHead({
+      link: [
+        { rel: 'canonical', href: pageData.value.canonical_url }
+      ]
+    })
+  }
+} else {
+  // Fall back to site-wide config with hardcoded defaults
+  useSeoMeta({
+    title: () => siteConfig.value?.title?.replace('${title}', 'About') || 'About - Studio Inkless Blog',
+    ogTitle: () => siteConfig.value?.og_title || 'About Studio Inkless Blog',
+    description: () => siteConfig.value?.description || 'Learn about Studio Inkless Blog - a modern blogging platform built with Nuxt 3, Tailwind CSS, and cutting-edge technologies.',
+    ogDescription: () => siteConfig.value?.og_description || 'A modern blogging platform built with Nuxt 3, Tailwind CSS, and deployed on Cloudflare Pages.',
+    ogImage: () => siteConfig.value?.og_image || 'https://images.pexels.com/photos/11035471/pexels-photo-11035471.jpeg?auto=compress&cs=tinysrgb&w=1200',
+    twitterCard: 'summary_large_image',
+    twitterTitle: () => siteConfig.value?.twitter_title || 'About Studio Inkless Blog',
+    twitterDescription: () => siteConfig.value?.twitter_description || 'A modern blogging platform built with Nuxt 3, Tailwind CSS, and deployed on Cloudflare Pages.',
+    twitterImage: () => siteConfig.value?.twitter_image || 'https://images.pexels.com/photos/11035471/pexels-photo-11035471.jpeg?auto=compress&cs=tinysrgb&w=1200',
+  })
+}
 </script>

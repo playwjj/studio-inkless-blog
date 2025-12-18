@@ -94,7 +94,10 @@
                 Sort
               </th>
               <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Views
+                Menu
+              </th>
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Published
               </th>
               <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Created
@@ -172,9 +175,24 @@
                 {{ page.sort || 0 }}
               </td>
 
-              <!-- Views -->
-              <td class="px-4 py-3 whitespace-nowrap text-xs text-gray-900">
-                {{ page.view_count }}
+              <!-- Menu Visibility -->
+              <td class="px-4 py-3 whitespace-nowrap">
+                <div class="flex gap-1">
+                  <span v-if="page.show_to_header_menu === 1" class="inline-flex px-1.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-800">
+                    Header
+                  </span>
+                  <span v-if="page.show_to_footer_menu === 1" class="inline-flex px-1.5 py-0.5 text-xs font-medium bg-purple-100 text-purple-800">
+                    Footer
+                  </span>
+                  <span v-if="page.show_to_header_menu !== 1 && page.show_to_footer_menu !== 1" class="text-gray-400">
+                    -
+                  </span>
+                </div>
+              </td>
+
+              <!-- Published -->
+              <td class="px-4 py-3 whitespace-nowrap text-xs text-gray-500">
+                {{ page.published_at ? formatDate(page.published_at) : '-' }}
               </td>
 
               <!-- Created -->
@@ -241,7 +259,9 @@ interface Page {
   template: string
   cover_image_url?: string
   sort: number
-  view_count: number
+  show_to_header_menu: number
+  show_to_footer_menu: number
+  published_at?: string
   created_at: string
   updated_at: string
 }

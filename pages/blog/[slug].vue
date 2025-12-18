@@ -319,6 +319,49 @@ const { getTitle, siteConfig } = useSiteConfig()
 
 const linkCopied = ref(false)
 
+// Track view count when article loads
+onMounted(async () => {
+  if (data.value && slug) {
+    try {
+      // Check localStorage to prevent duplicate counting
+      const viewedArticlesKey = 'viewed_articles'
+      const viewedData = localStorage.getItem(viewedArticlesKey)
+      const viewedArticles = viewedData ? JSON.parse(viewedData) : {}
+
+      // Check if article was viewed in the last 24 hours
+      const articleId = data.value.id
+      const lastViewed = viewedArticles[articleId]
+      const now = Date.now()
+      const twentyFourHours = 24 * 60 * 60 * 1000
+
+      if (lastViewed && (now - lastViewed) < twentyFourHours) {
+        // Already viewed within 24 hours, don't count
+        return
+      }
+
+      // Track the view
+      await $fetch(`/api/posts/${slug}/view`, {
+        method: 'POST'
+      })
+
+      // Save to localStorage
+      viewedArticles[articleId] = now
+
+      // Clean up old entries (older than 7 days)
+      const sevenDays = 7 * 24 * 60 * 60 * 1000
+      Object.keys(viewedArticles).forEach(key => {
+        if (now - viewedArticles[key] > sevenDays) {
+          delete viewedArticles[key]
+        }
+      })
+
+      localStorage.setItem(viewedArticlesKey, JSON.stringify(viewedArticles))
+    } catch (error) {
+      console.error('Failed to track view:', error)
+    }
+  }
+})
+
 const formattedContent = computed(() => {
   if (!data.value?.content) return ''
 

@@ -188,7 +188,9 @@ export default defineEventHandler(async (event) => {
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     status TEXT DEFAULT 'published',
-    "content" TEXT
+    "content" TEXT,
+    is_featured INTEGER DEFAULT 0,
+    view_count INTEGER DEFAULT 0
 )`
       },
       {

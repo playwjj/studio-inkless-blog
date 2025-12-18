@@ -105,7 +105,7 @@
     </section>
 
     <!-- Featured Post Section -->
-    <section class="bg-gray-50 py-16 md:py-24">
+    <section v-if="data?.featuredPost" class="bg-gray-50 py-16 md:py-24">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center gap-3 mb-12">
           <div class="w-1 h-8 bg-gradient-to-b from-primary-600 to-primary-400 rounded-full"></div>
@@ -121,8 +121,8 @@
         </div>
 
         <FeaturedPostCard
-          v-else-if="data?.posts && data.posts.length > 0"
-          :post="data.posts[0]"
+          v-else
+          :post="data.featuredPost"
         />
       </div>
     </section>
@@ -160,7 +160,7 @@
 
         <div v-else-if="data?.posts" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           <BlogCard
-            v-for="post in data.posts.slice(1, 4)"
+            v-for="post in data.posts.slice(0, 3)"
             :key="post.id"
             :post="post"
           />
@@ -306,27 +306,70 @@
 <script setup lang="ts">
 const { siteConfig } = useSiteConfig()
 
-// Fetch posts
+// Fetch posts for display
 const { data, pending, error } = await useFetch('/api/posts', {
   query: { limit: 10 }
 })
 
-// Fetch categories
+// Fetch categories for display
 const { data: categories, pending: categoriesPending } = await useFetch('/api/categories')
 
-// SEO Meta - Home page uses site config directly
-useSeoMeta({
-  title: () => siteConfig.value?.og_title || 'Studio Inkless Blog',
-  ogTitle: () => siteConfig.value?.og_title || 'Studio Inkless Blog',
-  description: () => siteConfig.value?.description || '',
-  ogDescription: () => siteConfig.value?.og_description || '',
-  ogImage: () => siteConfig.value?.og_image || '',
-  ogUrl: () => siteConfig.value?.og_url || '',
-  twitterCard: 'summary_large_image',
-  twitterTitle: () => siteConfig.value?.twitter_title || '',
-  twitterDescription: () => siteConfig.value?.twitter_description || '',
-  twitterImage: () => siteConfig.value?.twitter_image || '',
-})
+// Try to fetch page-specific data from pages table (slug = '/')
+// If not found, will fall back to site config
+const { data: pageData } = await useFetch(`/api/pages/page?slug=${encodeURIComponent('/')}`).catch(() => ({ data: null }))
+
+// Configure SEO Meta tags
+if (pageData.value) {
+  // Use page-specific SEO data from pages table
+  const metaTitle = pageData.value.meta_title || pageData.value.title || siteConfig.value?.og_title || 'Studio Inkless Blog'
+  const metaDescription = pageData.value.meta_description || pageData.value.description || siteConfig.value?.description || ''
+  const ogImage = pageData.value.og_image || pageData.value.cover_image || siteConfig.value?.og_image || ''
+
+  useSeoMeta({
+    title: () => metaTitle,
+    ogTitle: () => pageData.value?.og_title || metaTitle,
+    description: () => metaDescription,
+    ogDescription: () => pageData.value?.og_description || metaDescription,
+    ogImage: () => ogImage,
+    ogUrl: () => siteConfig.value?.og_url || '',
+    twitterCard: 'summary_large_image',
+    twitterTitle: () => pageData.value?.og_title || metaTitle,
+    twitterDescription: () => pageData.value?.og_description || metaDescription,
+    twitterImage: () => ogImage,
+  })
+
+  // Add keywords meta tag if available
+  if (pageData.value.meta_keywords) {
+    useHead({
+      meta: [
+        { name: 'keywords', content: pageData.value.meta_keywords }
+      ]
+    })
+  }
+
+  // Add canonical URL if specified
+  if (pageData.value.canonical_url) {
+    useHead({
+      link: [
+        { rel: 'canonical', href: pageData.value.canonical_url }
+      ]
+    })
+  }
+} else {
+  // Fall back to site-wide config
+  useSeoMeta({
+    title: () => siteConfig.value?.og_title || 'Studio Inkless Blog',
+    ogTitle: () => siteConfig.value?.og_title || 'Studio Inkless Blog',
+    description: () => siteConfig.value?.description || '',
+    ogDescription: () => siteConfig.value?.og_description || '',
+    ogImage: () => siteConfig.value?.og_image || '',
+    ogUrl: () => siteConfig.value?.og_url || '',
+    twitterCard: 'summary_large_image',
+    twitterTitle: () => siteConfig.value?.twitter_title || '',
+    twitterDescription: () => siteConfig.value?.twitter_description || '',
+    twitterImage: () => siteConfig.value?.twitter_image || '',
+  })
+}
 </script>
 
 <style scoped>

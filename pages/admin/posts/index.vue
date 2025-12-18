@@ -161,7 +161,7 @@
                 {{ formatDate(post.published_at) }}
               </td>
               <td class="px-4 py-3 whitespace-nowrap text-xs text-gray-500">
-                {{ post.views }}
+                {{ (post.view_count || 0).toLocaleString() }}
               </td>
               <td class="px-4 py-3 whitespace-nowrap text-right text-sm">
                 <div class="flex items-center justify-end space-x-2">

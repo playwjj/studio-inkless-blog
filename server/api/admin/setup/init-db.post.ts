@@ -116,7 +116,8 @@ export default defineEventHandler(async (event) => {
   "keywords" TEXT,
   "email" TEXT,
   "copyright_text" TEXT,
-  "twitter_handle" TEXT
+  "twitter_handle" TEXT,
+  "gtm_code" TEXT
 )`
       },
       {

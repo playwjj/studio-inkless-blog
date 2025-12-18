@@ -21,7 +21,8 @@ export default defineEventHandler(async (event) => {
       og_url,
       twitter_title,
       twitter_description,
-      twitter_image
+      twitter_image,
+      gtm_code
     } = body
 
     // Validate required fields
@@ -55,7 +56,8 @@ export default defineEventHandler(async (event) => {
       og_url: og_url?.trim() || '',
       twitter_title: twitter_title?.trim() || title.trim(),
       twitter_description: twitter_description?.trim() || description.trim(),
-      twitter_image: twitter_image?.trim() || ''
+      twitter_image: twitter_image?.trim() || '',
+      gtm_code: gtm_code?.trim() || ''
     }
 
     let updatedSite: DbSite

@@ -190,6 +190,26 @@
         </div>
       </div>
 
+      <!-- Analytics & Tracking -->
+      <div class="bg-white border border-gray-200 p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-6">Analytics & Tracking</h2>
+        <div class="space-y-4">
+          <div>
+            <label for="gtm_code" class="block text-sm font-medium text-gray-700 mb-1.5">
+              Google Tag Manager ID
+            </label>
+            <input
+              id="gtm_code"
+              v-model="formData.gtm_code"
+              type="text"
+              class="w-full px-3 py-2 text-sm border border-gray-200 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none"
+              placeholder="GTM-XXXXXXX"
+            />
+            <p class="mt-1 text-xs text-gray-500">Enter your GTM container ID. GTM will not load on admin pages.</p>
+          </div>
+        </div>
+      </div>
+
       <!-- Twitter Card settings -->
       <div class="bg-white border border-gray-200 p-6">
         <h2 class="text-lg font-semibold text-gray-900 mb-6">Twitter Card</h2>
@@ -302,6 +322,7 @@ interface SiteSettings {
   twitter_title: string
   twitter_description: string
   twitter_image: string
+  gtm_code?: string
 }
 
 const loading = ref(false)
@@ -325,7 +346,8 @@ const formData = reactive<SiteSettings>({
   og_url: '',
   twitter_title: '',
   twitter_description: '',
-  twitter_image: ''
+  twitter_image: '',
+  gtm_code: ''
 })
 
 // Load site settings on mount
@@ -384,7 +406,8 @@ const handleSubmit = async () => {
         og_url: formData.og_url,
         twitter_title: formData.twitter_title,
         twitter_description: formData.twitter_description,
-        twitter_image: formData.twitter_image
+        twitter_image: formData.twitter_image,
+        gtm_code: formData.gtm_code
       }
     })
 

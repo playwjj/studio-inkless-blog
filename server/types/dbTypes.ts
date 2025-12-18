@@ -67,6 +67,7 @@ export interface DbSite {
   twitter_title: string
   twitter_description: string
   twitter_image: string
+  gtm_code?: string
 }
 
 export interface DbPage {

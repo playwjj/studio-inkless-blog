@@ -16,7 +16,20 @@ export default defineNuxtConfig({
   ...(process.env.NODE_ENV === 'production' ? {
     nitro: {
       preset: 'cloudflare-pages',
-      serveStatic: true
+      serveStatic: true,
+      // Enable Node.js compatibility for Cloudflare Workers
+      // This provides polyfills for Node.js APIs like fs
+      cloudflare: {
+        pages: {
+          routes: {
+            exclude: ['/favicon.ico']
+          }
+        }
+      },
+      // Configure compatibility flags for Cloudflare Workers
+      compatibilityDate: '2024-11-01',
+      // Enable Node.js built-in modules compatibility
+      node: true
     }
   } : {}),
 

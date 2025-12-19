@@ -1,23 +1,38 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
 
+// Cache the S3 client to avoid re-initialization
+let cachedClient: S3Client | null = null
+
 /**
  * Get S3 client configured for Cloudflare R2
  */
 export function getR2Client() {
+  // Return cached client if available
+  if (cachedClient) {
+    return cachedClient
+  }
+
   const config = useRuntimeConfig()
 
   if (!config.r2AccountId || !config.r2AccessKeyId || !config.r2SecretAccessKey) {
     throw new Error('R2 configuration is missing. Please check environment variables.')
   }
 
-  return new S3Client({
+  // Create client with static credentials to avoid file system access
+  // This is critical for Cloudflare Pages/Workers compatibility
+  cachedClient = new S3Client({
     region: 'auto',
     endpoint: `https://${config.r2AccountId}.r2.cloudflarestorage.com`,
     credentials: {
       accessKeyId: config.r2AccessKeyId,
       secretAccessKey: config.r2SecretAccessKey
-    }
+    },
+    // Disable all credential chain providers that might access the file system
+    // This forces the SDK to use only the explicitly provided credentials
+    forcePathStyle: true
   })
+
+  return cachedClient
 }
 
 /**

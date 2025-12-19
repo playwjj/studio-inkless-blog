@@ -19,6 +19,8 @@ export default defineNuxtConfig({
       serveStatic: true,
       // Configure compatibility flags for Cloudflare Workers
       compatibilityDate: '2024-11-01',
+      // CRITICAL: Enable Node.js compatibility flags for Cloudflare Workers
+      compatibilityFlags: ['nodejs_compat'],
       // Enable Node.js built-in modules compatibility
       node: true,
       // Cloudflare-specific configuration

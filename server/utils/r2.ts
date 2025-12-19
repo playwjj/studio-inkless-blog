@@ -1,38 +1,16 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
-
-// Cache the S3 client to avoid re-initialization
-let cachedClient: S3Client | null = null
+import type { H3Event } from 'h3'
 
 /**
- * Get S3 client configured for Cloudflare R2
+ * Get R2 bucket binding from Cloudflare environment
  */
-export function getR2Client() {
-  // Return cached client if available
-  if (cachedClient) {
-    return cachedClient
+export function getR2Bucket(event: H3Event) {
+  const bucket = event.context.cloudflare?.env?.MY_BUCKET
+
+  if (!bucket) {
+    throw new Error('R2 bucket binding not found. Make sure MY_BUCKET is configured in your Cloudflare Pages settings.')
   }
 
-  const config = useRuntimeConfig()
-
-  if (!config.r2AccountId || !config.r2AccessKeyId || !config.r2SecretAccessKey) {
-    throw new Error('R2 configuration is missing. Please check environment variables.')
-  }
-
-  // Create client with static credentials to avoid file system access
-  // This is critical for Cloudflare Pages/Workers compatibility
-  cachedClient = new S3Client({
-    region: 'auto',
-    endpoint: `https://${config.r2AccountId}.r2.cloudflarestorage.com`,
-    credentials: {
-      accessKeyId: config.r2AccessKeyId,
-      secretAccessKey: config.r2SecretAccessKey
-    },
-    // Disable all credential chain providers that might access the file system
-    // This forces the SDK to use only the explicitly provided credentials
-    forcePathStyle: true
-  })
-
-  return cachedClient
+  return bucket
 }
 
 /**
@@ -49,39 +27,32 @@ export function generateFileKey(originalName: string): string {
 }
 
 /**
- * Upload file buffer to R2
+ * Upload file buffer to R2 using native Cloudflare R2 API
  */
 export async function uploadToR2(
-  buffer: Buffer,
+  event: H3Event,
+  buffer: Buffer | Uint8Array,
   key: string,
   contentType: string
 ): Promise<void> {
-  const config = useRuntimeConfig()
-  const client = getR2Client()
+  const bucket = getR2Bucket(event)
 
-  const command = new PutObjectCommand({
-    Bucket: config.r2BucketName,
-    Key: key,
-    Body: buffer,
-    ContentType: contentType
+  await bucket.put(key, buffer, {
+    httpMetadata: {
+      contentType: contentType
+    }
   })
-
-  await client.send(command)
 }
 
 /**
- * Delete file from R2
+ * Delete file from R2 using native Cloudflare R2 API
  */
-export async function deleteFromR2(key: string): Promise<void> {
-  const config = useRuntimeConfig()
-  const client = getR2Client()
-
-  const command = new DeleteObjectCommand({
-    Bucket: config.r2BucketName,
-    Key: key
-  })
-
-  await client.send(command)
+export async function deleteFromR2(
+  event: H3Event,
+  key: string
+): Promise<void> {
+  const bucket = getR2Bucket(event)
+  await bucket.delete(key)
 }
 
 /**
@@ -107,7 +78,7 @@ export function getPublicUrl(key: string): string {
  * (sharp library requires native bindings which are not available in Workers environment)
  */
 export async function getImageDimensions(
-  buffer: Buffer,
+  buffer: Buffer | Uint8Array,
   mimeType: string
 ): Promise<{ width: number; height: number } | null> {
   // Image dimension extraction is disabled for Cloudflare Pages compatibility

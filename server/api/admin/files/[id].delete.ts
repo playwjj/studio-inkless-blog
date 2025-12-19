@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
 
     // Delete from R2 storage
     try {
-      await deleteFromR2(file.file_key)
+      await deleteFromR2(event, file.file_key)
     } catch (error) {
       // Log R2 deletion error but continue with database deletion
       console.error('R2 deletion failed for file:', file.file_key, error)

@@ -40,7 +40,7 @@ export default defineEventHandler(async (event) => {
 
       // Upload to R2
       try {
-        await uploadToR2(file.data, fileKey, mimeType)
+        await uploadToR2(event, file.data, fileKey, mimeType)
       } catch (error) {
         console.error('R2 upload failed:', error)
         throw createError({

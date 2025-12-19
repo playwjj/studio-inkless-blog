@@ -12,27 +12,11 @@ export default defineNuxtConfig({
     quality: 80,
   },
 
-  // Cloudflare Pages configuration (only for production)
-  ...(process.env.NODE_ENV === 'production' ? {
-    nitro: {
-      preset: 'cloudflare-pages',
-      serveStatic: true,
-      // Configure compatibility flags for Cloudflare Workers
-      compatibilityDate: '2024-11-01',
-      // CRITICAL: Enable Node.js compatibility flags for Cloudflare Workers
-      compatibilityFlags: ['nodejs_compat'],
-      // Enable Node.js built-in modules compatibility
-      node: true,
-      // Cloudflare-specific configuration
-      cloudflare: {
-        pages: {
-          routes: {
-            exclude: ['/favicon.ico']
-          }
-        }
-      }
-    }
-  } : {}),
+
+  nitro: {
+    preset: 'cloudflare-pages',
+    serveStatic: true      
+  },
 
   // App configuration
   app: {
@@ -78,10 +62,7 @@ export default defineNuxtConfig({
     dbApiUrl: process.env.DB_API_URL || 'https://db.404401.xyz',
     sessionSecret: process.env.SESSION_SECRET || 'change-this-secret-in-production-min-32-chars-required',
     // Cloudflare R2 Configuration
-    r2AccountId: process.env.R2_ACCOUNT_ID,
-    r2AccessKeyId: process.env.R2_ACCESS_KEY_ID,
-    r2SecretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
-    r2BucketName: process.env.R2_BUCKET_NAME,
+    // R2 bucket is bound directly via Cloudflare Pages, only public URL is needed
     r2PublicUrl: process.env.R2_PUBLIC_URL,
     // Setup disabling for security
     setupDisabled: process.env.SETUP_DISABLED === 'true' || false

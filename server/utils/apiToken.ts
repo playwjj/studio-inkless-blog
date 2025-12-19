@@ -1,28 +1,45 @@
-import crypto from 'crypto'
 import type { DbApiToken } from '~/server/types/dbTypes'
 
 /**
  * Generate a random API token
  * Format: sk_live_<32 random hex characters>
+ * Uses Web Crypto API for Cloudflare Workers compatibility
  */
 export function generateApiToken(): string {
-  const randomBytes = crypto.randomBytes(32)
-  const token = randomBytes.toString('hex')
+  // Use Web Crypto API (compatible with both Node.js and Cloudflare Workers)
+  const randomBytes = new Uint8Array(32)
+  crypto.getRandomValues(randomBytes)
+
+  // Convert to hex string
+  const token = Array.from(randomBytes)
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('')
+
   return `sk_live_${token}`
 }
 
 /**
  * Hash an API token for storage
+ * Uses Web Crypto API for Cloudflare Workers compatibility
  */
-export function hashApiToken(token: string): string {
-  return crypto.createHash('sha256').update(token).digest('hex')
+export async function hashApiToken(token: string): Promise<string> {
+  // Use Web Crypto API (compatible with both Node.js and Cloudflare Workers)
+  const encoder = new TextEncoder()
+  const data = encoder.encode(token)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+
+  // Convert to hex string
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+
+  return hashHex
 }
 
 /**
  * Verify an API token against a hash
  */
-export function verifyApiToken(token: string, hash: string): boolean {
-  const tokenHash = hashApiToken(token)
+export async function verifyApiToken(token: string, hash: string): Promise<boolean> {
+  const tokenHash = await hashApiToken(token)
   return tokenHash === hash
 }
 
@@ -31,17 +48,15 @@ export function verifyApiToken(token: string, hash: string): boolean {
  */
 export async function findTokenByHash(tokenHash: string): Promise<DbApiToken | null> {
   try {
-    const response = await fetchFromDb<DbApiToken>('api_tokens', {
-      limit: 1
-    })
+    // Use fetchByField to query by token_hash directly
+    const token = await fetchByField<DbApiToken>('api_tokens', 'token_hash', tokenHash)
 
-    if (!response.data || response.data.length === 0) {
-      return null
+    // Verify token is active
+    if (token && token.is_active === 1) {
+      return token
     }
 
-    // Find token with matching hash
-    const token = response.data.find(t => t.token_hash === tokenHash && t.is_active === 1)
-    return token || null
+    return null
   } catch (error) {
     console.error('Failed to find token by hash:', error)
     return null

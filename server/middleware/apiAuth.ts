@@ -43,7 +43,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     // Hash the token to look it up in database
-    const tokenHash = hashApiToken(token)
+    const tokenHash = await hashApiToken(token)
 
     // Find token in database
     const dbToken = await findTokenByHash(tokenHash)

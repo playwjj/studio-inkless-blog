@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
 
     // Generate token
     const token = generateApiToken()
-    const tokenHash = hashApiToken(token)
+    const tokenHash = await hashApiToken(token)
 
     // Calculate expiration date if provided
     let expiresAt: string | null = null

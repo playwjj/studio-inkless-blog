@@ -22,10 +22,10 @@
       <form @submit.prevent="handleSubscribe" class="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
         <input
           v-model="email"
-          type="email"
+          type="text"
           placeholder="Enter your email"
-          required
-          class="flex-1 px-6 py-4 rounded-xl bg-white/80 backdrop-blur-sm border-2 border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 transition-colors"
+          :disabled="isSubscribing"
+          class="flex-1 px-6 py-4 rounded-xl bg-white/80 backdrop-blur-sm border-2 border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 transition-colors disabled:opacity-50"
         />
         <button
           type="submit"
@@ -35,6 +35,10 @@
           {{ isSubscribing ? 'Subscribing...' : 'Subscribe' }}
         </button>
       </form>
+
+      <p v-if="errorMessage" class="mt-4 text-red-600 font-medium">
+        {{ errorMessage }}
+      </p>
 
       <p v-if="subscribed" class="mt-4 text-green-600 font-medium">
         ✓ Thank you for subscribing!
@@ -51,20 +55,43 @@
 const email = ref('')
 const isSubscribing = ref(false)
 const subscribed = ref(false)
+const errorMessage = ref('')
 
 const handleSubscribe = async () => {
+  // Basic client-side validation
+  if (!email.value || !email.value.includes('@')) {
+    errorMessage.value = 'Please enter a valid email address'
+    return
+  }
+
+  errorMessage.value = ''
   isSubscribing.value = true
 
-  // Simulate API call
-  await new Promise(resolve => setTimeout(resolve, 1000))
+  try {
+    const response = await $fetch('/api/newsletter/subscribe', {
+      method: 'POST',
+      body: { email: email.value }
+    })
 
-  subscribed.value = true
-  email.value = ''
-  isSubscribing.value = false
+    if ((response as any).success) {
+      subscribed.value = true
+      email.value = ''
 
-  // Reset success message after 5 seconds
-  setTimeout(() => {
-    subscribed.value = false
-  }, 5000)
+      // Reset success message after 5 seconds
+      setTimeout(() => {
+        subscribed.value = false
+      }, 5000)
+    }
+  } catch (error: any) {
+    if (error.statusCode === 409) {
+      errorMessage.value = 'This email is already subscribed'
+    } else if (error.statusCode === 400) {
+      errorMessage.value = 'Invalid email address'
+    } else {
+      errorMessage.value = 'Failed to subscribe. Please try again later.'
+    }
+  } finally {
+    isSubscribing.value = false
+  }
 }
 </script>

@@ -109,76 +109,96 @@ DB_API_URL=https://your-db-api.example.com</code></pre>
         <form @submit.prevent="saveSiteConfiguration" class="mt-6 space-y-4">
           <!-- Required Fields -->
           <div>
-            <label class="block text-sm font-medium text-slate-900 dark:text-slate-100 mb-1">Site Name *</label>
-            <input 
-              v-model="siteForm.name" 
-              type="text" 
-              required
+            <label class="block text-sm font-medium text-slate-900 dark:text-slate-100 mb-1">
+              Site Name <span class="text-red-500">*</span>
+            </label>
+            <input
+              v-model="siteForm.name"
+              type="text"
               placeholder="e.g., My Blog"
               class="w-full px-3 py-2 border rounded dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100"
+              @blur="() => { setTouched('name'); validateField('name', siteForm) }"
             />
+            <p v-if="touched.name && errors.name" class="mt-1 text-xs text-red-600 dark:text-red-400">{{ errors.name }}</p>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-slate-900 dark:text-slate-100 mb-1">Site Title *</label>
+            <label class="block text-sm font-medium text-slate-900 dark:text-slate-100 mb-1">
+              Site Title <span class="text-red-500">*</span>
+            </label>
             <input
               v-model="siteForm.title"
               type="text"
-              required
               placeholder="e.g., My Awesome Blog"
               class="w-full px-3 py-2 border rounded dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100"
+              @blur="() => { setTouched('title'); validateField('title', siteForm) }"
             />
+            <p v-if="touched.title && errors.title" class="mt-1 text-xs text-red-600 dark:text-red-400">{{ errors.title }}</p>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-slate-900 dark:text-slate-100 mb-1">Site Description *</label>
+            <label class="block text-sm font-medium text-slate-900 dark:text-slate-100 mb-1">
+              Site Description <span class="text-red-500">*</span>
+            </label>
             <textarea
               v-model="siteForm.description"
-              required
               rows="3"
               placeholder="A brief description of your blog"
               class="w-full px-3 py-2 border rounded dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100"
+              @blur="() => { setTouched('description'); validateField('description', siteForm) }"
             ></textarea>
+            <p v-if="touched.description && errors.description" class="mt-1 text-xs text-red-600 dark:text-red-400">{{ errors.description }}</p>
           </div>
 
           <!-- Admin User Section -->
           <div class="border-t pt-4">
-            <h3 class="text-sm font-medium text-slate-900 dark:text-slate-100 mb-4">Create Initial Admin User *</h3>
+            <h3 class="text-sm font-medium text-slate-900 dark:text-slate-100 mb-4">
+              Create Initial Admin User <span class="text-red-500">*</span>
+            </h3>
             <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Create your administrator account to manage the blog</p>
 
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Username *</label>
-                <input 
-                  v-model="siteForm.admin_username" 
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Username <span class="text-red-500">*</span>
+                </label>
+                <input
+                  v-model="siteForm.admin_username"
                   type="text"
-                  required
                   placeholder="admin"
                   class="w-full px-3 py-2 border rounded dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100"
+                  @blur="() => { setTouched('admin_username'); validateField('admin_username', siteForm) }"
                 />
+                <p v-if="touched.admin_username && errors.admin_username" class="mt-1 text-xs text-red-600 dark:text-red-400">{{ errors.admin_username }}</p>
               </div>
 
               <div>
-                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email *</label>
-                <input 
-                  v-model="siteForm.admin_email" 
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Email <span class="text-red-500">*</span>
+                </label>
+                <input
+                  v-model="siteForm.admin_email"
                   type="email"
-                  required
                   placeholder="admin@example.com"
                   class="w-full px-3 py-2 border rounded dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100"
+                  @blur="() => { setTouched('admin_email'); validateField('admin_email', siteForm) }"
                 />
+                <p v-if="touched.admin_email && errors.admin_email" class="mt-1 text-xs text-red-600 dark:text-red-400">{{ errors.admin_email }}</p>
               </div>
 
               <div class="col-span-2">
-                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Password *</label>
-                <input 
-                  v-model="siteForm.admin_password" 
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Password <span class="text-red-500">*</span>
+                </label>
+                <input
+                  v-model="siteForm.admin_password"
                   type="password"
-                  required
                   placeholder="••••••••"
                   class="w-full px-3 py-2 border rounded dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100"
+                  @blur="() => { setTouched('admin_password'); validateField('admin_password', siteForm) }"
                 />
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Minimum 8 characters recommended</p>
+                <p v-if="touched.admin_password && errors.admin_password" class="mt-1 text-xs text-red-600 dark:text-red-400">{{ errors.admin_password }}</p>
+                <p v-else class="text-xs text-slate-500 dark:text-slate-400 mt-1">Minimum 8 characters recommended</p>
               </div>
             </div>
           </div>
@@ -250,6 +270,31 @@ DB_API_URL=https://your-db-api.example.com</code></pre>
 </template>
 
 <script setup lang="ts">
+import { createValidation, required, minLength, pattern } from '~/composables/useFormValidation'
+
+// Validation setup
+const { errors, touched, validateField, validateAll, setTouched } = createValidation<{
+  name: string
+  title: string
+  description: string
+  admin_username: string
+  admin_email: string
+  admin_password: string
+}>({
+  name: [required('Please enter site name')],
+  title: [required('Please enter site title')],
+  description: [required('Please enter site description')],
+  admin_username: [required('Please enter admin username')],
+  admin_email: [
+    required('Please enter admin email'),
+    pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Please enter a valid email address')
+  ],
+  admin_password: [
+    required('Please enter admin password'),
+    minLength(8, 'Password must be at least 8 characters')
+  ]
+})
+
 const setupStep = ref<SetupStep>('checking')
 const checking = ref(false)
 const initializing = ref(false)
@@ -324,6 +369,19 @@ async function initializeDatabase() {
 }
 
 async function saveSiteConfiguration() {
+  // Mark all fields as touched and validate
+  setTouched('name')
+  setTouched('title')
+  setTouched('description')
+  setTouched('admin_username')
+  setTouched('admin_email')
+  setTouched('admin_password')
+
+  if (!validateAll(siteForm.value)) {
+    error.value = 'Please correct the highlighted fields'
+    return
+  }
+
   saving.value = true
   error.value = null
 

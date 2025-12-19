@@ -1,6 +1,7 @@
 # Allow all crawlers
 User-agent: *
 Allow: /
+Disallow: /admin/*
 
 # Sitemap location
 Sitemap: /sitemap.xml

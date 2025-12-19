@@ -54,7 +54,7 @@ export default defineEventHandler(async (event) => {
       // Check if all required tables exist
       const requiredTables = [
         'site', 'users', 'authors', 'categories', 'tags',
-        'articles', 'files', 'pages', 'api_tokens', 'page_blocks'
+        'articles', 'files', 'pages', 'api_tokens', 'page_blocks', 'newsletters'
       ]
       const allTablesExist = requiredTables.every(table => existingTables.includes(table))
 

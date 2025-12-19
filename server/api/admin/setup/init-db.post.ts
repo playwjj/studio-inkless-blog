@@ -272,6 +272,21 @@ export default defineEventHandler(async (event) => {
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 )`
       },
+      {
+        name: 'newsletters',
+        sql: `CREATE TABLE newsletters (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,                                                                                                                                                            
+       email TEXT NOT NULL UNIQUE,                                                                                                                                                                      
+       status TEXT NOT NULL DEFAULT 'active',                                                                                                                                                           
+       source TEXT DEFAULT 'homepage',                                                                                                                                                                  
+       ip_address TEXT,                                                                                                                                                                                 
+       user_agent TEXT,                                                                                                                                                                                 
+       subscribed_at TEXT NOT NULL,                                                                                                                                                                     
+       unsubscribed_at TEXT,                                                                                                                                                                            
+       created_at TEXT NOT NULL,                                                                                                                                                                        
+       updated_at TEXT NOT NULL       
+)`
+      },
 
       // Level 3: Depend on Level 2 tables
       {

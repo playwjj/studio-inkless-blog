@@ -269,33 +269,60 @@
       </div>
     </section>
 
-    <!-- Stats Section -->
+    <!-- Features Section -->
     <section class="bg-white py-16">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-          <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 text-center border border-blue-100 hover:shadow-lg transition-shadow">
-            <div class="text-3xl md:text-4xl font-bold text-primary-600 mb-2">
-              {{ data?.posts?.length || 0 }}
+          <!-- Open Source -->
+          <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 text-center border border-blue-100 hover:shadow-lg transition-shadow group">
+            <div class="flex justify-center mb-3">
+              <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                </svg>
+              </div>
             </div>
-            <div class="text-gray-600 text-sm md:text-base font-medium">Articles Published</div>
+            <div class="text-lg md:text-xl font-bold text-primary-600 mb-1">Open Source</div>
+            <div class="text-gray-600 text-xs md:text-sm">100% Free</div>
           </div>
-          <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 text-center border border-purple-100 hover:shadow-lg transition-shadow">
-            <div class="text-3xl md:text-4xl font-bold text-purple-600 mb-2">
-              {{ categories?.length || 0 }}
+
+          <!-- SEO Friendly -->
+          <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 text-center border border-purple-100 hover:shadow-lg transition-shadow group">
+            <div class="flex justify-center mb-3">
+              <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
             </div>
-            <div class="text-gray-600 text-sm md:text-base font-medium">Categories</div>
+            <div class="text-lg md:text-xl font-bold text-purple-600 mb-1">SEO Optimized</div>
+            <div class="text-gray-600 text-xs md:text-sm">High Rankings</div>
           </div>
-          <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 text-center border border-green-100 hover:shadow-lg transition-shadow">
-            <div class="text-3xl md:text-4xl font-bold text-green-600 mb-2">
-              50K+
+
+          <!-- Mobile First -->
+          <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 text-center border border-green-100 hover:shadow-lg transition-shadow group">
+            <div class="flex justify-center mb-3">
+              <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+              </div>
             </div>
-            <div class="text-gray-600 text-sm md:text-base font-medium">Monthly Readers</div>
+            <div class="text-lg md:text-xl font-bold text-green-600 mb-1">Mobile First</div>
+            <div class="text-gray-600 text-xs md:text-sm">Responsive Design</div>
           </div>
-          <div class="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-6 text-center border border-orange-100 hover:shadow-lg transition-shadow">
-            <div class="text-3xl md:text-4xl font-bold text-orange-600 mb-2">
-              100%
+
+          <!-- Lightning Fast -->
+          <div class="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-6 text-center border border-orange-100 hover:shadow-lg transition-shadow group">
+            <div class="flex justify-center mb-3">
+              <div class="w-12 h-12 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
             </div>
-            <div class="text-gray-600 text-sm md:text-base font-medium">Free Content</div>
+            <div class="text-lg md:text-xl font-bold text-orange-600 mb-1">Lightning Fast</div>
+            <div class="text-gray-600 text-xs md:text-sm">Edge Deployed</div>
           </div>
         </div>
       </div>

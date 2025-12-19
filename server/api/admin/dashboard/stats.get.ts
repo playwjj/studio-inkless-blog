@@ -1,26 +1,9 @@
-import type { DbArticle, DbCategory, DbTag, DbPage } from '~/server/types/dbTypes'
+import type { DbArticle, DbCategory } from '~/server/types/dbTypes'
 
 export default defineEventHandler(async (event) => {
   try {
     // Require authentication
     await requireAuth(event)
-
-    // Fetch all data in parallel
-    const [articlesResponse, categoriesResponse, tagsResponse, pagesResponse] = await Promise.all([
-      fetchFromDb<DbArticle>('articles'),
-      fetchFromDb<DbCategory>('categories'),
-      fetchFromDb<DbTag>('tags'),
-      fetchFromDb<DbPage>('pages')
-    ])
-
-    // Extract data arrays from responses
-    const articles = articlesResponse.data || []
-    const categories = categoriesResponse.data || []
-    const tags = tagsResponse.data || []
-    const pages = pagesResponse.data || []
-
-    // Calculate total views
-    const totalViews = articles.reduce((sum, article) => sum + (article.view_count || 0), 0)
 
     // Format total views (e.g., 1000 -> "1K", 12500 -> "12.5K")
     const formatViews = (views: number): string => {
@@ -32,10 +15,60 @@ export default defineEventHandler(async (event) => {
       return views.toString()
     }
 
-    // Get recent articles (5 most recent, published only)
+    // Execute queries in parallel
+    const [
+      publishedPostsResult,
+      totalViewsResult,
+      categoriesResult,
+      tagsResult,
+      pagesResult,
+      articlesResponse,
+      categoriesResponse
+    ] = await Promise.all([
+      // Use SQL for statistics
+      executeQuery<{ count: number }>(`
+        SELECT COUNT(*) as count
+        FROM articles
+        WHERE status = 'published'
+      `),
+
+      executeQuery<{ total: number }>(`
+        SELECT COALESCE(SUM(view_count), 0) as total
+        FROM articles
+      `),
+
+      executeQuery<{ count: number }>(`
+        SELECT COUNT(*) as count
+        FROM categories
+      `),
+
+      executeQuery<{ count: number }>(`
+        SELECT COUNT(*) as count
+        FROM tags
+      `),
+
+      executeQuery<{ count: number }>(`
+        SELECT COUNT(*) as count
+        FROM pages
+      `),
+
+      // Use fetchFromDb for recent articles
+      fetchFromDb<DbArticle>('articles', {
+        limit: 1000,
+        sortBy: 'created_at',
+        sortOrder: 'desc'
+      }),
+
+      fetchFromDb<DbCategory>('categories')
+    ])
+
+    // Extract data
+    const articles = articlesResponse.data || []
+    const categories = categoriesResponse.data || []
+
+    // Get recent 5 published articles
     const publishedArticles = articles
       .filter(article => article.status === 'published')
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 5)
 
     // Enhance recent articles with category names
@@ -45,7 +78,6 @@ export default defineEventHandler(async (event) => {
         id: article.id,
         title: article.title,
         slug: article.slug,
-        // Normalize to `cover_image_url` (fall back to older `cover_image` if present)
         cover_image_url: (article as any).cover_image_url || (article as any).cover_image || null,
         view_count: article.view_count || 0,
         created_at: article.created_at,
@@ -55,11 +87,11 @@ export default defineEventHandler(async (event) => {
 
     return {
       stats: {
-        totalPosts: articles.filter(a => a.status === 'published').length,
-        totalViews: formatViews(totalViews),
-        totalCategories: categories.length,
-        totalTags: tags.length,
-        totalPages: pages.length
+        totalPosts: publishedPostsResult[0]?.count || 0,
+        totalViews: formatViews(totalViewsResult[0]?.total || 0),
+        totalCategories: categoriesResult[0]?.count || 0,
+        totalTags: tagsResult[0]?.count || 0,
+        totalPages: pagesResult[0]?.count || 0
       },
       recentArticles
     }

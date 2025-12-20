@@ -47,7 +47,12 @@ export default defineEventHandler(async (event) => {
 
     // Sync tags to tags table
     if (body.tags) {
-      await syncTagsToTable(body.tags)
+      await syncTagsToTable(body.tags, body.status)
+    }
+
+    // Update category count if article is published
+    if (body.status === 'published') {
+      await incrementCategoryCount(parseInt(body.category_id))
     }
 
     return {
@@ -71,7 +76,7 @@ export default defineEventHandler(async (event) => {
 })
 
 // Helper function to sync tags to tags table
-async function syncTagsToTable(tagsString: string) {
+async function syncTagsToTable(tagsString: string, status: string) {
   if (!tagsString) return
 
   const tagNames = tagsString
@@ -89,20 +94,22 @@ async function syncTagsToTable(tagsString: string) {
       )
 
       if (!tag) {
-        // Create new tag
+        // Create new tag with appropriate usage_count
         await insertRow('tags', {
           name: tagName,
           slug: tagName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
-          usage_count: 1,
+          usage_count: status === 'published' ? 1 : 0,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
       } else {
-        // Update usage count
-        await updateRow('tags', tag.id, {
-          usage_count: (tag.usage_count || 0) + 1,
-          updated_at: new Date().toISOString()
-        })
+        // Only increment usage count if article is published
+        if (status === 'published') {
+          await updateRow('tags', tag.id, {
+            usage_count: (tag.usage_count || 0) + 1,
+            updated_at: new Date().toISOString()
+          })
+        }
       }
     } catch (error) {
       console.error(`Failed to sync tag "${tagName}":`, error)

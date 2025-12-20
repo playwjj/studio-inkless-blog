@@ -33,6 +33,7 @@ export interface DbCategory {
   slug: string
   created_at: string
   updated_at: string
+  count?: number
 }
 
 export interface DbTag {

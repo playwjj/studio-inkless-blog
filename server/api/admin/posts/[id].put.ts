@@ -64,18 +64,49 @@ export default defineEventHandler(async (event) => {
       updateData.published_at = new Date().toISOString()
     }
 
+    // Prepare status information for tag and category updates
+    const oldStatus = article.status
+    const newStatus = body.status || oldStatus
+    const oldCategoryId = article.category_id
+    const newCategoryId = body.category_id ? parseInt(body.category_id) : oldCategoryId
+    const oldTags = article.tag_names || ''
+    const newTags = body.tags !== undefined ? (body.tags || '') : oldTags
+
     // Handle tags if provided
     if (body.tags !== undefined) {
       updateData.tag_names = body.tags || ''  // Default to empty string, matching database default
 
-      // Sync tags to tags table
-      if (body.tags) {
-        await syncTagsToTable(body.tags, article.tag_names)
-      }
+      // Sync tags to tags table (only for published articles)
+      await syncTagsToTableWithStatus(newTags, oldTags, oldStatus, newStatus)
+    } else if (oldStatus !== newStatus) {
+      // Status changed but tags didn't - still need to update tag counts
+      await handleStatusChangeForTags(oldTags, oldStatus, newStatus)
     }
 
     // Update the article
     await updateRow('articles', articleId, updateData)
+
+    // Update category counts based on changes
+    // Handle category change
+    if (oldCategoryId !== newCategoryId) {
+      // If article is published, update both old and new category counts
+      if (oldStatus === 'published') {
+        await decrementCategoryCount(oldCategoryId)
+      }
+      if (newStatus === 'published') {
+        await incrementCategoryCount(newCategoryId)
+      }
+    }
+    // Handle status change (same category)
+    else if (oldStatus !== newStatus) {
+      if (oldStatus === 'published' && newStatus !== 'published') {
+        // Changed from published to draft/archived
+        await decrementCategoryCount(oldCategoryId)
+      } else if (oldStatus !== 'published' && newStatus === 'published') {
+        // Changed from draft/archived to published
+        await incrementCategoryCount(newCategoryId)
+      }
+    }
 
     return {
       success: true,
@@ -94,8 +125,13 @@ export default defineEventHandler(async (event) => {
   }
 })
 
-// Helper function to sync tags to tags table
-async function syncTagsToTable(newTagsString: string, oldTagsString?: string | null) {
+// Helper function to sync tags considering article status changes
+async function syncTagsToTableWithStatus(
+  newTagsString: string,
+  oldTagsString: string,
+  oldStatus: string,
+  newStatus: string
+) {
   const newTagNames = newTagsString
     ? newTagsString.split(',').map(tag => tag.trim()).filter(Boolean)
     : []
@@ -114,54 +150,137 @@ async function syncTagsToTable(newTagsString: string, oldTagsString?: string | n
     tag => !newTagNames.some(newTag => newTag.toLowerCase() === tag.toLowerCase())
   )
 
-  // Add/increment new tags
-  for (const tagName of tagsToAdd) {
-    try {
-      let tag = await fetchOneFromDb<{ id: number, name: string, usage_count: number }>(
-        'tags',
-        undefined,
-        { name: tagName }
-      )
+  // Tags that remain unchanged
+  const tagsUnchanged = newTagNames.filter(
+    tag => oldTagNames.some(oldTag => oldTag.toLowerCase() === tag.toLowerCase())
+  )
 
-      if (!tag) {
-        // Create new tag
-        await insertRow('tags', {
-          name: tagName,
-          slug: tagName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
-          usage_count: 1,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-      } else {
-        // Increment usage count
-        await updateRow('tags', tag.id, {
-          usage_count: (tag.usage_count || 0) + 1,
-          updated_at: new Date().toISOString()
-        })
-      }
-    } catch (error) {
-      console.error(`Failed to sync tag "${tagName}":`, error)
+  // Handle added tags
+  for (const tagName of tagsToAdd) {
+    // Only increment if new status is published
+    if (newStatus === 'published') {
+      await incrementOrCreateTag(tagName)
+    } else {
+      // Create tag with usage_count = 0 if it doesn't exist
+      await ensureTagExists(tagName)
     }
   }
 
-  // Decrement removed tags
+  // Handle removed tags
   for (const tagName of tagsToRemove) {
-    try {
-      let tag = await fetchOneFromDb<{ id: number, name: string, usage_count: number }>(
-        'tags',
-        undefined,
-        { name: tagName }
-      )
-
-      if (tag && tag.usage_count > 0) {
-        // Decrement usage count
-        await updateRow('tags', tag.id, {
-          usage_count: tag.usage_count - 1,
-          updated_at: new Date().toISOString()
-        })
-      }
-    } catch (error) {
-      console.error(`Failed to update tag "${tagName}":`, error)
+    // Only decrement if old status was published
+    if (oldStatus === 'published') {
+      await decrementTag(tagName)
     }
+  }
+
+  // Handle unchanged tags when status changes
+  if (oldStatus !== newStatus && tagsUnchanged.length > 0) {
+    for (const tagName of tagsUnchanged) {
+      if (oldStatus === 'published' && newStatus !== 'published') {
+        // Was published, now not - decrement
+        await decrementTag(tagName)
+      } else if (oldStatus !== 'published' && newStatus === 'published') {
+        // Wasn't published, now is - increment
+        await incrementOrCreateTag(tagName)
+      }
+    }
+  }
+}
+
+// Helper function to handle status change when tags don't change
+async function handleStatusChangeForTags(
+  tagsString: string,
+  oldStatus: string,
+  newStatus: string
+) {
+  if (!tagsString || oldStatus === newStatus) return
+
+  const tagNames = tagsString.split(',').map(tag => tag.trim()).filter(Boolean)
+
+  if (oldStatus === 'published' && newStatus !== 'published') {
+    // Changed from published to draft/archived
+    for (const tagName of tagNames) {
+      await decrementTag(tagName)
+    }
+  } else if (oldStatus !== 'published' && newStatus === 'published') {
+    // Changed from draft/archived to published
+    for (const tagName of tagNames) {
+      await incrementOrCreateTag(tagName)
+    }
+  }
+}
+
+// Helper to increment tag or create if doesn't exist
+async function incrementOrCreateTag(tagName: string) {
+  try {
+    let tag = await fetchOneFromDb<{ id: number, name: string, usage_count: number }>(
+      'tags',
+      undefined,
+      { name: tagName }
+    )
+
+    if (!tag) {
+      // Create new tag
+      await insertRow('tags', {
+        name: tagName,
+        slug: tagName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+        usage_count: 1,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+    } else {
+      // Increment usage count
+      await updateRow('tags', tag.id, {
+        usage_count: (tag.usage_count || 0) + 1,
+        updated_at: new Date().toISOString()
+      })
+    }
+  } catch (error) {
+    console.error(`Failed to increment tag "${tagName}":`, error)
+  }
+}
+
+// Helper to ensure tag exists (for draft articles)
+async function ensureTagExists(tagName: string) {
+  try {
+    let tag = await fetchOneFromDb<{ id: number, name: string, usage_count: number }>(
+      'tags',
+      undefined,
+      { name: tagName }
+    )
+
+    if (!tag) {
+      // Create new tag with usage_count = 0
+      await insertRow('tags', {
+        name: tagName,
+        slug: tagName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+        usage_count: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+    }
+  } catch (error) {
+    console.error(`Failed to ensure tag exists "${tagName}":`, error)
+  }
+}
+
+// Helper to decrement tag
+async function decrementTag(tagName: string) {
+  try {
+    let tag = await fetchOneFromDb<{ id: number, name: string, usage_count: number }>(
+      'tags',
+      undefined,
+      { name: tagName }
+    )
+
+    if (tag && tag.usage_count > 0) {
+      await updateRow('tags', tag.id, {
+        usage_count: tag.usage_count - 1,
+        updated_at: new Date().toISOString()
+      })
+    }
+  } catch (error) {
+    console.error(`Failed to decrement tag "${tagName}":`, error)
   }
 }

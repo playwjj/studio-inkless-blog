@@ -156,7 +156,8 @@ export default defineEventHandler(async (event) => {
     slug TEXT NOT NULL UNIQUE,
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    count INTEGER DEFAULT 0
 )`
       },
       {

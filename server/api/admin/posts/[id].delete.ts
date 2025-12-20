@@ -28,6 +28,16 @@ export default defineEventHandler(async (event) => {
     // Delete the article
     await deleteRow('articles', articleId)
 
+    // Update category count if article was published
+    if (article.status === 'published') {
+      await decrementCategoryCount(article.category_id)
+    }
+
+    // Update tag usage_count if article was published and had tags
+    if (article.status === 'published' && article.tag_names) {
+      await decrementTagUsageCounts(article.tag_names)
+    }
+
     return {
       success: true,
       message: 'Article deleted successfully'

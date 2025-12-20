@@ -6,15 +6,30 @@
         <h1 class="text-2xl font-semibold text-gray-900">Categories</h1>
         <p class="mt-1 text-sm text-gray-500">Manage blog post categories</p>
       </div>
-      <button
-        @click="showCreateModal = true"
-        class="inline-flex items-center px-3 py-1.5 bg-gray-900 text-white text-sm hover:bg-gray-800 transition-colors"
-      >
-        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-        </svg>
-        New Category
-      </button>
+      <div class="flex items-center gap-2">
+        <!-- Maintenance button -->
+        <button
+          @click="recalculateCounts"
+          :disabled="isRecalculating"
+          class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-gray-700 text-sm hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Recalculate post counts for all categories"
+        >
+          <svg class="w-4 h-4 mr-1.5" :class="{ 'animate-spin': isRecalculating }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          {{ isRecalculating ? 'Recalculating...' : 'Recalculate Counts' }}
+        </button>
+
+        <button
+          @click="showCreateModal = true"
+          class="inline-flex items-center px-3 py-1.5 bg-gray-900 text-white text-sm hover:bg-gray-800 transition-colors"
+        >
+          <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          New Category
+        </button>
+      </div>
     </div>
 
     <!-- Categories list -->
@@ -251,6 +266,7 @@ const showCreateModal = ref(false)
 const editingCategory = ref<Category | null>(null)
 const loading = ref(false)
 const submitting = ref(false)
+const isRecalculating = ref(false)
 
 const categoryForm = reactive({
   name: '',
@@ -394,4 +410,32 @@ watch(() => categoryForm.name, (newName) => {
       .replace(/^-|-$/g, '')
   }
 })
+
+// Recalculate category post counts
+const recalculateCounts = async () => {
+  await showConfirm({
+    title: 'Recalculate Category Counts',
+    message: 'This will recalculate post counts for all categories based on published articles. This may take a moment. Continue?',
+    confirmText: 'Recalculate',
+    cancelText: 'Cancel',
+    variant: 'default',
+    onConfirm: async () => {
+      isRecalculating.value = true
+      try {
+        const response = await $fetch('/api/admin/categories/recalculate', {
+          method: 'POST'
+        })
+
+        const categoriesUpdated = response.data?.categoriesUpdated || 0
+        success('Category counts recalculated!', `Updated ${categoriesUpdated} categor${categoriesUpdated === 1 ? 'y' : 'ies'}.`)
+        await loadCategories()
+      } catch (error: any) {
+        showError('Failed to recalculate counts', error.statusMessage || 'Please try again.')
+        console.error('Recalculate error:', error)
+      } finally {
+        isRecalculating.value = false
+      }
+    }
+  })
+}
 </script>

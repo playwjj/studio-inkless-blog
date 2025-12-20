@@ -6,15 +6,42 @@
         <h1 class="text-2xl font-semibold text-gray-900">Tags</h1>
         <p class="mt-1 text-sm text-gray-500">Manage blog post tags</p>
       </div>
-      <button
-        @click="showCreateModal = true"
-        class="inline-flex items-center px-3 py-1.5 bg-gray-900 text-white text-sm hover:bg-gray-800 transition-colors"
-      >
-        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-        </svg>
-        New Tag
-      </button>
+      <div class="flex items-center gap-2">
+        <!-- Maintenance buttons -->
+        <button
+          @click="recalculateCounts"
+          :disabled="isRecalculating"
+          class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-gray-700 text-sm hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Recalculate usage counts for all tags"
+        >
+          <svg class="w-4 h-4 mr-1.5" :class="{ 'animate-spin': isRecalculating }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          {{ isRecalculating ? 'Recalculating...' : 'Recalculate Counts' }}
+        </button>
+
+        <button
+          @click="cleanupUnusedTags"
+          :disabled="isCleaning"
+          class="inline-flex items-center px-3 py-1.5 border border-red-300 text-red-700 text-sm hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Delete tags with usage count = 0"
+        >
+          <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+          {{ isCleaning ? 'Cleaning...' : 'Clean Unused' }}
+        </button>
+
+        <button
+          @click="showCreateModal = true"
+          class="inline-flex items-center px-3 py-1.5 bg-gray-900 text-white text-sm hover:bg-gray-800 transition-colors"
+        >
+          <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          New Tag
+        </button>
+      </div>
     </div>
 
     <!-- Search -->
@@ -275,6 +302,8 @@ const showCreateModal = ref(false)
 const editingTag = ref<Tag | null>(null)
 const loading = ref(false)
 const submitting = ref(false)
+const isRecalculating = ref(false)
+const isCleaning = ref(false)
 
 const tagForm = reactive({
   name: '',
@@ -427,4 +456,63 @@ watch(() => tagForm.name, (newName) => {
       .replace(/^-|-$/g, '')
   }
 })
+
+// Recalculate tag usage counts
+const recalculateCounts = async () => {
+  await showConfirm({
+    title: 'Recalculate Tag Counts',
+    message: 'This will recalculate usage_count for all tags based on published articles. This may take a moment. Continue?',
+    confirmText: 'Recalculate',
+    cancelText: 'Cancel',
+    variant: 'default',
+    onConfirm: async () => {
+      isRecalculating.value = true
+      try {
+        const response = await $fetch('/api/admin/tags/recalculate', {
+          method: 'POST'
+        })
+
+        success('Tag counts recalculated!', response.message || 'All tag usage counts have been updated.')
+        await loadTags()
+      } catch (error: any) {
+        showError('Failed to recalculate counts', error.statusMessage || 'Please try again.')
+        console.error('Recalculate error:', error)
+      } finally {
+        isRecalculating.value = false
+      }
+    }
+  })
+}
+
+// Cleanup unused tags
+const cleanupUnusedTags = async () => {
+  await showConfirm({
+    title: 'Clean Up Unused Tags',
+    message: 'This will permanently delete all tags with usage_count = 0. This action cannot be undone. Continue?',
+    confirmText: 'Delete Unused Tags',
+    cancelText: 'Cancel',
+    variant: 'danger',
+    onConfirm: async () => {
+      isCleaning.value = true
+      try {
+        const response = await $fetch('/api/admin/tags/cleanup', {
+          method: 'POST'
+        })
+
+        const deletedCount = response.data?.deletedCount || 0
+        if (deletedCount > 0) {
+          success('Cleanup complete!', `Deleted ${deletedCount} unused tag(s).`)
+        } else {
+          success('No unused tags found', 'All tags are currently in use.')
+        }
+        await loadTags()
+      } catch (error: any) {
+        showError('Failed to cleanup tags', error.statusMessage || 'Please try again.')
+        console.error('Cleanup error:', error)
+      } finally {
+        isCleaning.value = false
+      }
+    }
+  })
+}
 </script>

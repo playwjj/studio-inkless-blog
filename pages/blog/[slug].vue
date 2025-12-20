@@ -139,8 +139,8 @@
 
             <!-- Article Content -->
             <div class="bg-white rounded-xl shadow-md border border-gray-100 p-8 md:p-12">
-              <div class="prose prose-lg max-w-none">
-                <div class="text-gray-700 leading-relaxed" v-html="formattedContent"></div>
+              <div class="article-content">
+                <div v-html="formattedContent"></div>
               </div>
 
               <!-- Tags -->
@@ -423,3 +423,178 @@ useSeoMeta({
   twitterImage: () => data.value?.coverImage || siteConfig.value?.twitter_image || '',
 })
 </script>
+
+<style scoped>
+.article-content {
+  @apply text-gray-700 leading-relaxed;
+}
+
+/* 标题样式 */
+.article-content :deep(h1) {
+  @apply text-4xl font-bold text-gray-900 mt-12 mb-6 leading-tight;
+  @apply first:mt-0;
+}
+
+.article-content :deep(h2) {
+  @apply text-3xl font-bold text-gray-900 mt-10 mb-5 leading-tight;
+  @apply border-b-2 border-gray-200 pb-3;
+}
+
+.article-content :deep(h3) {
+  @apply text-2xl font-bold text-gray-800 mt-8 mb-4 leading-snug;
+}
+
+.article-content :deep(h4) {
+  @apply text-xl font-semibold text-gray-800 mt-6 mb-3;
+}
+
+.article-content :deep(h5) {
+  @apply text-lg font-semibold text-gray-800 mt-5 mb-2;
+}
+
+.article-content :deep(h6) {
+  @apply text-base font-semibold text-gray-800 mt-4 mb-2;
+}
+
+/* 段落样式 */
+.article-content :deep(p) {
+  @apply text-base text-gray-700 leading-relaxed mb-6;
+}
+
+/* 列表样式 */
+.article-content :deep(ul) {
+  @apply list-none space-y-3 mb-6 pl-0;
+}
+
+.article-content :deep(ul li) {
+  @apply relative pl-7 text-gray-700 leading-relaxed;
+}
+
+.article-content :deep(ul li::before) {
+  content: '';
+  @apply absolute left-0 top-2 w-2 h-2 bg-primary-600 rounded-full;
+}
+
+.article-content :deep(ul li p) {
+  @apply mb-0;
+}
+
+.article-content :deep(ol) {
+  @apply list-decimal list-inside space-y-3 mb-6 pl-2;
+}
+
+.article-content :deep(ol li) {
+  @apply text-gray-700 leading-relaxed pl-2;
+}
+
+.article-content :deep(ol li p) {
+  @apply inline mb-0;
+}
+
+/* 嵌套列表 */
+.article-content :deep(li > ul),
+.article-content :deep(li > ol) {
+  @apply mt-3 mb-0;
+}
+
+/* 代码块样式 */
+.article-content :deep(pre) {
+  @apply bg-gray-900 text-gray-100 p-6 rounded-xl overflow-x-auto mb-6 shadow-lg;
+  @apply border border-gray-800;
+}
+
+.article-content :deep(pre code) {
+  @apply font-mono text-sm leading-relaxed block;
+  @apply bg-transparent text-gray-100;
+}
+
+/* 行内代码样式 */
+.article-content :deep(code) {
+  @apply bg-primary-50 text-primary-700 px-2 py-1 rounded font-mono text-sm;
+  @apply border border-primary-200;
+}
+
+.article-content :deep(pre code) {
+  @apply bg-transparent text-gray-100 px-0 py-0 border-0;
+}
+
+/* 强调文本样式 */
+.article-content :deep(strong) {
+  @apply font-bold text-gray-900;
+}
+
+.article-content :deep(em) {
+  @apply italic text-gray-700;
+}
+
+/* 引用块样式 */
+.article-content :deep(blockquote) {
+  @apply border-l-4 border-primary-600 pl-6 py-2 my-6 bg-primary-50;
+  @apply italic text-gray-700 rounded-r-lg;
+}
+
+.article-content :deep(blockquote p) {
+  @apply mb-0;
+}
+
+/* 链接样式 */
+.article-content :deep(a) {
+  @apply text-primary-600 hover:text-primary-700 underline;
+  @apply transition-colors duration-200;
+}
+
+/* 图片样式 */
+.article-content :deep(img) {
+  @apply rounded-lg shadow-md my-6 max-w-full h-auto;
+}
+
+/* 表格样式 */
+.article-content :deep(table) {
+  @apply w-full border-collapse mb-6 shadow-sm rounded-lg overflow-hidden;
+}
+
+.article-content :deep(thead) {
+  @apply bg-gray-50;
+}
+
+.article-content :deep(th) {
+  @apply px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider;
+  @apply border-b-2 border-gray-200;
+}
+
+.article-content :deep(td) {
+  @apply px-6 py-4 text-sm text-gray-700 border-b border-gray-200;
+}
+
+.article-content :deep(tbody tr:hover) {
+  @apply bg-gray-50;
+}
+
+/* 水平分割线 */
+.article-content :deep(hr) {
+  @apply my-8 border-0 border-t-2 border-gray-200;
+}
+
+/* 响应式优化 */
+@media (max-width: 640px) {
+  .article-content :deep(h1) {
+    @apply text-3xl mt-8 mb-4;
+  }
+
+  .article-content :deep(h2) {
+    @apply text-2xl mt-6 mb-3;
+  }
+
+  .article-content :deep(h3) {
+    @apply text-xl mt-5 mb-3;
+  }
+
+  .article-content :deep(pre) {
+    @apply p-4 text-xs;
+  }
+
+  .article-content :deep(pre code) {
+    @apply text-xs;
+  }
+}
+</style>

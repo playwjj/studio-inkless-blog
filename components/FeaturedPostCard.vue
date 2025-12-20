@@ -22,7 +22,7 @@
           <span class="inline-flex items-center px-4 py-1.5 text-sm font-semibold text-white bg-gradient-to-r from-primary-600 to-primary-700 rounded-full shadow-md">
             Featured
           </span>
-          <span class="text-sm text-gray-500">{{ post.readTime }} min read</span>
+          <span class="text-sm text-gray-500 hidden">{{ post.readTime }} min read</span>
         </div>
 
         <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4 transition-colors line-clamp-2">

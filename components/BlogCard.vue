@@ -22,7 +22,7 @@
         >
           {{ post.category }}
         </NuxtLink>
-        <span class="text-sm text-gray-500">{{ post.readTime }} min read</span>
+        <span class="text-sm text-gray-500 hidden">{{ post.readTime }} min read</span>
       </div>
 
       <NuxtLink :to="`/blog/${post.slug}`">

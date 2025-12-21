@@ -362,23 +362,8 @@ onMounted(async () => {
   }
 })
 
-const formattedContent = computed(() => {
-  if (!data.value?.content) return ''
-
-  return data.value.content
-    .replace(/\n/g, '<br>')
-    .replace(/#{1,6}\s+(.+)/g, (match, title) => {
-      const level = match.match(/^#+/)[0].length
-      const sizes = ['text-3xl', 'text-2xl', 'text-xl', 'text-lg', 'text-base', 'text-sm']
-      return `<h${level} class="${sizes[level - 1]} font-bold mt-8 mb-4 text-gray-900">${title}</h${level}>`
-    })
-    .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-gray-900">$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em class="italic">$1</em>')
-    .replace(/```(\w+)?\n([\s\S]+?)```/g, '<pre class="bg-gray-900 text-gray-100 p-6 rounded-xl overflow-x-auto my-6 shadow-lg"><code class="text-sm">$2</code></pre>')
-    .replace(/`([^`]+)`/g, '<code class="bg-primary-50 text-primary-700 px-2 py-1 rounded font-mono text-sm">$1</code>')
-    .replace(/^-\s+(.+)/gm, '<li class="ml-6 mb-2">$1</li>')
-    .replace(/^\d+\.\s+(.+)/gm, '<li class="ml-6 mb-2">$1</li>')
-})
+// Content is already HTML from TiptapEditor, no conversion needed
+const formattedContent = computed(() => data.value?.content || '')
 
 const shareOnTwitter = () => {
   const url = window.location.href

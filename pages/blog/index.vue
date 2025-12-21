@@ -267,12 +267,19 @@
 import type { BlogListItem } from '~/types/blog'
 
 const { getTitle, siteConfig } = useSiteConfig()
+const route = useRoute()
+const router = useRouter()
 
 const selectedCategory = ref<string | null>(null)
 const selectedTags = ref<string[]>([])
-const currentPage = ref(1)
 const searchQuery = ref('')
 const sortBy = ref('newest')
+
+// Read page from URL query parameter
+const currentPage = computed(() => {
+  const page = parseInt(route.query.page as string)
+  return page > 0 ? page : 1
+})
 
 // Compute query parameters for API
 const apiQuery = computed(() => ({
@@ -322,25 +329,40 @@ const toggleTag = (tag: string) => {
   } else {
     selectedTags.value.push(tag)
   }
-  currentPage.value = 1
+  // Reset to page 1 when filter changes
+  updatePageInUrl(1)
 }
 
 const clearAllFilters = () => {
   selectedCategory.value = null
   selectedTags.value = []
   searchQuery.value = ''
-  currentPage.value = 1
+  updatePageInUrl(1)
+}
+
+// Update page number in URL
+const updatePageInUrl = (page: number) => {
+  const query = { ...route.query }
+
+  if (page === 1) {
+    // Remove page param for page 1 (cleaner URL)
+    delete query.page
+  } else {
+    query.page = page.toString()
+  }
+
+  router.push({ query })
 }
 
 const handlePageChange = (page: number) => {
-  currentPage.value = page
+  updatePageInUrl(page)
   // Scroll to top of page
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 // Watch filter changes, reset page number
 watch([selectedCategory, selectedTags, searchQuery], () => {
-  currentPage.value = 1
+  updatePageInUrl(1)
 })
 
 useSeoMeta({

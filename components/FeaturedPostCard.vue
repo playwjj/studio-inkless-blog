@@ -2,11 +2,11 @@
   <article class="group relative overflow-hidden rounded-2xl bg-white shadow-xl hover:shadow-2xl transition-all duration-500">
     <div class="grid md:grid-cols-2 gap-0 min-h-[400px]">
       <!-- Image Section -->
-      <div class="relative overflow-hidden order-2 md:order-1">
+      <div class="relative overflow-hidden order-2 md:order-1 bg-gray-100">
         <div class="absolute inset-0 bg-gradient-to-r from-primary-600/20 to-transparent z-10"></div>
         <NuxtLink :to="`/blog/${post.slug}`" class="block w-full h-full">
           <NuxtImg
-            :src="post.coverImage"
+            :src="coverImageUrl"
             :alt="post.title"
             class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
             loading="eager"
@@ -80,7 +80,11 @@ interface Props {
   post: BlogListItem
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
 
 const { formatDate } = useFormatDate()
+const { getBlogCoverImage } = useImageFallback()
+
+// Get cover image with fallback
+const coverImageUrl = computed(() => getBlogCoverImage(props.post.coverImage, props.post.title))
 </script>

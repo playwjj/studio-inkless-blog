@@ -1,9 +1,9 @@
 <template>
   <article class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300">
     <NuxtLink :to="`/blog/${post.slug}`">
-      <div class="aspect-video w-full overflow-hidden">
+      <div class="aspect-video w-full overflow-hidden bg-gray-100">
         <NuxtImg
-          :src="post.coverImage"
+          :src="coverImageUrl"
           :alt="post.title"
           class="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
           loading="lazy"
@@ -79,7 +79,11 @@ interface Props {
   post: BlogListItem
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
 
 const { formatDate } = useFormatDate()
+const { getBlogCoverImage } = useImageFallback()
+
+// Get cover image with fallback
+const coverImageUrl = computed(() => getBlogCoverImage(props.post.coverImage, props.post.title))
 </script>

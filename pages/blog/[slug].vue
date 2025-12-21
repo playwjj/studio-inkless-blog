@@ -126,9 +126,9 @@
           <!-- Article Body -->
           <div class="lg:col-span-2">
             <!-- Cover Image -->
-            <div class="aspect-video w-full overflow-hidden rounded-xl shadow-xl mb-8">
+            <div class="aspect-video w-full overflow-hidden rounded-xl shadow-xl mb-8 bg-gray-100">
               <NuxtImg
-                :src="data.coverImage"
+                :src="coverImageUrl"
                 :alt="data.title"
                 class="w-full h-full object-cover"
                 width="1200"
@@ -316,8 +316,14 @@ const { data, pending, error } = await useFetch(`/api/posts/${slug}`)
 
 const { formatDate } = useFormatDate()
 const { getTitle, siteConfig } = useSiteConfig()
+const { getBlogCoverImage } = useImageFallback()
 
 const linkCopied = ref(false)
+
+// Get cover image with fallback
+const coverImageUrl = computed(() =>
+  data.value ? getBlogCoverImage(data.value.coverImage, data.value.title) : ''
+)
 
 // Track view count when article loads
 onMounted(async () => {

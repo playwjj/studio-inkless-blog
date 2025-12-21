@@ -11,11 +11,37 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  // Get client IP
+  const clientIp = getClientIp(event)
+
+  // Check IP rate limiting
+  const ipCheck = checkIpRateLimit(clientIp)
+  if (!ipCheck.allowed) {
+    console.warn(`[Security] IP ${clientIp} is rate limited. Locked until ${new Date(ipCheck.lockedUntil!).toISOString()}`)
+    throw createError({
+      statusCode: 429,
+      statusMessage: `Too many login attempts. Please try again in ${formatWaitTime(ipCheck.waitTime!)}`
+    })
+  }
+
+  // Check account lockout
+  const accountCheck = checkAccountLockout(username)
+  if (accountCheck.locked) {
+    console.warn(`[Security] Account "${username}" is locked. Locked until ${new Date(accountCheck.lockedUntil!).toISOString()}`)
+    throw createError({
+      statusCode: 423,
+      statusMessage: `Account temporarily locked due to multiple failed attempts. Please try again in ${formatWaitTime(accountCheck.waitTime!)}`
+    })
+  }
+
   try {
     // Fetch user by username
     const user = await fetchByField<DbUser>('users', 'username', username)
 
     if (!user) {
+      // Record failed attempt
+      recordFailedAttempt(clientIp, username)
+
       throw createError({
         statusCode: 401,
         statusMessage: 'Invalid credentials'
@@ -24,6 +50,9 @@ export default defineEventHandler(async (event) => {
 
     // Check if user is active
     if (!user.is_active) {
+      // Record failed attempt
+      recordFailedAttempt(clientIp, username)
+
       throw createError({
         statusCode: 403,
         statusMessage: 'Account is disabled'
@@ -34,11 +63,23 @@ export default defineEventHandler(async (event) => {
     const isPasswordValid = await verifyPassword(password, user.password_hash)
 
     if (!isPasswordValid) {
+      // Record failed attempt
+      recordFailedAttempt(clientIp, username)
+
+      // Get remaining attempts
+      const remaining = accountCheck.remainingAttempts! - 1
+      const message = remaining > 0
+        ? `Invalid credentials. ${remaining} attempt${remaining !== 1 ? 's' : ''} remaining before account lockout.`
+        : 'Invalid credentials. Account will be locked after this attempt.'
+
       throw createError({
         statusCode: 401,
-        statusMessage: 'Invalid credentials'
+        statusMessage: message
       })
     }
+
+    // Successful login - reset rate limiting
+    resetAttempts(clientIp, username)
 
     // Update last login time
     await updateRow('users', user.id, {
@@ -48,6 +89,8 @@ export default defineEventHandler(async (event) => {
     // Create session
     const userSession = createUserSession(user)
     await setUserSession(event, userSession)
+
+    console.log(`[Security] Successful login for user "${username}" from IP ${clientIp}`)
 
     return {
       success: true,

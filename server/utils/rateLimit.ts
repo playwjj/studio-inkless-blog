@@ -58,8 +58,14 @@ function cleanupOldRecords() {
   }
 }
 
-// Start periodic cleanup
-setInterval(cleanupOldRecords, CONFIG.CLEANUP_INTERVAL_MS)
+// Start periodic cleanup (only in non-Cloudflare environments)
+if (typeof setInterval !== 'undefined') {
+  try {
+    setInterval(cleanupOldRecords, CONFIG.CLEANUP_INTERVAL_MS)
+  } catch (e) {
+    // Silently fail in serverless environments like Cloudflare Workers
+  }
+}
 
 /**
  * Check if an IP is rate limited
@@ -216,14 +222,15 @@ export function resetAttempts(ip: string, username: string) {
  * Get client IP address from event
  */
 export function getClientIp(event: any): string {
-  // Try various headers in order of preference
-  const headers = event.node.req.headers
+  // Get headers using Nuxt's getHeaders function for compatibility
+  const headers = getHeaders(event)
 
+  // Try various headers in order of preference
   const ip =
     headers['cf-connecting-ip'] ||  // Cloudflare
     headers['x-real-ip'] ||         // Nginx proxy
-    headers['x-forwarded-for']?.split(',')[0] || // Standard proxy
-    event.node.req.socket?.remoteAddress || // Direct connection
+    headers['x-forwarded-for']?.split(',')[0].trim() || // Standard proxy
+    event.node?.req?.socket?.remoteAddress || // Direct connection (Node.js only)
     'unknown'
 
   return ip.toString().trim()

@@ -276,8 +276,8 @@ const searchQuery = ref('')
 const selectedCategory = ref<string | null>(null)
 const sortBy = ref('newest')
 
-// Fetch all tags for sidebar
-const { data: tagsData } = await useFetch('/api/tags')
+// Fetch top 80 tags for sidebar
+const { data: tagsData } = await useFetch('/api/tags', { query: { limit: 80 } })
 
 // Find current tag by slug
 const currentTag = computed(() => {

@@ -288,7 +288,7 @@ const { data, pending, error, refresh } = await useFetch('/api/posts', {
   watch: [currentPage, selectedCategory, selectedTags, searchQuery]
 })
 const { data: categoriesData } = await useFetch('/api/categories')
-const { data: tagsData } = await useFetch('/api/tags')
+const { data: tagsData } = await useFetch('/api/tags', { query: { limit: 80 } })
 
 const filteredPosts = computed(() => {
   if (!data.value?.posts) return []

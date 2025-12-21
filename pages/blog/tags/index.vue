@@ -239,8 +239,8 @@ const searchQuery = ref('')
 const sortBy = ref('popular')
 const viewMode = ref<'grid' | 'cloud'>('grid')
 
-// Fetch all tags
-const { data, pending, error } = await useFetch('/api/tags')
+// Fetch all tags (up to 1000)
+const { data, pending, error } = await useFetch('/api/tags', { query: { limit: 1000 } })
 
 const filteredTags = computed(() => {
   if (!data.value) return []

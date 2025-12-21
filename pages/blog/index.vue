@@ -25,13 +25,15 @@
         <div class="max-w-2xl">
           <div class="relative">
             <input
-              :value="searchQuery"
+              :value="searchInput"
               @input="setSearch(($event.target as HTMLInputElement).value)"
               type="text"
-              placeholder="Search articles by title, content, or tags..."
+              placeholder="Search articles (min 2 characters)..."
               class="w-full px-5 py-3.5 pl-12 rounded-xl border-2 border-gray-200 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all shadow-sm hover:border-gray-300"
             />
+            <!-- Search Icon or Loading Spinner -->
             <svg
+              v-if="!isSearching"
               class="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
               fill="none"
               stroke="currentColor"
@@ -44,8 +46,18 @@
                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
               />
             </svg>
+            <svg
+              v-else
+              class="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-primary-500 animate-spin"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
             <button
-              v-if="searchQuery"
+              v-if="searchInput"
               @click="setSearch('')"
               class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
             >
@@ -290,7 +302,18 @@ const searchQuery = computed(() => {
   return route.query.search as string || ''
 })
 
+// Local search input for debouncing
+const searchInput = ref(searchQuery.value)
+const isSearching = ref(false)
+let searchTimeout: NodeJS.Timeout | null = null
+
 const sortBy = ref('newest')
+
+// Watch URL changes to update local input
+watch(searchQuery, (newVal) => {
+  searchInput.value = newVal
+  isSearching.value = false
+})
 
 // Compute query parameters for API
 const apiQuery = computed(() => ({
@@ -394,8 +417,32 @@ const setCategory = (category: string | null) => {
   updateFiltersInUrl({ category, resetPage: true })
 }
 
+// Debounced search: wait 500ms after user stops typing
 const setSearch = (search: string) => {
-  updateFiltersInUrl({ search, resetPage: true })
+  searchInput.value = search
+
+  // Clear existing timeout
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
+
+  // Only search if input is empty (clear) or has 2+ characters
+  if (search.trim().length === 0) {
+    // Immediately clear search
+    isSearching.value = false
+    updateFiltersInUrl({ search: '', resetPage: true })
+  } else if (search.trim().length >= 2) {
+    // Show searching indicator
+    isSearching.value = true
+
+    // Debounce: wait 500ms before searching
+    searchTimeout = setTimeout(() => {
+      updateFiltersInUrl({ search, resetPage: true })
+    }, 500)
+  } else {
+    // Less than 2 characters, hide indicator
+    isSearching.value = false
+  }
 }
 
 const clearAllFilters = () => {

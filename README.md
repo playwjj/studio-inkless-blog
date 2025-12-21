@@ -1,8 +1,50 @@
 # Studio Inkless Blog
 
-A modern, feature-rich blog built with Nuxt 3, Tailwind CSS, and deployed on Cloudflare Pages.
+<div align="center">
 
-> **⚡ Quick Links**: [Features](#-features) • [Tech Stack](#-tech-stack) • [Getting Started](#-getting-started) • [Database Setup](#-database-setup-with-d1-sql-studio) • [File Management](#-file-management-with-cloudflare-r2) • [API Docs](#-api-endpoints) • [Deployment](#-deployment-to-cloudflare-pages) • [Security](#-security) • [Contributing](#-contributing)
+**A modern, feature-rich blog platform built with Nuxt 3, Tailwind CSS, and Cloudflare**
+
+[Live Demo](https://404401.xyz) • [Features](#-features) • [Getting Started](#-getting-started) • [Documentation](#-documentation--resources)
+
+[![Nuxt 3](https://img.shields.io/badge/Nuxt-3.13.0-00DC82?logo=nuxt.js)](https://nuxt.com/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.3.0-3178C6?logo=typescript)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-6.12.0-38B2AC?logo=tailwind-css)](https://tailwindcss.com/)
+[![Cloudflare Pages](https://img.shields.io/badge/Cloudflare-Pages-F38020?logo=cloudflare)](https://pages.cloudflare.com/)
+
+</div>
+
+---
+
+## 🌐 Live Preview
+
+**Visit the live site:** [https://404401.xyz](https://404401.xyz)
+
+Experience all features in action including the admin dashboard, content management system, and responsive design.
+
+---
+
+## 📑 Table of Contents
+
+- [Live Preview](#-live-preview)
+- [Features](#-features)
+- [Tech Stack](#-tech-stack)
+- [Getting Started](#-getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+  - [Environment Configuration](#environment-configuration)
+- [Database Setup (D1 SQL Studio)](#-database-setup-with-d1-sql-studio)
+- [File Management (Cloudflare R2)](#-file-management-with-cloudflare-r2)
+- [Project Structure](#project-structure)
+- [API Endpoints](#-api-endpoints)
+- [Features Deep Dive](#-features-deep-dive)
+- [Deployment to Cloudflare Pages](#-deployment-to-cloudflare-pages)
+- [Performance Optimization](#-performance-optimization)
+- [Security](#-security-features)
+- [Documentation & Resources](#-documentation--resources)
+- [Contributing](#-contributing)
+- [License](#-license)
+
+---
 
 ## ✨ Features
 
@@ -33,19 +75,31 @@ A modern, feature-rich blog built with Nuxt 3, Tailwind CSS, and deployed on Clo
 
 ## 🛠 Tech Stack
 
-- [Nuxt 3](https://nuxt.com/) - Vue.js framework with SSR
-- [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS framework
-- [TypeScript](https://www.typescriptlang.org/) - Type-safe development
-- [Nuxt Image](https://image.nuxt.com/) - Image optimization
-- [Cloudflare R2](https://www.cloudflare.com/products/r2/) - S3-compatible object storage
-- [Cloudflare Pages](https://pages.cloudflare.com/) - Global deployment
+### Core Framework
+- **[Nuxt 3](https://nuxt.com/)** - Vue.js framework with server-side rendering (SSR)
+- **[Vue 3](https://vuejs.org/)** - Progressive JavaScript framework
+- **[TypeScript](https://www.typescriptlang.org/)** - Type-safe development
+
+### UI & Styling
+- **[Tailwind CSS](https://tailwindcss.com/)** - Utility-first CSS framework
+- **[Nuxt Image](https://image.nuxt.com/)** - Automatic image optimization
+- **[TipTap](https://tiptap.dev/)** - Rich text editor for content management
+
+### Backend & Infrastructure
+- **[Cloudflare Pages](https://pages.cloudflare.com/)** - Global CDN deployment
+- **[Cloudflare R2](https://www.cloudflare.com/products/r2/)** - S3-compatible object storage
+- **[D1 SQL Studio](https://github.com/playwjj/d1-sql-studio)** - Database management with REST API
+- **[H3](https://h3.unjs.io/)** - Web framework for server routes
 
 ## 🚀 Getting Started
+
+> 💡 **Tip**: Check out the [live demo](https://404401.xyz) to see all features in action before setting up your own instance!
 
 ### Prerequisites
 
 - Node.js 20 or later
 - npm or yarn
+- Cloudflare account (for R2 storage and deployment)
 
 ### Installation
 
@@ -744,17 +798,16 @@ Found a bug? Please open an issue on GitHub with:
 - Expected vs actual behavior
 - Your environment (OS, Node version, etc.)
 
-## � Changelog
-
-See [CHANGELOG.md](./CHANGELOG.md) for version history and release notes.
-
 ## ⭐ Show Your Support
 
 If you find this project helpful, please consider:
-- Starring the repository
-- Sharing it with others
-- Contributing improvements
-- Reporting bugs and suggesting features
+- ⭐ **Starring the repository** - Show your appreciation
+- 🔗 **Sharing it with others** - Help spread the word
+- 🤝 **Contributing improvements** - Make it better together
+- 🐛 **Reporting bugs** - Help us fix issues
+- 💡 **Suggesting features** - Share your ideas
+
+**Live site**: [https://404401.xyz](https://404401.xyz)
 
 ## 📄 License
 

@@ -59,8 +59,8 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     dbApiKey: process.env.DB_API_KEY,
-    dbApiUrl: process.env.DB_API_URL || 'https://db.404401.xyz',
-    sessionSecret: process.env.SESSION_SECRET || 'change-this-secret-in-production-min-32-chars-required',
+    dbApiUrl: process.env.DB_API_URL,
+    sessionSecret: process.env.SESSION_SECRET,
     // Cloudflare R2 Configuration
     // R2 bucket is bound directly via Cloudflare Pages, only public URL is needed
     r2PublicUrl: process.env.R2_PUBLIC_URL,

@@ -25,7 +25,8 @@
         <div class="max-w-2xl">
           <div class="relative">
             <input
-              v-model="searchQuery"
+              :value="searchQuery"
+              @input="setSearch(($event.target as HTMLInputElement).value)"
               type="text"
               placeholder="Search articles by title, content, or tags..."
               class="w-full px-5 py-3.5 pl-12 rounded-xl border-2 border-gray-200 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all shadow-sm hover:border-gray-300"
@@ -45,7 +46,7 @@
             </svg>
             <button
               v-if="searchQuery"
-              @click="searchQuery = ''"
+              @click="setSearch('')"
               class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
             >
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -63,7 +64,7 @@
 
             <button
               v-if="selectedCategory"
-              @click="selectedCategory = null"
+              @click="setCategory(null)"
               class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-100 text-primary-700 rounded-lg text-sm font-medium hover:bg-primary-200 transition-colors"
             >
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -133,7 +134,7 @@
               </div>
               <div v-if="categoriesData" class="p-3 space-y-1">
                 <button
-                  @click="selectedCategory = null"
+                  @click="setCategory(null)"
                   :class="[
                     'block w-full text-left px-4 py-2.5 rounded-lg transition-all font-medium text-sm',
                     !selectedCategory
@@ -148,10 +149,10 @@
                     </span>
                   </span>
                 </button>
-                <NuxtLink
+                <button
                   v-for="category in categoriesData"
                   :key="category.slug"
-                  :to="`/blog/category/${category.slug}`"
+                  @click="setCategory(category.name)"
                   :class="[
                     'block w-full text-left px-4 py-2.5 rounded-lg transition-all font-medium text-sm',
                     selectedCategory === category.name
@@ -165,7 +166,7 @@
                       {{ category.count }}
                     </span>
                   </span>
-                </NuxtLink>
+                </button>
               </div>
             </div>
 
@@ -269,16 +270,27 @@ const { getTitle, siteConfig } = useSiteConfig()
 const route = useRoute()
 const router = useRouter()
 
-const selectedCategory = ref<string | null>(null)
-const selectedTags = ref<string[]>([])
-const searchQuery = ref('')
-const sortBy = ref('newest')
-
-// Read page from URL query parameter
+// Read all filters from URL query parameters
 const currentPage = computed(() => {
   const page = parseInt(route.query.page as string)
   return page > 0 ? page : 1
 })
+
+const selectedCategory = computed(() => {
+  return route.query.category as string || null
+})
+
+const selectedTags = computed(() => {
+  const tags = route.query.tags
+  if (!tags) return []
+  return Array.isArray(tags) ? tags : [tags]
+})
+
+const searchQuery = computed(() => {
+  return route.query.search as string || ''
+})
+
+const sortBy = ref('newest')
 
 // Compute query parameters for API
 const apiQuery = computed(() => ({
@@ -321,35 +333,74 @@ const hasActiveFilters = computed(() => {
   return selectedCategory.value !== null || selectedTags.value.length > 0 || searchQuery.value.trim() !== ''
 })
 
-const toggleTag = (tag: string) => {
-  const index = selectedTags.value.indexOf(tag)
-  if (index > -1) {
-    selectedTags.value.splice(index, 1)
-  } else {
-    selectedTags.value.push(tag)
+// Update filters in URL
+const updateFiltersInUrl = (updates: {
+  category?: string | null
+  tags?: string[]
+  search?: string
+  resetPage?: boolean
+}) => {
+  const query: any = { ...route.query }
+
+  // Update category
+  if (updates.category !== undefined) {
+    if (updates.category) {
+      query.category = updates.category
+    } else {
+      delete query.category
+    }
   }
-  // Reset to page 1 when filter changes
-  resetToPageOne()
-}
 
-const clearAllFilters = () => {
-  selectedCategory.value = null
-  selectedTags.value = []
-  searchQuery.value = ''
-  resetToPageOne()
-}
+  // Update tags
+  if (updates.tags !== undefined) {
+    if (updates.tags.length > 0) {
+      query.tags = updates.tags
+    } else {
+      delete query.tags
+    }
+  }
 
-// Reset to page 1 (remove page query param)
-const resetToPageOne = () => {
-  const query = { ...route.query }
-  delete query.page
+  // Update search
+  if (updates.search !== undefined) {
+    if (updates.search.trim()) {
+      query.search = updates.search.trim()
+    } else {
+      delete query.search
+    }
+  }
+
+  // Reset to page 1 if filter changed
+  if (updates.resetPage) {
+    delete query.page
+  }
+
   router.push({ query })
 }
 
-// Watch filter changes, reset page number
-watch([selectedCategory, selectedTags, searchQuery], () => {
-  resetToPageOne()
-})
+const toggleTag = (tag: string) => {
+  const currentTags = [...selectedTags.value]
+  const index = currentTags.indexOf(tag)
+
+  if (index > -1) {
+    currentTags.splice(index, 1)
+  } else {
+    currentTags.push(tag)
+  }
+
+  updateFiltersInUrl({ tags: currentTags, resetPage: true })
+}
+
+const setCategory = (category: string | null) => {
+  updateFiltersInUrl({ category, resetPage: true })
+}
+
+const setSearch = (search: string) => {
+  updateFiltersInUrl({ search, resetPage: true })
+}
+
+const clearAllFilters = () => {
+  router.push({ path: route.path })
+}
 
 useSeoMeta({
   title: () => getTitle('Blog'),

@@ -1,48 +1,83 @@
 <template>
   <div v-if="totalPages > 1" class="flex justify-center items-center gap-2 mt-8">
-    <button
-      @click="$emit('update:page', currentPage - 1)"
-      :disabled="currentPage === 1"
+    <!-- Previous Button -->
+    <NuxtLink
+      v-if="currentPage > 1"
+      :to="getPageUrl(currentPage - 1)"
       :class="[
         'px-4 py-2 rounded-lg border transition-colors',
-        currentPage === 1
-          ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+        'border-gray-300 text-gray-700 hover:bg-gray-50'
+      ]"
+      @click="scrollToTop"
+    >
+      Previous
+    </NuxtLink>
+    <span
+      v-else
+      :class="[
+        'px-4 py-2 rounded-lg border transition-colors',
+        'border-gray-200 text-gray-400 cursor-not-allowed'
       ]"
     >
       Previous
-    </button>
+    </span>
 
+    <!-- Page Numbers -->
     <div class="flex gap-1">
-      <button
-        v-for="page in displayedPages"
-        :key="page"
-        @click="page !== '...' && $emit('update:page', page)"
-        :class="[
-          'min-w-[40px] h-10 rounded-lg border transition-colors',
-          page === currentPage
-            ? 'bg-primary-600 text-white border-primary-600'
-            : page === '...'
-            ? 'border-transparent text-gray-400 cursor-default'
-            : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-        ]"
-      >
-        {{ page }}
-      </button>
+      <template v-for="page in displayedPages" :key="page">
+        <!-- Ellipsis -->
+        <span
+          v-if="page === '...'"
+          class="min-w-[40px] h-10 rounded-lg border border-transparent text-gray-400 flex items-center justify-center"
+        >
+          {{ page }}
+        </span>
+        <!-- Current Page -->
+        <span
+          v-else-if="page === currentPage"
+          :class="[
+            'min-w-[40px] h-10 rounded-lg border transition-colors flex items-center justify-center',
+            'bg-primary-600 text-white border-primary-600 font-semibold'
+          ]"
+        >
+          {{ page }}
+        </span>
+        <!-- Other Pages -->
+        <NuxtLink
+          v-else
+          :to="getPageUrl(page as number)"
+          :class="[
+            'min-w-[40px] h-10 rounded-lg border transition-colors flex items-center justify-center',
+            'border-gray-300 text-gray-700 hover:bg-gray-50'
+          ]"
+          @click="scrollToTop"
+        >
+          {{ page }}
+        </NuxtLink>
+      </template>
     </div>
 
-    <button
-      @click="$emit('update:page', currentPage + 1)"
-      :disabled="currentPage === totalPages"
+    <!-- Next Button -->
+    <NuxtLink
+      v-if="currentPage < totalPages"
+      :to="getPageUrl(currentPage + 1)"
       :class="[
         'px-4 py-2 rounded-lg border transition-colors',
-        currentPage === totalPages
-          ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+        'border-gray-300 text-gray-700 hover:bg-gray-50'
+      ]"
+      @click="scrollToTop"
+    >
+      Next
+    </NuxtLink>
+    <span
+      v-else
+      :class="[
+        'px-4 py-2 rounded-lg border transition-colors',
+        'border-gray-200 text-gray-400 cursor-not-allowed'
       ]"
     >
       Next
-    </button>
+    </span>
   </div>
 </template>
 
@@ -57,9 +92,29 @@ const props = withDefaults(defineProps<Props>(), {
   maxDisplayed: 7
 })
 
-defineEmits<{
-  'update:page': [page: number]
-}>()
+const route = useRoute()
+
+// Generate URL for a specific page number
+const getPageUrl = (page: number) => {
+  const query = { ...route.query }
+
+  if (page === 1) {
+    // Remove page param for page 1 (cleaner URL)
+    delete query.page
+  } else {
+    query.page = page.toString()
+  }
+
+  return {
+    path: route.path,
+    query
+  }
+}
+
+// Scroll to top when clicking pagination
+const scrollToTop = () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
 
 const displayedPages = computed(() => {
   const pages: (number | string)[] = []

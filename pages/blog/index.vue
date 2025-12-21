@@ -254,7 +254,6 @@
               v-if="data?.pagination"
               :current-page="currentPage"
               :total-pages="data.pagination.totalPages"
-              @update:page="handlePageChange"
             />
           </div>
         </div>
@@ -330,39 +329,26 @@ const toggleTag = (tag: string) => {
     selectedTags.value.push(tag)
   }
   // Reset to page 1 when filter changes
-  updatePageInUrl(1)
+  resetToPageOne()
 }
 
 const clearAllFilters = () => {
   selectedCategory.value = null
   selectedTags.value = []
   searchQuery.value = ''
-  updatePageInUrl(1)
+  resetToPageOne()
 }
 
-// Update page number in URL
-const updatePageInUrl = (page: number) => {
+// Reset to page 1 (remove page query param)
+const resetToPageOne = () => {
   const query = { ...route.query }
-
-  if (page === 1) {
-    // Remove page param for page 1 (cleaner URL)
-    delete query.page
-  } else {
-    query.page = page.toString()
-  }
-
+  delete query.page
   router.push({ query })
-}
-
-const handlePageChange = (page: number) => {
-  updatePageInUrl(page)
-  // Scroll to top of page
-  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 // Watch filter changes, reset page number
 watch([selectedCategory, selectedTags, searchQuery], () => {
-  updatePageInUrl(1)
+  resetToPageOne()
 })
 
 useSeoMeta({

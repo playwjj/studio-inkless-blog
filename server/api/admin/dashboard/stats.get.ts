@@ -52,24 +52,21 @@ export default defineEventHandler(async (event) => {
         FROM pages
       `),
 
-      // Use fetchFromDb for recent articles
-      fetchFromDb<DbArticle>('articles', {
-        limit: 1000,
-        sortBy: 'created_at',
-        sortOrder: 'desc'
-      }),
+      // Use SQL query to get only recent 5 published articles directly
+      executeQuery<DbArticle>(`
+        SELECT id, title, slug, cover_image_url, view_count, created_at, category_id
+        FROM articles
+        WHERE status = 'published'
+        ORDER BY created_at DESC
+        LIMIT 5
+      `),
 
       fetchFromDb<DbCategory>('categories')
     ])
 
     // Extract data
-    const articles = articlesResponse.data || []
+    const publishedArticles = articlesResponse || []
     const categories = categoriesResponse.data || []
-
-    // Get recent 5 published articles
-    const publishedArticles = articles
-      .filter(article => article.status === 'published')
-      .slice(0, 5)
 
     // Enhance recent articles with category names
     const recentArticles = publishedArticles.map(article => {

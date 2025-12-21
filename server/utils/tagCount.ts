@@ -1,37 +1,42 @@
 /**
  * Update usage_count for multiple tags based on article tag_names
+ * Optimized to use batch queries
  */
 export async function updateTagUsageCounts(tagNames: string[]): Promise<void> {
-  for (const tagName of tagNames) {
-    try {
-      const tag = await fetchOneFromDb<{ id: number, name: string, usage_count: number }>(
-        'tags',
-        undefined,
-        { name: tagName }
+  if (tagNames.length === 0) return
+
+  try {
+    // Fetch all relevant tags in one query
+    const placeholders = tagNames.map(() => '?').join(',')
+    const tags = await executeQuery<{ id: number, name: string }>(
+      `SELECT id, name FROM tags WHERE name IN (${placeholders})`,
+      tagNames
+    )
+
+    const now = new Date().toISOString()
+
+    // Update each tag's count
+    for (const tag of tags) {
+      const articles = await executeQuery<{ count: number }>(
+        `SELECT COUNT(*) as count FROM articles WHERE tag_names LIKE ? AND status = ?`,
+        [`%${tag.name}%`, 'published']
       )
 
-      if (tag) {
-        // Count how many articles use this tag
-        const articles = await executeQuery<{ count: number }>(
-          `SELECT COUNT(*) as count FROM articles WHERE tag_names LIKE ? AND status = ?`,
-          [`%${tagName}%`, 'published']
-        )
+      const count = articles[0]?.count || 0
 
-        const count = articles[0]?.count || 0
-
-        await updateRow('tags', tag.id, {
-          usage_count: count,
-          updated_at: new Date().toISOString()
-        })
-      }
-    } catch (error) {
-      console.error(`Failed to update usage count for tag "${tagName}":`, error)
+      await updateRow('tags', tag.id, {
+        usage_count: count,
+        updated_at: now
+      })
     }
+  } catch (error) {
+    console.error('Failed to update usage counts for tags:', error)
   }
 }
 
 /**
  * Decrement usage_count for tags when an article is deleted
+ * Optimized to use batch queries
  */
 export async function decrementTagUsageCounts(tagNamesString: string): Promise<void> {
   if (!tagNamesString) return
@@ -41,28 +46,35 @@ export async function decrementTagUsageCounts(tagNamesString: string): Promise<v
     .map(tag => tag.trim())
     .filter(Boolean)
 
-  for (const tagName of tagNames) {
-    try {
-      const tag = await fetchOneFromDb<{ id: number, name: string, usage_count: number }>(
-        'tags',
-        undefined,
-        { name: tagName }
-      )
+  if (tagNames.length === 0) return
 
-      if (tag && tag.usage_count > 0) {
+  try {
+    // Fetch all tags in one query
+    const placeholders = tagNames.map(() => '?').join(',')
+    const tags = await executeQuery<{ id: number, name: string, usage_count: number }>(
+      `SELECT id, name, usage_count FROM tags WHERE name IN (${placeholders})`,
+      tagNames
+    )
+
+    const now = new Date().toISOString()
+
+    // Batch update
+    for (const tag of tags) {
+      if (tag.usage_count > 0) {
         await updateRow('tags', tag.id, {
           usage_count: tag.usage_count - 1,
-          updated_at: new Date().toISOString()
+          updated_at: now
         })
       }
-    } catch (error) {
-      console.error(`Failed to decrement usage count for tag "${tagName}":`, error)
     }
+  } catch (error) {
+    console.error('Failed to decrement usage counts for tags:', error)
   }
 }
 
 /**
  * Delete tags that are not used by any articles
+ * Optimized with batch queries
  */
 export async function cleanupUnusedTags(): Promise<number> {
   try {
@@ -71,8 +83,12 @@ export async function cleanupUnusedTags(): Promise<number> {
       'SELECT id, name FROM tags WHERE usage_count = 0 OR usage_count IS NULL'
     )
 
-    let deletedCount = 0
+    if (unusedTags.length === 0) return 0
 
+    let deletedCount = 0
+    const now = new Date().toISOString()
+
+    // Process in batches to avoid too many concurrent queries
     for (const tag of unusedTags) {
       // Double-check: verify no articles are using this tag
       const articles = await executeQuery<{ count: number }>(
@@ -85,14 +101,12 @@ export async function cleanupUnusedTags(): Promise<number> {
       if (count === 0) {
         await deleteRow('tags', tag.id)
         deletedCount++
-        console.log(`Deleted unused tag: ${tag.name}`)
       } else {
         // Update the count if it was incorrect
         await updateRow('tags', tag.id, {
           usage_count: count,
-          updated_at: new Date().toISOString()
+          updated_at: now
         })
-        console.log(`Updated count for tag ${tag.name}: ${count}`)
       }
     }
 

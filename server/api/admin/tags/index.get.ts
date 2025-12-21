@@ -5,11 +5,19 @@ export default defineEventHandler(async (event) => {
     // Require authentication
     await requireAuth(event)
 
+    // Get pagination parameters from query
+    const query = getQuery(event)
+    const page = parseInt(query.page as string) || 1
+    const limit = parseInt(query.limit as string) || 50
+    const sortBy = (query.sortBy as string) || 'created_at'
+    const sortOrder = (query.sortOrder as 'asc' | 'desc') || 'desc'
+
     // Fetch tags
     const tagsResponse = await fetchFromDb<DbTag>('tags', {
-      limit: 100,
-      sortBy: 'created_at',
-      sortOrder: 'desc'
+      page,
+      limit,
+      sortBy,
+      sortOrder
     })
 
     const tags = tagsResponse.data
@@ -17,7 +25,12 @@ export default defineEventHandler(async (event) => {
     return {
       success: true,
       tags: tags,
-      total: tagsResponse.meta?.total || tags.length
+      pagination: {
+        page: tagsResponse.meta?.page || page,
+        limit: tagsResponse.meta?.limit || limit,
+        total: tagsResponse.meta?.total || tags.length,
+        totalPages: Math.ceil((tagsResponse.meta?.total || tags.length) / limit)
+      }
     }
   } catch (error: any) {
     if (error.statusCode) {

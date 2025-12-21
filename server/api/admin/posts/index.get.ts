@@ -5,12 +5,20 @@ export default defineEventHandler(async (event) => {
     // Require authentication
     await requireAuth(event)
 
+    // Get pagination parameters from query
+    const query = getQuery(event)
+    const page = parseInt(query.page as string) || 1
+    const limit = parseInt(query.limit as string) || 20
+    const sortBy = (query.sortBy as string) || 'created_at'
+    const sortOrder = (query.sortOrder as 'asc' | 'desc') || 'desc'
+
     // Fetch articles and categories
     const [articlesResponse, categoriesResponse] = await Promise.all([
       fetchFromDb<DbArticle>('articles', {
-        limit: 1000,
-        sortBy: 'created_at',
-        sortOrder: 'desc'
+        page,
+        limit,
+        sortBy,
+        sortOrder
       }),
       fetchFromDb<DbCategory>('categories', { limit: 100 })
     ])
@@ -30,7 +38,12 @@ export default defineEventHandler(async (event) => {
     return {
       success: true,
       articles: articlesWithCategory,
-      total: articlesResponse.meta?.total || articles.length
+      pagination: {
+        page: articlesResponse.meta?.page || page,
+        limit: articlesResponse.meta?.limit || limit,
+        total: articlesResponse.meta?.total || articles.length,
+        totalPages: Math.ceil((articlesResponse.meta?.total || articles.length) / limit)
+      }
     }
   } catch (error: any) {
     if (error.statusCode) {

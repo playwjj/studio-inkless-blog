@@ -45,9 +45,9 @@ export default defineEventHandler(async (event) => {
     // Insert article into database
     await insertRow('articles', articleData)
 
-    // Sync tags to tags table
+    // Sync tags to tags table using batch operations (optimized)
     if (body.tags) {
-      await syncTagsToTable(body.tags, body.status)
+      await batchSyncTags(body.tags, '', '', body.status)
     }
 
     // Update category count if article is published
@@ -75,44 +75,3 @@ export default defineEventHandler(async (event) => {
   }
 })
 
-// Helper function to sync tags to tags table
-async function syncTagsToTable(tagsString: string, status: string) {
-  if (!tagsString) return
-
-  const tagNames = tagsString
-    .split(',')
-    .map(tag => tag.trim())
-    .filter(Boolean)
-
-  for (const tagName of tagNames) {
-    try {
-      // Check if tag exists
-      let tag = await fetchOneFromDb<{ id: number, name: string, usage_count: number }>(
-        'tags',
-        undefined,
-        { name: tagName }
-      )
-
-      if (!tag) {
-        // Create new tag with appropriate usage_count
-        await insertRow('tags', {
-          name: tagName,
-          slug: tagName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
-          usage_count: status === 'published' ? 1 : 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-      } else {
-        // Only increment usage count if article is published
-        if (status === 'published') {
-          await updateRow('tags', tag.id, {
-            usage_count: (tag.usage_count || 0) + 1,
-            updated_at: new Date().toISOString()
-          })
-        }
-      }
-    } catch (error) {
-      console.error(`Failed to sync tag "${tagName}":`, error)
-    }
-  }
-}

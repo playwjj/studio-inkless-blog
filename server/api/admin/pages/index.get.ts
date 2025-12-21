@@ -5,11 +5,19 @@ export default defineEventHandler(async (event) => {
     // Require authentication
     await requireAuth(event)
 
+    // Get pagination parameters from query
+    const query = getQuery(event)
+    const page = parseInt(query.page as string) || 1
+    const limit = parseInt(query.limit as string) || 50
+    const sortBy = (query.sortBy as string) || 'sort'
+    const sortOrder = (query.sortOrder as 'asc' | 'desc') || 'asc'
+
     // Fetch pages, sorted by sort order first, then by created_at
     const pagesResponse = await fetchFromDb<DbPage>('pages', {
-      limit: 1000,
-      sortBy: 'sort',
-      sortOrder: 'asc'
+      page,
+      limit,
+      sortBy,
+      sortOrder
     })
 
     const pages = pagesResponse.data || []
@@ -17,7 +25,12 @@ export default defineEventHandler(async (event) => {
     return {
       success: true,
       pages: pages,
-      total: pagesResponse.meta?.total || pages.length
+      pagination: {
+        page: pagesResponse.meta?.page || page,
+        limit: pagesResponse.meta?.limit || limit,
+        total: pagesResponse.meta?.total || pages.length,
+        totalPages: Math.ceil((pagesResponse.meta?.total || pages.length) / limit)
+      }
     }
   } catch (error: any) {
     if (error.statusCode) {

@@ -7,20 +7,12 @@ export default defineEventHandler(async (event) => {
     // Require authentication
     await requireAuth(event)
 
-    // Get all categories
-    const allCategories = await fetchAllFromDb<{ id: number, name: string }>('categories')
-
-    for (const category of allCategories) {
-      await updateCategoryCount(category.id)
-      console.log(`Updated category "${category.name}" count`)
-    }
+    // Recalculate all category counts using optimized batch function
+    await recalculateAllCategoryCounts()
 
     return {
       success: true,
-      message: 'Successfully recalculated all category counts',
-      data: {
-        categoriesUpdated: allCategories.length
-      }
+      message: 'Successfully recalculated all category counts'
     }
   } catch (error: any) {
     if (error.statusCode) {

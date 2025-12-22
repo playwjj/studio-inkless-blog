@@ -360,10 +360,13 @@ export async function deleteRows(
   // First fetch all rows matching the where clause
   const rows = await fetchAllFromDb<{ id: number }>(table, where)
 
-  // Delete each row
-  for (const row of rows) {
-    await deleteRow(table, row.id)
-  }
+  if (rows.length === 0) return true
+
+  // Batch delete using a single SQL statement
+  const ids = rows.map(row => row.id).join(',')
+  const deleteSql = `DELETE FROM ${table} WHERE id IN (${ids})`
+
+  await executeQuery(deleteSql)
 
   return true
 }

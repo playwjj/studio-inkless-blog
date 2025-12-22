@@ -64,3 +64,53 @@ export async function decrementCategoryCount(categoryId: number): Promise<void> 
     console.error(`Failed to decrement category count for category ${categoryId}:`, error)
   }
 }
+
+/**
+ * Recalculate count for all categories
+ * Optimized for Cloudflare Workers to avoid "Too many subrequests" error
+ */
+export async function recalculateAllCategoryCounts(): Promise<void> {
+  try {
+    // Get all categories and articles in parallel
+    const [allCategories, articleCounts] = await Promise.all([
+      fetchAllFromDb<{ id: number, name: string }>('categories'),
+      executeQuery<{ category_id: number, count: number }>(
+        'SELECT category_id, COUNT(*) as count FROM articles WHERE status = ? GROUP BY category_id',
+        ['published']
+      )
+    ])
+
+    if (allCategories.length === 0) {
+      console.log('No categories to recalculate')
+      return
+    }
+
+    // Create a map of category counts
+    const countMap = new Map<number, number>()
+    for (const result of articleCounts) {
+      countMap.set(result.category_id, result.count)
+    }
+
+    // Build batch update SQL
+    const now = new Date().toISOString()
+    const whenClauses = allCategories.map(category => {
+      const count = countMap.get(category.id) || 0
+      console.log(`Updated category "${category.name}" count to ${count}`)
+      return `WHEN id = ${category.id} THEN ${count}`
+    }).join(' ')
+
+    const updateSql = `
+      UPDATE categories
+      SET count = CASE ${whenClauses} ELSE 0 END,
+          updated_at = ?
+      WHERE id IN (${allCategories.map(c => c.id).join(',')})
+    `
+
+    await executeQuery(updateSql, [now])
+
+    console.log('Successfully recalculated all category counts')
+  } catch (error) {
+    console.error('Failed to recalculate category counts:', error)
+    throw error
+  }
+}

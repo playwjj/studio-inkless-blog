@@ -68,23 +68,35 @@ export async function processBatchTagOperations(operations: TagOperation[]): Pro
   // Step 5: Execute batch updates
   const now = new Date().toISOString()
 
-  // Batch update existing tags
-  for (const { id, newCount } of updates) {
-    await updateRow('tags', id, {
-      usage_count: newCount,
-      updated_at: now
-    })
+  // Batch update existing tags using a single SQL statement
+  if (updates.length > 0) {
+    const whenClauses = updates.map(({ id, newCount }) =>
+      `WHEN id = ${id} THEN ${newCount}`
+    ).join(' ')
+
+    const updateSql = `
+      UPDATE tags
+      SET usage_count = CASE ${whenClauses} ELSE usage_count END,
+          updated_at = ?
+      WHERE id IN (${updates.map(u => u.id).join(',')})
+    `
+
+    await executeQuery(updateSql, [now])
   }
 
-  // Batch insert new tags
-  for (const { name, count } of inserts) {
-    await insertRow('tags', {
-      name,
-      slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
-      usage_count: count,
-      created_at: now,
-      updated_at: now
-    })
+  // Batch insert new tags using a single SQL statement
+  if (inserts.length > 0) {
+    const values = inserts.map(({ name, count }) => {
+      const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+      return `('${name.replace(/'/g, "''")}', '${slug}', ${count}, '${now}', '${now}')`
+    }).join(', ')
+
+    const insertSql = `
+      INSERT INTO tags (name, slug, usage_count, created_at, updated_at)
+      VALUES ${values}
+    `
+
+    await executeQuery(insertSql)
   }
 }
 

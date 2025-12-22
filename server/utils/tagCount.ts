@@ -1,34 +1,60 @@
 /**
  * Update usage_count for multiple tags based on article tag_names
- * Optimized to use batch queries
+ * Optimized for Cloudflare Workers to avoid "Too many subrequests" error
  */
 export async function updateTagUsageCounts(tagNames: string[]): Promise<void> {
   if (tagNames.length === 0) return
 
   try {
-    // Fetch all relevant tags in one query
+    // Fetch tags and articles in parallel
     const placeholders = tagNames.map(() => '?').join(',')
-    const tags = await executeQuery<{ id: number, name: string }>(
-      `SELECT id, name FROM tags WHERE name IN (${placeholders})`,
-      tagNames
-    )
-
-    const now = new Date().toISOString()
-
-    // Update each tag's count
-    for (const tag of tags) {
-      const articles = await executeQuery<{ count: number }>(
-        `SELECT COUNT(*) as count FROM articles WHERE tag_names LIKE ? AND status = ?`,
-        [`%${tag.name}%`, 'published']
+    const [tags, allArticles] = await Promise.all([
+      executeQuery<{ id: number, name: string }>(
+        `SELECT id, name FROM tags WHERE name IN (${placeholders})`,
+        tagNames
+      ),
+      executeQuery<{ tag_names: string }>(
+        'SELECT tag_names FROM articles WHERE status = ?',
+        ['published']
       )
+    ])
 
-      const count = articles[0]?.count || 0
+    if (tags.length === 0) return
 
-      await updateRow('tags', tag.id, {
-        usage_count: count,
-        updated_at: now
-      })
+    // Calculate usage count for each tag in memory
+    const tagCounts = new Map<number, number>()
+
+    for (const tag of tags) {
+      let count = 0
+      for (const article of allArticles) {
+        if (article.tag_names) {
+          const articleTags = article.tag_names
+            .split(',')
+            .map(t => t.trim())
+            .filter(Boolean)
+
+          if (articleTags.includes(tag.name)) {
+            count++
+          }
+        }
+      }
+      tagCounts.set(tag.id, count)
     }
+
+    // Batch update using a single SQL statement
+    const now = new Date().toISOString()
+    const whenClauses = tags.map(tag =>
+      `WHEN id = ${tag.id} THEN ${tagCounts.get(tag.id) || 0}`
+    ).join(' ')
+
+    const updateSql = `
+      UPDATE tags
+      SET usage_count = CASE ${whenClauses} ELSE usage_count END,
+          updated_at = ?
+      WHERE id IN (${tags.map(t => t.id).join(',')})
+    `
+
+    await executeQuery(updateSql, [now])
   } catch (error) {
     console.error('Failed to update usage counts for tags:', error)
   }
@@ -36,7 +62,7 @@ export async function updateTagUsageCounts(tagNames: string[]): Promise<void> {
 
 /**
  * Decrement usage_count for tags when an article is deleted
- * Optimized to use batch queries
+ * Optimized for Cloudflare Workers to avoid "Too many subrequests" error
  */
 export async function decrementTagUsageCounts(tagNamesString: string): Promise<void> {
   if (!tagNamesString) return
@@ -56,17 +82,27 @@ export async function decrementTagUsageCounts(tagNamesString: string): Promise<v
       tagNames
     )
 
-    const now = new Date().toISOString()
+    if (tags.length === 0) return
 
-    // Batch update
-    for (const tag of tags) {
-      if (tag.usage_count > 0) {
-        await updateRow('tags', tag.id, {
-          usage_count: tag.usage_count - 1,
-          updated_at: now
-        })
-      }
-    }
+    // Filter tags that need to be updated (usage_count > 0)
+    const tagsToUpdate = tags.filter(tag => tag.usage_count > 0)
+
+    if (tagsToUpdate.length === 0) return
+
+    // Batch update using a single SQL statement
+    const now = new Date().toISOString()
+    const whenClauses = tagsToUpdate.map(tag =>
+      `WHEN id = ${tag.id} THEN ${tag.usage_count - 1}`
+    ).join(' ')
+
+    const updateSql = `
+      UPDATE tags
+      SET usage_count = CASE ${whenClauses} ELSE usage_count END,
+          updated_at = ?
+      WHERE id IN (${tagsToUpdate.map(t => t.id).join(',')})
+    `
+
+    await executeQuery(updateSql, [now])
   } catch (error) {
     console.error('Failed to decrement usage counts for tags:', error)
   }
@@ -74,43 +110,73 @@ export async function decrementTagUsageCounts(tagNamesString: string): Promise<v
 
 /**
  * Delete tags that are not used by any articles
- * Optimized with batch queries
+ * Optimized for Cloudflare Workers to avoid "Too many subrequests" error
  */
 export async function cleanupUnusedTags(): Promise<number> {
   try {
-    // Find all tags with usage_count = 0
-    const unusedTags = await executeQuery<{ id: number, name: string }>(
-      'SELECT id, name FROM tags WHERE usage_count = 0 OR usage_count IS NULL'
-    )
+    // Fetch unused tags and all articles in parallel
+    const [unusedTags, allArticles] = await Promise.all([
+      executeQuery<{ id: number, name: string }>(
+        'SELECT id, name FROM tags WHERE usage_count = 0 OR usage_count IS NULL'
+      ),
+      executeQuery<{ tag_names: string }>(
+        'SELECT tag_names FROM articles'
+      )
+    ])
 
     if (unusedTags.length === 0) return 0
 
-    let deletedCount = 0
     const now = new Date().toISOString()
+    const tagsToDelete: number[] = []
+    const tagsToUpdate: Array<{ id: number, count: number }> = []
 
-    // Process in batches to avoid too many concurrent queries
+    // Calculate actual usage for each "unused" tag
     for (const tag of unusedTags) {
-      // Double-check: verify no articles are using this tag
-      const articles = await executeQuery<{ count: number }>(
-        'SELECT COUNT(*) as count FROM articles WHERE tag_names LIKE ?',
-        [`%${tag.name}%`]
-      )
+      let count = 0
+      for (const article of allArticles) {
+        if (article.tag_names) {
+          const articleTags = article.tag_names
+            .split(',')
+            .map(t => t.trim())
+            .filter(Boolean)
 
-      const count = articles[0]?.count || 0
+          if (articleTags.includes(tag.name)) {
+            count++
+          }
+        }
+      }
 
       if (count === 0) {
-        await deleteRow('tags', tag.id)
-        deletedCount++
+        tagsToDelete.push(tag.id)
       } else {
-        // Update the count if it was incorrect
-        await updateRow('tags', tag.id, {
-          usage_count: count,
-          updated_at: now
-        })
+        // Tag was incorrectly marked as unused
+        tagsToUpdate.push({ id: tag.id, count })
       }
     }
 
-    return deletedCount
+    // Batch delete unused tags
+    if (tagsToDelete.length > 0) {
+      const deleteSql = `DELETE FROM tags WHERE id IN (${tagsToDelete.join(',')})`
+      await executeQuery(deleteSql)
+    }
+
+    // Batch update incorrectly marked tags
+    if (tagsToUpdate.length > 0) {
+      const whenClauses = tagsToUpdate.map(tag =>
+        `WHEN id = ${tag.id} THEN ${tag.count}`
+      ).join(' ')
+
+      const updateSql = `
+        UPDATE tags
+        SET usage_count = CASE ${whenClauses} ELSE usage_count END,
+            updated_at = ?
+        WHERE id IN (${tagsToUpdate.map(t => t.id).join(',')})
+      `
+
+      await executeQuery(updateSql, [now])
+    }
+
+    return tagsToDelete.length
   } catch (error) {
     console.error('Failed to cleanup unused tags:', error)
     return 0
@@ -120,28 +186,60 @@ export async function cleanupUnusedTags(): Promise<number> {
 /**
  * Recalculate usage_count for all tags
  * Useful for fixing inconsistencies
+ * Optimized for Cloudflare Workers to avoid "Too many subrequests" error
  */
 export async function recalculateAllTagCounts(): Promise<void> {
   try {
-    // Get all tags
-    const allTags = await fetchAllFromDb<{ id: number, name: string }>('tags')
+    // Get all tags and articles in parallel
+    const [allTags, allArticles] = await Promise.all([
+      fetchAllFromDb<{ id: number, name: string }>('tags'),
+      executeQuery<{ tag_names: string }>(
+        'SELECT tag_names FROM articles WHERE status = ?',
+        ['published']
+      )
+    ])
+
+    if (allTags.length === 0) {
+      console.log('No tags to recalculate')
+      return
+    }
+
+    // Calculate usage count for each tag in memory
+    const tagCounts = new Map<number, number>()
 
     for (const tag of allTags) {
-      // Count how many published articles use this tag
-      const articles = await executeQuery<{ count: number }>(
-        'SELECT COUNT(*) as count FROM articles WHERE tag_names LIKE ? AND status = ?',
-        [`%${tag.name}%`, 'published']
-      )
+      let count = 0
+      for (const article of allArticles) {
+        if (article.tag_names) {
+          // Split tag_names and check if this tag is present
+          const articleTags = article.tag_names
+            .split(',')
+            .map(t => t.trim())
+            .filter(Boolean)
 
-      const count = articles[0]?.count || 0
-
-      await updateRow('tags', tag.id, {
-        usage_count: count,
-        updated_at: new Date().toISOString()
-      })
-
+          if (articleTags.includes(tag.name)) {
+            count++
+          }
+        }
+      }
+      tagCounts.set(tag.id, count)
       console.log(`Updated tag "${tag.name}" usage_count to ${count}`)
     }
+
+    // Batch update using a single SQL statement with CASE WHEN
+    const now = new Date().toISOString()
+    const whenClauses = allTags.map(tag =>
+      `WHEN id = ${tag.id} THEN ${tagCounts.get(tag.id) || 0}`
+    ).join(' ')
+
+    const updateSql = `
+      UPDATE tags
+      SET usage_count = CASE ${whenClauses} ELSE usage_count END,
+          updated_at = ?
+      WHERE id IN (${allTags.map(t => t.id).join(',')})
+    `
+
+    await executeQuery(updateSql, [now])
 
     console.log('Successfully recalculated all tag counts')
   } catch (error) {

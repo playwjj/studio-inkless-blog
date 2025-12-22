@@ -185,3 +185,18 @@ export interface DbNewsletter {
   created_at: string
   updated_at: string
 }
+
+export interface DbContactUs {
+  id: number
+  name: string
+  email: string
+  subject?: string | null
+  message: string
+  status: 'new' | 'read' | 'replied' | 'archived'
+  ip_address?: string | null
+  user_agent?: string | null
+  created_at: string
+  updated_at: string
+  read_at?: string | null
+  replied_at?: string | null
+}

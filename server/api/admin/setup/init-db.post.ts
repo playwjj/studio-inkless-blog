@@ -276,16 +276,33 @@ export default defineEventHandler(async (event) => {
       {
         name: 'newsletters',
         sql: `CREATE TABLE newsletters (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,                                                                                                                                                            
-       email TEXT NOT NULL UNIQUE,                                                                                                                                                                      
-       status TEXT NOT NULL DEFAULT 'active',                                                                                                                                                           
-       source TEXT DEFAULT 'homepage',                                                                                                                                                                  
-       ip_address TEXT,                                                                                                                                                                                 
-       user_agent TEXT,                                                                                                                                                                                 
-       subscribed_at TEXT NOT NULL,                                                                                                                                                                     
-       unsubscribed_at TEXT,                                                                                                                                                                            
-       created_at TEXT NOT NULL,                                                                                                                                                                        
-       updated_at TEXT NOT NULL       
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+       email TEXT NOT NULL UNIQUE,
+       status TEXT NOT NULL DEFAULT 'active',
+       source TEXT DEFAULT 'homepage',
+       ip_address TEXT,
+       user_agent TEXT,
+       subscribed_at TEXT NOT NULL,
+       unsubscribed_at TEXT,
+       created_at TEXT NOT NULL,
+       updated_at TEXT NOT NULL
+)`
+      },
+      {
+        name: 'contact_us',
+        sql: `CREATE TABLE contact_us (
+       id INTEGER PRIMARY KEY AUTOINCREMENT,
+       name TEXT NOT NULL,
+       email TEXT NOT NULL,
+       subject TEXT,
+       message TEXT NOT NULL,
+       status TEXT NOT NULL DEFAULT 'new',
+       ip_address TEXT,
+       user_agent TEXT,
+       created_at TEXT NOT NULL,
+       updated_at TEXT NOT NULL,
+       read_at TEXT,
+       replied_at TEXT
 )`
       },
 

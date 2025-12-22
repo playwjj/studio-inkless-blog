@@ -229,6 +229,11 @@ const menuItems = [
     paths: ['M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z']
   },
   {
+    href: '/admin/contact',
+    label: 'Contact',
+    paths: ['M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z']
+  },
+  {
     href: '/admin/users',
     label: 'Users',
     paths: ['M12 4.354a4 4 0 110 8.646 4 4 0 010-8.646M9 13h6a4 4 0 014 4v2a2 2 0 01-2 2H7a2 2 0 01-2-2v-2a4 4 0 014-4z']

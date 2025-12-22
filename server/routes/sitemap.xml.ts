@@ -60,8 +60,10 @@ export default defineEventHandler(async (event) => {
     // Add all pages
     for (const page of pages) {
       const lastmod = page.updated_at || page.created_at
+      // Remove leading slash from slug to avoid double slashes
+      const slug = page.slug.startsWith('/') ? page.slug.slice(1) : page.slug
       xml += '  <url>\n'
-      xml += `    <loc>${baseUrl}/${page.slug}</loc>\n`
+      xml += `    <loc>${baseUrl}/${slug}</loc>\n`
       xml += `    <lastmod>${new Date(lastmod).toISOString().split('T')[0]}</lastmod>\n`
       xml += '    <changefreq>monthly</changefreq>\n'
       xml += '    <priority>0.7</priority>\n'

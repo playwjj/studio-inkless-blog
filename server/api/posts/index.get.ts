@@ -66,9 +66,8 @@ export default defineEventHandler(async (event) => {
     // Map featured article if exists
     const featuredPost = featuredArticle ? mapArticleToBlogItem(featuredArticle) : null
 
-    // Map all articles to BlogListItem format (excluding featured for regular posts)
+    // Map all articles to BlogListItem format
     let posts: BlogListItem[] = articlesResponse.data
-      .filter(article => !featuredArticle || article.id !== featuredArticle.id)
       .map(mapArticleToBlogItem)
 
     // Filter by category

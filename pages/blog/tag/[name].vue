@@ -188,19 +188,12 @@
               </div>
               <div v-if="relatedTags && relatedTags.length > 0" class="p-4">
                 <div class="flex flex-wrap gap-2">
-                  <NuxtLink
+                  <AiChipTag
                     v-for="tag in relatedTags"
                     :key="tag.name"
+                    :text="tag.name"
                     :to="`/blog/tag/${tag.slug}`"
-                    :class="[
-                      'px-3 py-1.5 text-sm font-medium rounded-lg transition-all',
-                      tagSlug === tag.slug
-                        ? 'bg-purple-600 text-white shadow-md scale-105'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105'
-                    ]"
-                  >
-                    #{{ tag.name }}
-                  </NuxtLink>
+                  />
                 </div>
               </div>
               <div v-else class="p-4 text-sm text-gray-500 text-center">

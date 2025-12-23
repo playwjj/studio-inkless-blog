@@ -8,6 +8,9 @@
       <!-- Dot pattern -->
       <div class="absolute inset-0" style="background-image: radial-gradient(circle at 1px 1px, rgb(148 163 184 / 0.1) 1px, transparent 0); background-size: 40px 40px;"></div>
 
+      <!-- Neural Network Background -->
+      <NeuralBackground />
+
       <!-- Animated lines background -->
       <div class="absolute inset-0 overflow-hidden pointer-events-none">
         <!-- Lines layer with stretched aspect ratio -->
@@ -30,14 +33,8 @@
             </linearGradient>
           </defs>
 
-          <!-- Animated curved lines that span full width -->
-          <path class="animate-line-draw-1" d="M -5 30 Q 25 20, 50 35 T 105 30" stroke="url(#line-gradient-1)" stroke-width="0.3" fill="none" opacity="0.7" />
-          <path class="animate-line-draw-2" d="M -5 60 Q 25 50, 50 65 T 105 60" stroke="url(#line-gradient-2)" stroke-width="0.3" fill="none" opacity="0.65" />
-          <path class="animate-line-draw-3" d="M -5 45 Q 25 35, 50 48 T 105 45" stroke="url(#line-gradient-3)" stroke-width="0.3" fill="none" opacity="0.7" />
-
-          <!-- Additional wave lines for fullness -->
-          <path class="animate-line-draw-1" d="M -5 25 Q 25 15, 50 28 T 105 25" stroke="url(#line-gradient-1)" stroke-width="0.18" fill="none" opacity="0.45" />
-          <path class="animate-line-draw-2" d="M -5 70 Q 25 60, 50 72 T 105 70" stroke="url(#line-gradient-2)" stroke-width="0.18" fill="none" opacity="0.35" />
+          <!-- Simplified animated curved lines - reduced for clarity -->
+          <path class="animate-line-draw-1" d="M -5 45 Q 25 35, 50 48 T 105 45" stroke="url(#line-gradient-3)" stroke-width="0.2" fill="none" opacity="0.3" />
 
           <!-- Static grid lines that fade in/out -->
           <g class="animate-grid-pulse" opacity="0.12">
@@ -50,12 +47,9 @@
           </g>
         </svg>
 
-        <!-- Dots layer using CSS for perfect circles -->
-        <div class="animate-dot-path-1 absolute w-2 h-2 rounded-full bg-blue-500 opacity-90"></div>
-        <div class="animate-dot-path-2 absolute w-2 h-2 rounded-full bg-purple-500 opacity-90"></div>
-        <div class="animate-dot-path-3 absolute w-2 h-2 rounded-full bg-cyan-400 opacity-90"></div>
-        <div class="animate-dot-path-4 absolute w-1.5 h-1.5 rounded-full bg-indigo-500 opacity-70"></div>
-        <div class="animate-dot-path-5 absolute w-1.5 h-1.5 rounded-full bg-pink-400 opacity-70"></div>
+        <!-- Reduced dots layer for cleaner look -->
+        <div class="animate-dot-path-1 absolute w-1.5 h-1.5 rounded-full bg-ai-purple opacity-50"></div>
+        <div class="animate-dot-path-3 absolute w-1.5 h-1.5 rounded-full bg-ai-cyan opacity-50"></div>
 
         <!-- Floating gradient orbs for depth -->
         <div class="absolute w-64 h-64 bg-gradient-to-br from-blue-400/10 to-indigo-400/5 rounded-full top-10 left-10 animate-float-slow blur-3xl"></div>
@@ -73,13 +67,18 @@
           <!-- Main Heading -->
           <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 leading-tight text-gray-900">
             Modern Web Development
-            <span class="block mt-2 bg-gradient-to-r from-primary-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            <span class="block mt-2 bg-gradient-to-r from-ai-purple via-ai-cyan to-ai-pink bg-clip-text text-transparent">
               Insights & Tutorials
             </span>
           </h1>
 
+          <!-- Subtitle with typing effect -->
           <p class="text-lg md:text-xl text-gray-600 mb-10 leading-relaxed">
-            Learn Nuxt, Vue, TypeScript, and modern web technologies through practical tutorials and best practices.
+            <TypingCursor
+              text="Learn Nuxt, Vue, TypeScript, and modern web technologies through practical tutorials and best practices."
+              :type-speed="50"
+              :start-delay="500"
+            />
           </p>
 
           <!-- CTA Buttons -->
@@ -158,9 +157,9 @@
           <p class="text-red-600">Failed to load posts. Please try again later.</p>
         </div>
 
-        <div v-else-if="data?.posts" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div v-else-if="latestPosts.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           <BlogCard
-            v-for="post in data.posts.slice(0, 3)"
+            v-for="post in latestPosts.slice(0, 3)"
             :key="post.id"
             :post="post"
           />
@@ -340,6 +339,14 @@ const { data, pending, error } = await useFetch('/api/posts', {
 
 // Fetch categories for display
 const { data: categories, pending: categoriesPending } = await useFetch('/api/categories')
+
+// Filter out featured post from latest posts to avoid duplication
+const latestPosts = computed(() => {
+  if (!data.value?.posts) return []
+  if (!data.value.featuredPost) return data.value.posts
+
+  return data.value.posts.filter(post => post.id !== data.value.featuredPost?.id)
+})
 
 // Try to fetch page-specific data from pages table (slug = '/')
 // If not found, will fall back to site config

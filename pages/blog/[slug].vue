@@ -147,17 +147,12 @@
               <div class="mt-12 pt-8 border-t border-gray-200">
                 <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Tags</h3>
                 <div class="flex flex-wrap gap-2">
-                  <NuxtLink
+                  <AiChipTag
                     v-for="tag in data.tags"
                     :key="tag"
+                    :text="tag"
                     :to="`/blog/tag/${tag.toLowerCase().replace(/\s+/g, '-')}`"
-                    class="inline-flex items-center px-4 py-2 text-sm font-medium bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 hover:shadow-md transition-all"
-                  >
-                    <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
-                    </svg>
-                    {{ tag }}
-                  </NuxtLink>
+                  />
                 </div>
               </div>
             </div>

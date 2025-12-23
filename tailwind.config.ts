@@ -54,7 +54,88 @@ export default {
           '50%': { opacity: '0' },
         },
       },
+      typography: {
+        DEFAULT: {
+          css: {
+            maxWidth: 'none',
+            color: '#374151',
+            a: {
+              color: '#06B6D4',
+              '&:hover': {
+                color: '#0891B2',
+              },
+            },
+            'code::before': {
+              content: '""',
+            },
+            'code::after': {
+              content: '""',
+            },
+            code: {
+              color: '#8B5CF6',
+              backgroundColor: '#F3F4F6',
+              paddingLeft: '0.375rem',
+              paddingRight: '0.375rem',
+              paddingTop: '0.125rem',
+              paddingBottom: '0.125rem',
+              borderRadius: '0.25rem',
+              fontWeight: '400',
+            },
+            pre: {
+              backgroundColor: '#1F2937',
+              color: '#F9FAFB',
+            },
+            'pre code': {
+              backgroundColor: 'transparent',
+              color: 'inherit',
+              padding: '0',
+            },
+            h1: {
+              background: 'linear-gradient(to right, #8B5CF6, #06B6D4, #EC4899)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            },
+            h2: {
+              color: '#1F2937',
+              borderBottomWidth: '1px',
+              borderBottomColor: '#E5E7EB',
+              paddingBottom: '0.5rem',
+            },
+            h3: {
+              color: '#374151',
+            },
+            blockquote: {
+              borderLeftColor: '#8B5CF6',
+              color: '#4B5563',
+            },
+            table: {
+              width: '100%',
+            },
+            th: {
+              backgroundColor: '#F3F4F6',
+              borderWidth: '1px',
+              borderColor: '#D1D5DB',
+              padding: '0.5rem',
+              textAlign: 'left',
+            },
+            'th:first-child': {
+              paddingLeft: '0.75rem',
+            },
+            td: {
+              borderWidth: '1px',
+              borderColor: '#D1D5DB',
+              padding: '0.5rem',
+            },
+            'td:first-child': {
+              paddingLeft: '0.75rem',
+            },
+          },
+        },
+      },
     },
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/typography'),
+  ],
 } satisfies Config

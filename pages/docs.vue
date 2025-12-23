@@ -1,7 +1,5 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
-    <Header />
-
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <!-- Page Header -->
       <div class="mb-8">
@@ -45,22 +43,7 @@
       <div class="bg-white rounded-lg shadow-lg p-8">
         <article
           v-if="currentContent"
-          class="prose prose-lg max-w-none
-            prose-headings:font-bold
-            prose-h1:text-4xl prose-h1:mb-6 prose-h1:bg-gradient-to-r prose-h1:from-ai-purple prose-h1:via-ai-cyan prose-h1:to-ai-pink prose-h1:bg-clip-text prose-h1:text-transparent
-            prose-h2:text-3xl prose-h2:mt-8 prose-h2:mb-4 prose-h2:text-gray-800 prose-h2:border-b prose-h2:border-gray-200 prose-h2:pb-2
-            prose-h3:text-2xl prose-h3:mt-6 prose-h3:mb-3 prose-h3:text-gray-700
-            prose-p:text-gray-600 prose-p:leading-relaxed
-            prose-a:text-ai-cyan prose-a:no-underline hover:prose-a:underline
-            prose-code:text-ai-purple prose-code:bg-gray-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none
-            prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-pre:rounded-lg prose-pre:shadow-lg
-            prose-ul:list-disc prose-ul:pl-6
-            prose-ol:list-decimal prose-ol:pl-6
-            prose-li:text-gray-600
-            prose-table:border-collapse prose-table:w-full
-            prose-th:bg-gray-100 prose-th:border prose-th:border-gray-300 prose-th:p-2 prose-th:text-left
-            prose-td:border prose-td:border-gray-300 prose-td:p-2
-            prose-blockquote:border-l-4 prose-blockquote:border-ai-purple prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-gray-600"
+          class="prose prose-lg max-w-none"
           v-html="currentContent"
         ></article>
 
@@ -70,67 +53,37 @@
         </div>
       </div>
     </main>
-
-    <Footer />
   </div>
 </template>
 
 <script setup lang="ts">
-// Parse markdown to HTML (basic implementation)
-const parseMarkdown = (md: string): string => {
-  let html = md
+import { marked } from 'marked'
 
-  // Headers
-  html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>')
-  html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>')
-  html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>')
+// Configure marked with custom heading ID generation
+marked.use({
+  gfm: true, // GitHub Flavored Markdown
+  breaks: true, // Convert \n to <br>
+  mangle: false, // Don't escape autolinked email addresses
+  renderer: {
+    heading({ tokens, depth }: any) {
+      // Extract raw text from tokens
+      const text = tokens.map((t: any) => t.text || t.raw || '').join('')
 
-  // Bold
-  html = html.replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+      // Generate ID from header text
+      const id = text
+        .toLowerCase()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .trim()
 
-  // Italic
-  html = html.replace(/\*(.*?)\*/gim, '<em>$1</em>')
+      // Parse tokens to HTML
+      const html = this.parser.parseInline(tokens)
 
-  // Links
-  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2">$1</a>')
-
-  // Inline code
-  html = html.replace(/`([^`]+)`/gim, '<code>$1</code>')
-
-  // Code blocks
-  html = html.replace(/```(\w*)\n([\s\S]*?)```/gim, (match, lang, code) => {
-    return `<pre><code class="language-${lang}">${code.trim()}</code></pre>`
-  })
-
-  // Unordered lists
-  html = html.replace(/^\* (.*$)/gim, '<li>$1</li>')
-  html = html.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
-
-  // Ordered lists
-  html = html.replace(/^\d+\. (.*$)/gim, '<li>$1</li>')
-
-  // Blockquotes
-  html = html.replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>')
-
-  // Horizontal rules
-  html = html.replace(/^---$/gim, '<hr>')
-
-  // Tables (basic support)
-  html = html.replace(/\|(.+)\|/g, (match) => {
-    const cells = match.split('|').filter(cell => cell.trim())
-    const cellTags = cells.map(cell => `<td>${cell.trim()}</td>`).join('')
-    return `<tr>${cellTags}</tr>`
-  })
-
-  // Paragraphs
-  html = html.split('\n\n').map(para => {
-    if (!para.trim()) return ''
-    if (para.startsWith('<')) return para
-    return `<p>${para.trim()}</p>`
-  }).join('\n')
-
-  return html
-}
+      return `<h${depth} id="${id}">${html}</h${depth}>\n`
+    }
+  }
+})
 
 // Get tab from URL query
 const route = useRoute()
@@ -140,13 +93,13 @@ const activeTab = ref<'installation' | 'api'>((route.query.tab as string) === 'a
 const { data: installationData } = await useFetch('/api/docs/installation')
 const { data: apiData } = await useFetch('/api/docs/api')
 
-// Parse markdown content
+// Parse markdown content using marked
 const installationContent = computed(() =>
-  installationData.value?.content ? parseMarkdown(installationData.value.content) : null
+  installationData.value?.content ? marked(installationData.value.content) : null
 )
 
 const apiContent = computed(() =>
-  apiData.value?.content ? parseMarkdown(apiData.value.content) : null
+  apiData.value?.content ? marked(apiData.value.content) : null
 )
 
 // Current content based on active tab
@@ -154,9 +107,73 @@ const currentContent = computed(() =>
   activeTab.value === 'installation' ? installationContent.value : apiContent.value
 )
 
+// Handle anchor link clicks
+const handleAnchorClick = (e: Event) => {
+  const target = e.target as HTMLElement
+
+  // Find the closest anchor element (in case click is on child element)
+  const anchor = target.closest('a')
+
+  if (anchor) {
+    const href = anchor.getAttribute('href')
+
+    // Only handle hash links
+    if (href && href.startsWith('#')) {
+      e.preventDefault()
+      const id = href.slice(1)
+
+      if (id) {
+        const element = document.getElementById(id)
+        if (element) {
+          // Scroll to element
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+
+          // Update URL hash
+          const currentUrl = new URL(window.location.href)
+          currentUrl.hash = id
+          window.history.pushState({}, '', currentUrl.toString())
+        } else {
+          console.warn(`Element with id "${id}" not found`)
+        }
+      }
+    }
+  }
+}
+
+// Scroll to hash on mount and when content changes
+const scrollToHash = () => {
+  const hash = window.location.hash
+  if (hash) {
+    // Use setTimeout to ensure content is rendered
+    setTimeout(() => {
+      const id = hash.slice(1)
+      const element = document.getElementById(id)
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    }, 100)
+  }
+}
+
 // Update URL when tab changes
 watch(activeTab, (newTab) => {
   navigateTo(`/docs?tab=${newTab}`, { replace: true })
+})
+
+// Watch for content changes to scroll to hash
+watch(currentContent, () => {
+  scrollToHash()
+})
+
+// Scroll to hash on mount
+onMounted(() => {
+  scrollToHash()
+  // Add click listener for anchor links
+  document.addEventListener('click', handleAnchorClick)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleAnchorClick)
 })
 
 // SEO
@@ -167,3 +184,42 @@ useHead({
   ]
 })
 </script>
+
+<style scoped>
+/* Smooth scroll behavior */
+:deep(html) {
+  scroll-behavior: smooth;
+}
+
+/* Add scroll margin to headers for better anchor positioning */
+:deep(.prose h1),
+:deep(.prose h2),
+:deep(.prose h3),
+:deep(.prose h4),
+:deep(.prose h5),
+:deep(.prose h6) {
+  scroll-margin-top: 2rem;
+}
+
+/* Highlight anchor links on hover */
+:deep(.prose a[href^="#"]) {
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+:deep(.prose a[href^="#"]:hover) {
+  text-decoration: underline;
+  opacity: 0.8;
+}
+
+/* Fix table first column padding */
+:deep(.prose table th:first-child),
+:deep(.prose table td:first-child) {
+  padding-left: 0.75rem !important;
+}
+
+:deep(.prose table th),
+:deep(.prose table td) {
+  padding: 0.5rem !important;
+}
+</style>

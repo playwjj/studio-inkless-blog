@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@nuxt/image": "^2.0.0",
+    "@tailwindcss/typography": "^0.5.19",
     "@tiptap/extension-image": "^3.13.0",
     "@tiptap/extension-link": "^3.13.0",
     "@tiptap/extension-placeholder": "^3.13.0",
@@ -18,6 +19,7 @@
     "@tiptap/vue-3": "^3.13.0",
     "bcryptjs": "^3.0.3",
     "h3-session": "^0.2.5",
+    "marked": "^17.0.1",
     "nuxt": "^3.13.0",
     "vue": "^3.4.0",
     "vue-router": "^4.4.0",

@@ -1050,5 +1050,5 @@ const response = await fetch(`${API_BASE_URL}/api/admin/files/upload`, {
 
 ---
 
-**Last Updated**: 2024-12-23
+**Last Updated**: 2025-12-23
 **Maintainer**: Studio Inkless Team

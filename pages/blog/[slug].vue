@@ -415,7 +415,7 @@ useSeoMeta({
   @apply text-gray-700 leading-relaxed;
 }
 
-/* 标题样式 */
+/* Heading styles */
 .article-content :deep(h1) {
   @apply text-4xl font-bold text-gray-900 mt-12 mb-6 leading-tight;
   @apply first:mt-0;
@@ -442,12 +442,12 @@ useSeoMeta({
   @apply text-base font-semibold text-gray-800 mt-4 mb-2;
 }
 
-/* 段落样式 */
+/* Paragraph styles */
 .article-content :deep(p) {
   @apply text-base text-gray-700 leading-relaxed mb-6;
 }
 
-/* 列表样式 */
+/* List styles */
 .article-content :deep(ul) {
   @apply list-none space-y-3 mb-6 pl-0;
 }
@@ -477,34 +477,95 @@ useSeoMeta({
   @apply inline mb-0;
 }
 
-/* 嵌套列表 */
+/* Nested lists */
 .article-content :deep(li > ul),
 .article-content :deep(li > ol) {
   @apply mt-3 mb-0;
 }
 
-/* 代码块样式 */
+/* Code block styles - AI theme */
 .article-content :deep(pre) {
-  @apply bg-gray-900 text-gray-100 p-6 rounded-xl overflow-x-auto mb-6 shadow-lg;
-  @apply border border-gray-800;
+  @apply relative rounded-xl overflow-hidden mb-6;
+  @apply font-mono text-sm leading-relaxed;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  @apply text-gray-100;
+  box-shadow:
+    0 10px 25px -5px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(139, 92, 246, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  position: relative;
+  padding: 3.5rem 1.5rem 1.5rem 1.5rem;
+}
+
+/* Terminal-style header decoration */
+.article-content :deep(pre)::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2.5rem;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border-bottom: 1px solid rgba(139, 92, 246, 0.1);
+}
+
+/* Terminal dots */
+.article-content :deep(pre)::before {
+  content: '';
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  background: #EC4899;
+  box-shadow:
+    1.25rem 0 0 #06B6D4,
+    2.5rem 0 0 #8B5CF6,
+    0 0 10px rgba(236, 72, 153, 0.3),
+    1.25rem 0 10px rgba(6, 182, 212, 0.3),
+    2.5rem 0 10px rgba(139, 92, 246, 0.3);
+  z-index: 1;
 }
 
 .article-content :deep(pre code) {
   @apply font-mono text-sm leading-relaxed block;
   @apply bg-transparent text-gray-100;
+  overflow-x: auto;
+  display: block;
 }
 
-/* 行内代码样式 */
-.article-content :deep(code) {
-  @apply bg-primary-50 text-primary-700 px-2 py-1 rounded font-mono text-sm;
-  @apply border border-primary-200;
-}
-
+/* Code inside pre - fully transparent */
 .article-content :deep(pre code) {
-  @apply bg-transparent text-gray-100 px-0 py-0 border-0;
+  @apply bg-transparent text-gray-100;
+  padding: 0;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  color: inherit;
+  background: transparent !important;
 }
 
-/* 强调文本样式 */
+/* Inline code styles - AI theme */
+.article-content :deep(:not(pre) > code) {
+  @apply px-2 py-1 rounded font-mono text-sm;
+  @apply relative inline-block;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(6, 182, 212, 0.1) 100%);
+  color: #8B5CF6;
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.1);
+}
+
+.article-content :deep(:not(pre) > code):hover {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(6, 182, 212, 0.15) 100%);
+  border-color: rgba(139, 92, 246, 0.3);
+  box-shadow: 0 0 15px rgba(139, 92, 246, 0.2);
+  transition: all 0.3s ease;
+}
+
+/* Emphasis text styles */
 .article-content :deep(strong) {
   @apply font-bold text-gray-900;
 }
@@ -513,7 +574,7 @@ useSeoMeta({
   @apply italic text-gray-700;
 }
 
-/* 引用块样式 */
+/* Blockquote styles */
 .article-content :deep(blockquote) {
   @apply border-l-4 border-primary-600 pl-6 py-2 my-6 bg-primary-50;
   @apply italic text-gray-700 rounded-r-lg;
@@ -523,18 +584,18 @@ useSeoMeta({
   @apply mb-0;
 }
 
-/* 链接样式 */
+/* Link styles */
 .article-content :deep(a) {
   @apply text-primary-600 hover:text-primary-700 underline;
   @apply transition-colors duration-200;
 }
 
-/* 图片样式 */
+/* Image styles */
 .article-content :deep(img) {
   @apply rounded-lg shadow-md my-6 max-w-full h-auto;
 }
 
-/* 表格样式 */
+/* Table styles */
 .article-content :deep(table) {
   @apply w-full border-collapse mb-6 shadow-sm rounded-lg overflow-hidden;
 }
@@ -556,12 +617,12 @@ useSeoMeta({
   @apply bg-gray-50;
 }
 
-/* 水平分割线 */
+/* Horizontal rule */
 .article-content :deep(hr) {
   @apply my-8 border-0 border-t-2 border-gray-200;
 }
 
-/* 响应式优化 */
+/* Responsive optimization */
 @media (max-width: 640px) {
   .article-content :deep(h1) {
     @apply text-3xl mt-8 mb-4;

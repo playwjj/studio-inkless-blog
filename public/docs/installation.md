@@ -18,7 +18,7 @@ A modern, feature-rich blog platform built with Nuxt 3, Tailwind CSS, and Cloudf
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/studio-inkless-blog.git
+git clone https://github.com/playwjj/studio-inkless-blog.git
 cd studio-inkless-blog
 ```
 

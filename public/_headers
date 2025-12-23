@@ -1,0 +1,89 @@
+# ============================================
+# Cloudflare Pages Cache Headers Configuration
+# ============================================
+
+# --------------------------------------------
+# Static Assets - Long-term cache (versioned files with hash)
+# --------------------------------------------
+/_nuxt/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# --------------------------------------------
+# Build files - Short cache for version checking
+# --------------------------------------------
+/_nuxt/builds/meta/*
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/_nuxt/builds/*
+  Cache-Control: public, max-age=86400, must-revalidate
+
+# --------------------------------------------
+# Public Static Files
+# --------------------------------------------
+/favicon.svg
+  Cache-Control: public, max-age=86400
+
+/logo.svg
+  Cache-Control: public, max-age=86400
+
+/robots.txt
+  Cache-Control: public, max-age=3600
+
+/site.webmanifest
+  Cache-Control: public, max-age=86400
+
+# --------------------------------------------
+# Public Read-only APIs - Short cache + CDN cache
+# --------------------------------------------
+/api/posts
+  Cache-Control: public, max-age=300, s-maxage=600, stale-while-revalidate=300
+
+/api/posts/*
+  Cache-Control: public, max-age=300, s-maxage=600, stale-while-revalidate=300
+
+/api/categories
+  Cache-Control: public, max-age=600, s-maxage=1800, stale-while-revalidate=600
+
+/api/tags
+  Cache-Control: public, max-age=600, s-maxage=1800, stale-while-revalidate=600
+
+/api/site
+  Cache-Control: public, max-age=600, s-maxage=1800, stale-while-revalidate=600
+
+/api/menu
+  Cache-Control: public, max-age=600, s-maxage=1800, stale-while-revalidate=600
+
+/api/pages
+  Cache-Control: public, max-age=300, s-maxage=600, stale-while-revalidate=300
+
+/api/pages/*
+  Cache-Control: public, max-age=300, s-maxage=600, stale-while-revalidate=300
+
+# --------------------------------------------
+# Admin and Auth APIs - No cache
+# --------------------------------------------
+/api/admin/*
+  Cache-Control: no-store, no-cache, must-revalidate, private
+
+/api/auth/*
+  Cache-Control: no-store, no-cache, must-revalidate, private
+
+/api/newsletter/*
+  Cache-Control: no-store, no-cache, must-revalidate, private
+
+/api/contact/*
+  Cache-Control: no-store, no-cache, must-revalidate, private
+
+/api/tokens/*
+  Cache-Control: no-store, no-cache, must-revalidate, private
+
+# --------------------------------------------
+# HTML Pages - Short cache + Security headers
+# --------------------------------------------
+/*
+  Cache-Control: public, max-age=0, s-maxage=300, must-revalidate
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  X-XSS-Protection: 1; mode=block
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=()

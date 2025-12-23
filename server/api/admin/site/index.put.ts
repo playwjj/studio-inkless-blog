@@ -1,4 +1,5 @@
 import type { DbSite } from '~/server/types/dbTypes'
+import { purgeCacheForSite } from '~/server/utils/cache'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -70,6 +71,10 @@ export default defineEventHandler(async (event) => {
       // Create new configuration
       updatedSite = await createRow<DbSite>('site', siteData)
     }
+
+    // Purge cache for site settings
+    const origin = getRequestURL(event).origin
+    await purgeCacheForSite(origin)
 
     return {
       success: true,

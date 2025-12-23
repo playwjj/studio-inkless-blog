@@ -1,4 +1,5 @@
 import type { DbTag } from '~/server/types/dbTypes'
+import { purgeCacheForTag } from '~/server/utils/cache'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -54,6 +55,10 @@ export default defineEventHandler(async (event) => {
       description: description?.trim() || null,
       updated_at: new Date().toISOString()
     })
+
+    // Purge cache for tags
+    const origin = getRequestURL(event).origin
+    await purgeCacheForTag(tagId, origin)
 
     return {
       success: true,

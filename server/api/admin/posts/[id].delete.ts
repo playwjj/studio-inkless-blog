@@ -1,4 +1,5 @@
 import type { DbArticle } from '~/server/types/dbTypes'
+import { purgeCacheForPost } from '~/server/utils/cache'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -27,6 +28,10 @@ export default defineEventHandler(async (event) => {
 
     // Delete the article
     await deleteRow('articles', articleId)
+
+    // Purge cache for this post
+    const origin = getRequestURL(event).origin
+    await purgeCacheForPost(articleId, origin)
 
     // Update category count if article was published
     if (article.status === 'published') {

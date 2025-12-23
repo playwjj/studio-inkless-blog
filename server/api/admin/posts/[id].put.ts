@@ -1,4 +1,5 @@
 import type { DbArticle } from '~/server/types/dbTypes'
+import { purgeCacheForPost } from '~/server/utils/cache'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -85,6 +86,10 @@ export default defineEventHandler(async (event) => {
 
     // Update the article
     await updateRow('articles', articleId, updateData)
+
+    // Purge cache for this post
+    const origin = getRequestURL(event).origin
+    await purgeCacheForPost(articleId, origin)
 
     // Update category counts based on changes
     // Handle category change

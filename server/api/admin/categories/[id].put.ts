@@ -1,4 +1,5 @@
 import type { DbCategory } from '~/server/types/dbTypes'
+import { purgeCacheForCategory } from '~/server/utils/cache'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -54,6 +55,10 @@ export default defineEventHandler(async (event) => {
       description: description?.trim() || null,
       updated_at: new Date().toISOString()
     })
+
+    // Purge cache for categories
+    const origin = getRequestURL(event).origin
+    await purgeCacheForCategory(categoryId, origin)
 
     return {
       success: true,

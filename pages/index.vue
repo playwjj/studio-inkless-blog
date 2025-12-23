@@ -12,9 +12,9 @@
       <NeuralBackground />
 
       <!-- Animated lines background -->
-      <div class="absolute inset-0 overflow-hidden pointer-events-none">
-        <!-- Lines layer with stretched aspect ratio -->
-        <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" viewBox="0 0 100 100">
+      <div class="absolute inset-0 overflow-hidden pointer-events-none" style="contain: layout style;">
+        <!-- Lines layer with stretched aspect ratio - optimized -->
+        <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" viewBox="0 0 100 100" style="shape-rendering: optimizeSpeed;">
           <defs>
             <linearGradient id="line-gradient-1" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" style="stop-color:rgb(59, 130, 246);stop-opacity:0.5" />
@@ -47,13 +47,13 @@
           </g>
         </svg>
 
-        <!-- Reduced dots layer for cleaner look -->
-        <div class="animate-dot-path-1 absolute w-1.5 h-1.5 rounded-full bg-ai-purple opacity-50"></div>
-        <div class="animate-dot-path-3 absolute w-1.5 h-1.5 rounded-full bg-ai-cyan opacity-50"></div>
+        <!-- Reduced dots layer for cleaner look - GPU optimized -->
+        <div class="animate-dot-path-1 absolute w-1.5 h-1.5 rounded-full bg-ai-purple opacity-50" style="will-change: transform;"></div>
+        <div class="animate-dot-path-3 absolute w-1.5 h-1.5 rounded-full bg-ai-cyan opacity-50" style="will-change: transform;"></div>
 
-        <!-- Floating gradient orbs for depth -->
-        <div class="absolute w-64 h-64 bg-gradient-to-br from-blue-400/10 to-indigo-400/5 rounded-full top-10 left-10 animate-float-slow blur-3xl"></div>
-        <div class="absolute w-96 h-96 bg-gradient-to-br from-purple-400/10 to-pink-400/5 rounded-full bottom-0 right-0 animate-float-medium blur-3xl"></div>
+        <!-- Floating gradient orbs for depth - optimized without blur -->
+        <div class="absolute w-64 h-64 bg-gradient-to-br from-blue-400/8 to-indigo-400/4 rounded-full top-10 left-10 animate-float-slow" style="filter: blur(60px); will-change: transform; transform: translateZ(0);"></div>
+        <div class="absolute w-96 h-96 bg-gradient-to-br from-purple-400/8 to-pink-400/4 rounded-full bottom-0 right-0 animate-float-medium" style="filter: blur(80px); will-change: transform; transform: translateZ(0);"></div>
       </div>
 
       <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
@@ -407,25 +407,25 @@ if (pageData.value) {
 </script>
 
 <style scoped>
-/* Floating orbs animations */
+/* Floating orbs animations - optimized with GPU acceleration */
 @keyframes float-slow {
   0%, 100% {
-    transform: translate(0, 0) rotate(0deg);
+    transform: translate3d(0, 0, 0) rotate(0deg);
   }
   33% {
-    transform: translate(30px, -30px) rotate(120deg);
+    transform: translate3d(30px, -30px, 0) rotate(120deg);
   }
   66% {
-    transform: translate(-20px, 20px) rotate(240deg);
+    transform: translate3d(-20px, 20px, 0) rotate(240deg);
   }
 }
 
 @keyframes float-medium {
   0%, 100% {
-    transform: translate(0, 0) rotate(0deg);
+    transform: translate3d(0, 0, 0) rotate(0deg);
   }
   50% {
-    transform: translate(-40px, 40px) rotate(180deg);
+    transform: translate3d(-40px, 40px, 0) rotate(180deg);
   }
 }
 
@@ -564,43 +564,20 @@ if (pageData.value) {
   animation: dot-path-5 14s ease-in-out infinite;
 }
 
+/* Optimized dot animations using transform for GPU acceleration */
 @keyframes dot-path-1 {
-  0% { left: -2%; top: 30%; }
-  25% { left: 25%; top: 20%; }
-  50% { left: 50%; top: 35%; }
-  75% { left: 75%; top: 30%; }
-  100% { left: 102%; top: 30%; }
-}
-
-@keyframes dot-path-2 {
-  0% { left: -2%; top: 60%; }
-  25% { left: 25%; top: 50%; }
-  50% { left: 50%; top: 65%; }
-  75% { left: 75%; top: 60%; }
-  100% { left: 102%; top: 60%; }
+  0% { transform: translate(-2vw, 30vh); }
+  25% { transform: translate(25vw, 20vh); }
+  50% { transform: translate(50vw, 35vh); }
+  75% { transform: translate(75vw, 30vh); }
+  100% { transform: translate(102vw, 30vh); }
 }
 
 @keyframes dot-path-3 {
-  0% { left: -2%; top: 45%; }
-  25% { left: 25%; top: 35%; }
-  50% { left: 50%; top: 48%; }
-  75% { left: 75%; top: 45%; }
-  100% { left: 102%; top: 45%; }
-}
-
-@keyframes dot-path-4 {
-  0% { left: -2%; top: 25%; }
-  25% { left: 25%; top: 15%; }
-  50% { left: 50%; top: 28%; }
-  75% { left: 75%; top: 25%; }
-  100% { left: 102%; top: 25%; }
-}
-
-@keyframes dot-path-5 {
-  0% { left: -2%; top: 70%; }
-  25% { left: 25%; top: 60%; }
-  50% { left: 50%; top: 72%; }
-  75% { left: 75%; top: 70%; }
-  100% { left: 102%; top: 70%; }
+  0% { transform: translate(-2vw, 45vh); }
+  25% { transform: translate(25vw, 35vh); }
+  50% { transform: translate(50vw, 48vh); }
+  75% { transform: translate(75vw, 45vh); }
+  100% { transform: translate(102vw, 45vh); }
 }
 </style>

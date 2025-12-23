@@ -1,7 +1,7 @@
 <template>
-  <div class="absolute inset-0 overflow-hidden pointer-events-none">
-    <!-- Neural network connections -->
-    <svg class="absolute inset-0 w-full h-full opacity-25" xmlns="http://www.w3.org/2000/svg">
+  <div class="absolute inset-0 overflow-hidden pointer-events-none" style="contain: layout style paint;">
+    <!-- Neural network connections - GPU optimized -->
+    <svg class="absolute inset-0 w-full h-full opacity-25" xmlns="http://www.w3.org/2000/svg" style="will-change: opacity;">
       <defs>
         <!-- AI gradient for connections -->
         <linearGradient id="neural-gradient-1" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -16,9 +16,9 @@
           <stop offset="100%" style="stop-color:#06B6D4;stop-opacity:0.6" />
         </linearGradient>
 
-        <!-- Glow filter for neural nodes -->
+        <!-- Simplified glow filter - reduced blur for performance -->
         <filter id="glow">
-          <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+          <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
           <feMerge>
             <feMergeNode in="coloredBlur"/>
             <feMergeNode in="SourceGraphic"/>
@@ -70,13 +70,5 @@
 </script>
 
 <style scoped>
-/* Additional glow effects */
-.fill-ai-purple,
-.fill-ai-cyan,
-.fill-ai-pink,
-.fill-ai-cyan-light,
-.fill-ai-pink-light,
-.fill-ai-purple-dark {
-  filter: drop-shadow(0 0 8px currentColor);
-}
+/* Removed drop-shadow for performance - using SVG filter instead */
 </style>

@@ -4,9 +4,10 @@
 1. [Overview](#overview)
 2. [Authentication](#authentication)
 3. [Base Information](#base-information)
-4. [Article Management API](#article-management-api)
-5. [File Upload API](#file-upload-api)
-6. [Complete Examples](#complete-examples)
+4. [Public API](#public-api)
+5. [Admin Article Management API](#admin-article-management-api)
+6. [File Upload API](#file-upload-api)
+7. [Complete Examples](#complete-examples)
 
 ---
 
@@ -76,7 +77,178 @@ All API responses return JSON format with the following structure:
 
 ---
 
-## Article Management API
+## Public API
+
+These endpoints are publicly accessible and do not require authentication.
+
+### 1. Get Published Posts
+
+**Endpoint:** `GET /api/posts`
+
+**Description:** Get list of published blog posts for public display
+
+**Authentication:** Not required
+
+**Query Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `page` | number | Page number (default: 1) |
+| `limit` | number | Items per page (default: 10) |
+| `category` | string | Filter by category slug |
+| `tag` | string | Filter by tag slug |
+| `search` | string | Search in title and content |
+
+**Success Response (200):**
+```json
+{
+  "featuredPost": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "title": "Featured Article",
+    "slug": "featured-article",
+    "excerpt": "This is featured",
+    "coverImage": "https://example.com/image.jpg",
+    "category": "Technology",
+    "tags": ["Nuxt", "Vue", "TypeScript"],
+    "publishedAt": "2024-12-14T10:30:00.000Z",
+    "readTime": 5,
+    "viewCount": 100,
+    "author": {
+      "name": "John Doe",
+      "avatar": "https://example.com/avatar.jpg"
+    }
+  },
+  "posts": [
+    {
+      "id": "660e8400-e29b-41d4-a716-446655440001",
+      "title": "My First Blog",
+      "slug": "my-first-blog",
+      "excerpt": "Summary",
+      "coverImage": "https://example.com/image.jpg",
+      "category": "Technology",
+      "tags": ["Nuxt", "Vue"],
+      "publishedAt": "2024-12-14T10:30:00.000Z",
+      "readTime": 5,
+      "viewCount": 50,
+      "author": {
+        "name": "John Doe",
+        "avatar": "https://example.com/avatar.jpg"
+      }
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 25,
+    "totalPages": 3
+  }
+}
+```
+
+---
+
+### 2. Get Single Post by Slug
+
+**Endpoint:** `GET /api/posts/:slug`
+
+**Description:** Get published blog post details by slug
+
+**Authentication:** Not required
+
+**Path Parameters:**
+- `slug` (string): Article URL slug
+
+**Success Response (200):**
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "title": "My First Blog",
+  "slug": "my-first-blog",
+  "content": "<p>Full article content with HTML...</p>",
+  "excerpt": "Summary",
+  "coverImage": "https://example.com/image.jpg",
+  "category": "Technology",
+  "tags": ["Nuxt", "Vue", "TypeScript"],
+  "publishedAt": "2024-12-14T10:30:00.000Z",
+  "readTime": 5,
+  "viewCount": 100,
+  "author": {
+    "name": "John Doe",
+    "avatar": "https://example.com/avatar.jpg",
+    "bio": "Software developer"
+  }
+}
+```
+
+---
+
+### 3. Get Categories
+
+**Endpoint:** `GET /api/categories`
+
+**Description:** Get list of all categories
+
+**Authentication:** Not required
+
+**Success Response (200):**
+```json
+[
+  {
+    "id": 1,
+    "name": "Technology",
+    "slug": "technology",
+    "description": "Tech articles",
+    "count": 15
+  },
+  {
+    "id": 2,
+    "name": "Lifestyle",
+    "slug": "lifestyle",
+    "description": "Life articles",
+    "count": 8
+  }
+]
+```
+
+---
+
+### 4. Get Tags
+
+**Endpoint:** `GET /api/tags`
+
+**Description:** Get list of all tags
+
+**Authentication:** Not required
+
+**Query Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `limit` | number | Maximum number of tags to return (default: 50) |
+
+**Success Response (200):**
+```json
+[
+  {
+    "id": 1,
+    "name": "Nuxt",
+    "slug": "nuxt",
+    "count": 10
+  },
+  {
+    "id": 2,
+    "name": "Vue",
+    "slug": "vue",
+    "count": 15
+  }
+]
+```
+
+---
+
+## Admin Article Management API
+
+These endpoints require authentication and are used for managing blog content.
 
 ### 1. Create Article
 
@@ -138,7 +310,14 @@ Authorization: Bearer YOUR_API_TOKEN
 
 **Authentication:** Required ✓
 
-**Query Parameters:** None
+**Query Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `page` | number | Page number (default: 1) |
+| `limit` | number | Items per page (default: 20) |
+| `sortBy` | string | Sort field (default: 'created_at') |
+| `sortOrder` | string | Sort order: 'asc' or 'desc' (default: 'desc') |
 
 **Success Response (200):**
 ```json
@@ -155,10 +334,11 @@ Authorization: Bearer YOUR_API_TOKEN
       "author_id": 1,
       "category_id": 2,
       "category_name": "Technology",
-      "tag_names": "Nuxt,Vue,TypeScript",
       "status": "published",
       "published_at": "2024-12-14T10:30:00.000Z",
       "read_time": 5,
+      "view_count": 100,
+      "is_featured": 0,
       "created_at": "2024-12-14T10:30:00.000Z",
       "updated_at": "2024-12-14T10:30:00.000Z"
     },
@@ -172,17 +352,25 @@ Authorization: Bearer YOUR_API_TOKEN
       "author_id": 1,
       "category_id": 1,
       "category_name": "Life",
-      "tag_names": "Sharing,Daily",
       "status": "draft",
       "published_at": "2024-12-14T10:31:00.000Z",
       "read_time": 3,
+      "view_count": 50,
+      "is_featured": 0,
       "created_at": "2024-12-14T10:31:00.000Z",
       "updated_at": "2024-12-14T10:31:00.000Z"
     }
   ],
-  "total": 2
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 2,
+    "totalPages": 1
+  }
 }
 ```
+
+**Note:** This endpoint does not return tag information for each article. To get tags for a specific article, use the "Get Single Article" endpoint.
 
 ---
 
@@ -794,13 +982,23 @@ Slug should:
 
 ### Q3: How to format tags?
 
-Tags should be a comma-separated string with optional spaces between tags (spaces will be automatically trimmed):
+**Input Format:** Tags should be provided as a comma-separated string when creating or updating articles:
 ```
 "Nuxt, Vue, TypeScript, Web Development"
 ```
-Will be converted to:
-```
-["Nuxt", "Vue", "TypeScript", "Web Development"]
+
+**Storage:** Tags are stored using a many-to-many relationship through the `article_tags` junction table. The system automatically:
+- Creates new tags if they don't exist
+- Links tags to articles through `article_tags` table
+- Updates tag usage counts
+
+**Output Format:**
+- **Admin API** (`GET /api/admin/posts/:id`): Returns tags as comma-separated string for backward compatibility
+- **Public API** (`GET /api/posts/:slug`): Returns tags as an array of strings
+```json
+{
+  "tags": ["Nuxt", "Vue", "TypeScript", "Web Development"]
+}
 ```
 
 ### Q4: What content formats are supported?
@@ -848,8 +1046,9 @@ const response = await fetch(`${API_BASE_URL}/api/admin/files/upload`, {
 | Version | Date | Description |
 |---------|------|-------------|
 | 1.0 | 2024-12-14 | Initial version with article management and file upload APIs |
+| 1.1 | 2024-12-23 | Added public API documentation; Updated admin API with pagination parameters; Fixed response format documentation; Added note about tag system migration to many-to-many relationship |
 
 ---
 
-**Last Updated**: 2024-12-14
+**Last Updated**: 2024-12-23
 **Maintainer**: Studio Inkless Team

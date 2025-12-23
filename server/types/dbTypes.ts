@@ -8,7 +8,6 @@ export interface DbArticle {
   cover_image_url?: string
   author_id: number
   category_id: number
-  tag_names?: string // Comma-separated tag names (e.g., "Nuxt,Vue,Web Development")
   status: 'draft' | 'published' | 'archived'
   published_at: string  // NOT NULL in database
   read_time: number

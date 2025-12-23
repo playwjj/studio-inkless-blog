@@ -184,7 +184,6 @@ export default defineEventHandler(async (event) => {
     cover_image_url TEXT,
     published_at TIMESTAMP NOT NULL,
     read_time INTEGER DEFAULT 0,
-    tag_names TEXT DEFAULT '', 
     author_id INTEGER NOT NULL,
     category_id INTEGER NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

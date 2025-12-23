@@ -25,32 +25,25 @@ export default defineEventHandler(async (event) => {
     }
 
     // Fetch related data
-    const [authorsResponse, categoriesResponse, tagsResponse] = await Promise.all([
+    const [authorsResponse, categoriesResponse] = await Promise.all([
       fetchFromDb<DbAuthor>('authors', { limit: 100 }),
-      fetchFromDb<DbCategory>('categories', { limit: 100 }),
-      fetchFromDb<DbTag>('tags', { limit: 100 })
+      fetchFromDb<DbCategory>('categories', { limit: 100 })
     ])
 
     const authors = authorsResponse.data
     const categories = categoriesResponse.data
-    const tags = tagsResponse.data
+
+    // Get all article IDs for batch tag fetching
+    const articleIds = articlesResponse.data.map(a => a.id)
+    const articleTagsMap = await getTagsForArticles(articleIds)
 
     // Helper function to convert article to BlogListItem
     const mapArticleToBlogItem = (article: DbArticle): BlogListItem => {
       const author = authors.find(a => a.id === article.author_id)
       const category = categories.find(c => c.id === article.category_id)
 
-      // Parse tag_names field and match with tags from database
-      let articleTags: string[] = []
-      if (article.tag_names) {
-        const tagNames = article.tag_names.split(',').map(name => name.trim())
-        articleTags = tagNames
-          .map(name => {
-            const tag = tags.find(t => t.name.toLowerCase() === name.toLowerCase())
-            return tag ? tag.name : name
-          })
-          .filter(Boolean)
-      }
+      // Get tags from the many-to-many relationship
+      const articleTags = articleTagsMap.get(article.id) || []
 
       return {
         id: article.id.toString(),
@@ -90,10 +83,10 @@ export default defineEventHandler(async (event) => {
     // Filter by tag
     if (query.tag && typeof query.tag === 'string') {
       const tagSlug = query.tag.toString().toLowerCase()
-      const tag = tags.find(t => t.slug === tagSlug)
-      if (tag) {
-        // Filter posts that include this tag
-        posts = posts.filter(post => post.tags.includes(tag.name))
+      const articleIdsWithTag = await getArticleIdsByTag(tagSlug)
+      if (articleIdsWithTag.length > 0) {
+        // Filter posts that have this tag
+        posts = posts.filter(post => articleIdsWithTag.includes(post.id))
       }
     }
 

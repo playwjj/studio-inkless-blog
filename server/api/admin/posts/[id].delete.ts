@@ -26,7 +26,32 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // Delete the article
+    // Update tag counts before deleting (if article is published)
+    if (article.status === 'published') {
+      // Get tag IDs for this article
+      const relations = await executeQuery<{ tag_id: number }>(
+        `SELECT tag_id FROM article_tags WHERE article_id = ?`,
+        [articleId]
+      )
+      const tagIds = relations.map(r => r.tag_id)
+
+      if (tagIds.length > 0) {
+        // Decrement usage counts
+        const placeholders = tagIds.map(() => '?').join(',')
+        await executeQuery(
+          `UPDATE tags
+           SET usage_count = CASE
+             WHEN usage_count > 0 THEN usage_count - 1
+             ELSE 0
+           END,
+           updated_at = ?
+           WHERE id IN (${placeholders})`,
+          [new Date().toISOString(), ...tagIds]
+        )
+      }
+    }
+
+    // Delete the article (article_tags will be cascade deleted via foreign key)
     await deleteRow('articles', articleId)
 
     // Purge cache for this post
@@ -36,11 +61,6 @@ export default defineEventHandler(async (event) => {
     // Update category count if article was published
     if (article.status === 'published') {
       await decrementCategoryCount(article.category_id)
-    }
-
-    // Update tag usage_count if article was published and had tags
-    if (article.status === 'published' && article.tag_names) {
-      await decrementTagUsageCounts(article.tag_names)
     }
 
     return {

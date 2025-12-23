@@ -35,7 +35,6 @@ export default defineEventHandler(async (event) => {
       view_count: 0,  // Initialize view count
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-      tag_names: body.tags || '',  // Store tags as comma-separated string, default to empty string
       // published_at is required in database, set it based on status
       published_at: body.status === 'published'
         ? (body.published_at || new Date().toISOString())
@@ -45,9 +44,9 @@ export default defineEventHandler(async (event) => {
     // Insert article into database
     await insertRow('articles', articleData)
 
-    // Sync tags to tags table using batch operations (optimized)
+    // Sync tags using many-to-many relationship
     if (body.tags) {
-      await batchSyncTags(body.tags, '', '', body.status)
+      await syncArticleTags(articleId, body.tags, '', body.status)
     }
 
     // Update category count if article is published

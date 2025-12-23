@@ -25,11 +25,15 @@ export default defineEventHandler(async (event) => {
       })
     }
 
+    // Get tags from many-to-many relationship
+    const tagNames = await getArticleTagNames(articleId)
+    const tagsString = tagNames.join(', ')
+
     return {
       success: true,
       data: {
         ...article,
-        tags: article.tag_names || ''
+        tags: tagsString  // Return as comma-separated string for API compatibility
       }
     }
   } catch (error: any) {

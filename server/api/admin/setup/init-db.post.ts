@@ -326,6 +326,17 @@ export default defineEventHandler(async (event) => {
     "updated_at" TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (page_id) REFERENCES pages(id) ON DELETE CASCADE
 )`
+      },
+      {
+        name: 'article_tags',
+        sql: `CREATE TABLE article_tags (
+    article_id TEXT NOT NULL,
+    tag_id INTEGER NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (article_id, tag_id),
+    FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE,
+    FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
+)`
       }
     ]
 

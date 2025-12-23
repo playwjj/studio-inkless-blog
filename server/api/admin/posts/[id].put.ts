@@ -70,18 +70,19 @@ export default defineEventHandler(async (event) => {
     const newStatus = body.status || oldStatus
     const oldCategoryId = article.category_id
     const newCategoryId = body.category_id ? parseInt(body.category_id) : oldCategoryId
-    const oldTags = article.tag_names || ''
-    const newTags = body.tags !== undefined ? (body.tags || '') : oldTags
 
-    // Handle tags if provided
+    // Handle tags using many-to-many relationship
     if (body.tags !== undefined) {
-      updateData.tag_names = body.tags || ''  // Default to empty string, matching database default
+      // Get old tags from article_tags table
+      const oldTagNames = await getArticleTagNames(articleId)
+      const oldTags = oldTagNames.join(', ')
+      const newTags = body.tags || ''
 
-      // Sync tags to tags table using batch operations (optimized)
-      await batchSyncTags(newTags, oldTags, oldStatus, newStatus)
+      // Sync tags using many-to-many relationship
+      await syncArticleTags(articleId, newTags, oldTags, newStatus)
     } else if (oldStatus !== newStatus) {
       // Status changed but tags didn't - still need to update tag counts
-      await batchHandleStatusChangeForTags(oldTags, oldStatus, newStatus)
+      await handleArticleStatusChangeForTags(articleId, oldStatus, newStatus)
     }
 
     // Update the article

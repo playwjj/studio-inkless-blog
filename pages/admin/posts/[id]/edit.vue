@@ -382,10 +382,19 @@ const handleSubmit = async () => {
     submitting.value = true
     errorMessage.value = ''
 
+    // Prepare request body with properly formatted published_at
+    const requestBody = {
+      ...formData,
+      // Convert datetime-local format to ISO string
+      published_at: formData.published_at
+        ? new Date(formData.published_at).toISOString()
+        : new Date().toISOString()
+    }
+
     // Update article
     const response = await $fetch(`/api/admin/posts/${postId}`, {
       method: 'PUT',
-      body: formData
+      body: requestBody
     })
 
     if ((response as any).success) {

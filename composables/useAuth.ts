@@ -1,9 +1,10 @@
 import { ref } from 'vue'
+import type { DbUser } from '~/server/types/dbTypes'
 
 export function useAuth() {
-  const currentUser = ref<any>(null)
+  const currentUser = ref<DbUser | null>(null)
   const loading = ref(false)
-  const error = ref<any>(null)
+  const error = ref<Error | null>(null)
 
   async function fetchUser() {
     loading.value = true
@@ -22,7 +23,7 @@ export function useAuth() {
       const data = await res.json()
       currentUser.value = data?.user ?? null
     } catch (err) {
-      error.value = err
+      error.value = err instanceof Error ? err : new Error(String(err))
       currentUser.value = null
     } finally {
       loading.value = false
@@ -35,7 +36,7 @@ export function useAuth() {
       await $fetch('/api/auth/logout', { method: 'POST' })
       currentUser.value = null
     } catch (err) {
-      error.value = err
+      error.value = err instanceof Error ? err : new Error(String(err))
       throw err
     } finally {
       loading.value = false

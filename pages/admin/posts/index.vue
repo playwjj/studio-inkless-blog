@@ -50,7 +50,7 @@
       <!-- Clear filters button -->
       <div v-if="hasActiveFilters" class="mt-3 flex items-center justify-between">
         <p class="text-xs text-gray-600">
-          Showing {{ filteredPosts.length }} of {{ posts.length }} posts
+          Showing {{ totalItems }} filtered results
         </p>
         <button
           @click="clearFilters"
@@ -228,7 +228,7 @@
           <div>
             <p class="text-xs text-gray-500">
               Showing <span class="font-medium">{{ paginationStart }}</span> to <span class="font-medium">{{ paginationEnd }}</span> of
-              <span class="font-medium">{{ filteredPosts.length }}</span> results
+              <span class="font-medium">{{ totalItems }}</span> results
             </p>
           </div>
           <div v-if="totalPages > 1">
@@ -283,6 +283,8 @@ const loading = ref(true)
 const deleting = ref<number | null>(null)
 const currentPage = ref(1)
 const pageSize = ref(10)
+const totalPages = ref(1)
+const totalItems = ref(0)
 
 interface Post {
   id: number
@@ -305,14 +307,24 @@ interface Category {
 const posts = ref<Post[]>([])
 const categories = ref<Category[]>([])
 
-// Fetch posts from API
+// Fetch posts from API with server-side pagination and filtering
 const fetchPosts = async () => {
   try {
     loading.value = true
-    const response = await $fetch('/api/admin/posts')
+    const response = await $fetch('/api/admin/posts', {
+      query: {
+        page: currentPage.value,
+        limit: pageSize.value,
+        search: searchQuery.value || undefined,
+        status: filterStatus.value || undefined,
+        category: filterCategory.value || undefined
+      }
+    })
 
     if (response.success && response.articles) {
       posts.value = response.articles
+      totalPages.value = response.pagination?.totalPages || 1
+      totalItems.value = response.pagination?.total || 0
     }
   } catch (error) {
     console.error('Failed to fetch posts:', error)
@@ -340,42 +352,17 @@ onMounted(() => {
   fetchCategories()
 })
 
-const filteredPosts = computed(() => {
-  return posts.value.filter(post => {
-    const matchesSearch = !searchQuery.value ||
-      post.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      (post.excerpt && post.excerpt.toLowerCase().includes(searchQuery.value.toLowerCase()))
-
-    const matchesStatus = !filterStatus.value || post.status === filterStatus.value
-
-    // Match by category name
-    let matchesCategory = true
-    if (filterCategory.value) {
-      const selectedCategory = categories.value.find(c => c.id.toString() === filterCategory.value)
-      matchesCategory = selectedCategory ? post.category_name === selectedCategory.name : true
-    }
-
-    return matchesSearch && matchesStatus && matchesCategory
-  })
-})
-
-// Pagination
-const totalPages = computed(() => Math.ceil(filteredPosts.value.length / pageSize.value))
-
-const paginatedPosts = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  const end = start + pageSize.value
-  return filteredPosts.value.slice(start, end)
-})
+// Server-side pagination - posts are already filtered and paginated by API
+const paginatedPosts = computed(() => posts.value)
 
 const paginationStart = computed(() => {
-  if (filteredPosts.value.length === 0) return 0
+  if (totalItems.value === 0) return 0
   return (currentPage.value - 1) * pageSize.value + 1
 })
 
 const paginationEnd = computed(() => {
   const end = currentPage.value * pageSize.value
-  return Math.min(end, filteredPosts.value.length)
+  return Math.min(end, totalItems.value)
 })
 
 const pageNumbers = computed(() => {
@@ -438,9 +425,23 @@ const prevPage = () => {
   }
 }
 
-// Reset to page 1 when filters change
+// Reset to page 1 and reload when filters change
 watch([searchQuery, filterStatus, filterCategory], () => {
-  currentPage.value = 1
+  if (currentPage.value === 1) {
+    // If already on page 1, manually reload
+    fetchPosts()
+  } else {
+    // Otherwise, setting page to 1 will trigger reload
+    currentPage.value = 1
+  }
+})
+
+// Reload when page changes (skip initial trigger)
+watch(currentPage, (newPage, oldPage) => {
+  // Only reload if the page actually changed (not initial setup)
+  if (oldPage !== undefined) {
+    fetchPosts()
+  }
 })
 
 // Check if any filters are active

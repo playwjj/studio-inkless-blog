@@ -55,6 +55,9 @@
           <thead class="bg-gray-50 border-b border-gray-200">
             <tr>
               <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                ID
+              </th>
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Name
               </th>
               <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -81,6 +84,9 @@
               class="hover:bg-gray-50 transition-colors cursor-pointer"
               @click="viewMessage(message)"
             >
+              <td class="px-4 py-3 whitespace-nowrap">
+                <span class="text-xs text-gray-500">{{ message.id }}</span>
+              </td>
               <td class="px-4 py-3">
                 <span class="text-sm font-medium text-gray-900">{{ message.name }}</span>
               </td>
@@ -118,25 +124,64 @@
       </div>
 
       <!-- Pagination -->
-      <div v-if="totalPages > 1" class="px-4 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
-        <div class="text-sm text-gray-500">
-          Page {{ currentPage }} of {{ totalPages }}
-        </div>
-        <div class="flex gap-2">
+      <div class="bg-gray-50 px-4 py-3 flex items-center justify-between border-t border-gray-200">
+        <div class="flex-1 flex justify-between sm:hidden">
           <button
-            @click="currentPage--"
+            @click="prevPage"
             :disabled="currentPage === 1"
-            class="px-3 py-1 text-sm border border-gray-200 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="px-3 py-1.5 border border-gray-300 text-xs bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Previous
           </button>
           <button
-            @click="currentPage++"
+            @click="nextPage"
             :disabled="currentPage === totalPages"
-            class="px-3 py-1 text-sm border border-gray-200 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="ml-3 px-3 py-1.5 border border-gray-300 text-xs bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Next
           </button>
+        </div>
+        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+          <div>
+            <p class="text-xs text-gray-500">
+              Showing <span class="font-medium">{{ paginationStart }}</span> to <span class="font-medium">{{ paginationEnd }}</span> of
+              <span class="font-medium">{{ totalItems }}</span> results
+            </p>
+          </div>
+          <div v-if="totalPages > 1">
+            <nav class="relative z-0 inline-flex -space-x-px">
+              <button
+                @click="prevPage"
+                :disabled="currentPage === 1"
+                class="px-3 py-1.5 border border-gray-200 bg-white text-xs text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <button
+                v-for="(page, index) in pageNumbers"
+                :key="index"
+                @click="typeof page === 'number' ? goToPage(page) : null"
+                :disabled="page === '...'"
+                :class="[
+                  'px-3 py-1.5 border border-gray-200 text-xs',
+                  page === currentPage
+                    ? 'bg-gray-900 text-white'
+                    : page === '...'
+                    ? 'bg-white text-gray-400 cursor-default'
+                    : 'bg-white text-gray-500 hover:bg-gray-50'
+                ]"
+              >
+                {{ page }}
+              </button>
+              <button
+                @click="nextPage"
+                :disabled="currentPage === totalPages"
+                class="px-3 py-1.5 border border-gray-200 bg-white text-xs text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </nav>
+          </div>
         </div>
       </div>
     </div>
@@ -252,6 +297,8 @@ const searchQuery = ref('')
 const statusFilter = ref<'all' | 'new' | 'read' | 'replied' | 'archived'>('all')
 const currentPage = ref(1)
 const totalPages = ref(1)
+const totalItems = ref(0)
+const pageSize = ref(20)
 const selectedMessage = ref<DbContactUs | null>(null)
 
 onMounted(() => {
@@ -268,7 +315,7 @@ async function loadMessages() {
     const response = await $fetch('/api/admin/contact', {
       query: {
         page: currentPage.value,
-        limit: 20,
+        limit: pageSize.value,
         search: searchQuery.value || undefined,
         status: statusFilter.value !== 'all' ? statusFilter.value : undefined
       }
@@ -276,6 +323,7 @@ async function loadMessages() {
 
     messages.value = (response as any).data || []
     totalPages.value = (response as any).pagination?.totalPages || 1
+    totalItems.value = (response as any).pagination?.total || 0
   } catch (error) {
     console.error('Failed to load contact messages:', error)
     showError('Failed to load contact messages', 'Please try again.')
@@ -381,5 +429,77 @@ const deleteMessage = async (id: number) => {
       }
     }
   })
+}
+
+// Pagination computed properties
+const paginationStart = computed(() => {
+  if (totalItems.value === 0) return 0
+  return (currentPage.value - 1) * pageSize.value + 1
+})
+
+const paginationEnd = computed(() => {
+  const end = currentPage.value * pageSize.value
+  return Math.min(end, totalItems.value)
+})
+
+const pageNumbers = computed(() => {
+  const pages = []
+  const maxVisible = 5
+
+  if (totalPages.value <= maxVisible) {
+    // Show all pages if total is less than max
+    for (let i = 1; i <= totalPages.value; i++) {
+      pages.push(i)
+    }
+  } else {
+    // Show smart pagination
+    if (currentPage.value <= 3) {
+      // Near the beginning
+      for (let i = 1; i <= Math.min(4, totalPages.value); i++) {
+        pages.push(i)
+      }
+      if (totalPages.value > 4) {
+        pages.push('...')
+        pages.push(totalPages.value)
+      }
+    } else if (currentPage.value >= totalPages.value - 2) {
+      // Near the end
+      pages.push(1)
+      pages.push('...')
+      for (let i = totalPages.value - 3; i <= totalPages.value; i++) {
+        pages.push(i)
+      }
+    } else {
+      // In the middle
+      pages.push(1)
+      pages.push('...')
+      pages.push(currentPage.value - 1)
+      pages.push(currentPage.value)
+      pages.push(currentPage.value + 1)
+      pages.push('...')
+      pages.push(totalPages.value)
+    }
+  }
+
+  return pages
+})
+
+// Pagination functions
+const goToPage = (page: number) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
+  }
+}
+
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++
+  }
+}
+
+const prevPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--
+  }
 }
 </script>

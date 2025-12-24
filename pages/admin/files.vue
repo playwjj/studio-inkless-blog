@@ -71,7 +71,7 @@
       </div>
 
       <!-- No results state -->
-      <div v-else-if="filteredFiles.length === 0" class="py-12 text-center">
+      <div v-else-if="totalItems === 0" class="py-12 text-center">
         <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
@@ -207,38 +207,64 @@
       </div>
 
       <!-- Pagination -->
-      <div v-if="totalPages > 1" class="px-4 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
-        <div class="text-sm text-gray-500">
-          Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ Math.min(currentPage * pageSize, filteredFiles.length) }} of {{ filteredFiles.length }} files
-        </div>
-        <div class="flex space-x-1">
+      <div class="bg-gray-50 px-4 py-3 flex items-center justify-between border-t border-gray-200">
+        <div class="flex-1 flex justify-between sm:hidden">
           <button
             @click="currentPage--"
             :disabled="currentPage === 1"
-            class="px-3 py-1 text-sm border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="px-3 py-1.5 border border-gray-300 text-xs bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Previous
           </button>
           <button
-            v-for="page in pageNumbers"
-            :key="page"
-            @click="typeof page === 'number' && (currentPage = page)"
-            :class="[
-              'px-3 py-1 text-sm border border-gray-200',
-              currentPage === page ? 'bg-gray-900 text-white' : 'hover:bg-gray-50',
-              typeof page !== 'number' && 'cursor-default'
-            ]"
-            :disabled="typeof page !== 'number'"
-          >
-            {{ page }}
-          </button>
-          <button
             @click="currentPage++"
             :disabled="currentPage === totalPages"
-            class="px-3 py-1 text-sm border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="ml-3 px-3 py-1.5 border border-gray-300 text-xs bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Next
           </button>
+        </div>
+        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+          <div>
+            <p class="text-xs text-gray-500">
+              Showing <span class="font-medium">{{ paginationStart }}</span> to <span class="font-medium">{{ paginationEnd }}</span> of
+              <span class="font-medium">{{ totalItems }}</span> results
+            </p>
+          </div>
+          <div v-if="totalPages > 1">
+            <nav class="relative z-0 inline-flex -space-x-px">
+              <button
+                @click="currentPage--"
+                :disabled="currentPage === 1"
+                class="px-3 py-1.5 border border-gray-200 bg-white text-xs text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <button
+                v-for="(page, index) in pageNumbers"
+                :key="index"
+                @click="typeof page === 'number' && (currentPage = page)"
+                :disabled="page === '...'"
+                :class="[
+                  'px-3 py-1.5 border border-gray-200 text-xs',
+                  page === currentPage
+                    ? 'bg-gray-900 text-white'
+                    : page === '...'
+                    ? 'bg-white text-gray-400 cursor-default'
+                    : 'bg-white text-gray-500 hover:bg-gray-50'
+                ]"
+              >
+                {{ page }}
+              </button>
+              <button
+                @click="currentPage++"
+                :disabled="currentPage === totalPages"
+                class="px-3 py-1.5 border border-gray-200 bg-white text-xs text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </nav>
+          </div>
         </div>
       </div>
     </div>
@@ -376,6 +402,8 @@ const searchQuery = ref('')
 const filterMimeType = ref('')
 const currentPage = ref(1)
 const pageSize = ref(20)
+const totalPages = ref(1)
+const totalItems = ref(0)
 
 // Upload state
 const showUploadModal = ref(false)
@@ -384,39 +412,17 @@ const isDragging = ref(false)
 const uploadQueue = ref<Array<{ file: File; status: 'pending' | 'uploading' | 'success' | 'error' }>>([])
 const fileInput = ref<HTMLInputElement>()
 
-// Computed
-const filteredFiles = computed(() => {
-  let result = files.value
+// Computed - Server-side pagination, files are already filtered and paginated
+const paginatedFiles = computed(() => files.value)
 
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    result = result.filter(file =>
-      file.file_name.toLowerCase().includes(query)
-    )
-  }
-
-  if (filterMimeType.value) {
-    // Support multiple MIME types separated by comma
-    const mimeTypes = filterMimeType.value.split(',')
-    result = result.filter(file =>
-      mimeTypes.some(type =>
-        type.endsWith('/')
-          ? file.mime_type.startsWith(type)
-          : file.mime_type === type
-      )
-    )
-  }
-
-  return result
+const paginationStart = computed(() => {
+  if (totalItems.value === 0) return 0
+  return (currentPage.value - 1) * pageSize.value + 1
 })
 
-const totalPages = computed(() =>
-  Math.ceil(filteredFiles.value.length / pageSize.value)
-)
-
-const paginatedFiles = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  return filteredFiles.value.slice(start, start + pageSize.value)
+const paginationEnd = computed(() => {
+  const end = currentPage.value * pageSize.value
+  return Math.min(end, totalItems.value)
 })
 
 const pageNumbers = computed(() => {
@@ -458,13 +464,17 @@ const getFileIcon = (mimeType: string): string => {
 const fetchFiles = async () => {
   try {
     loading.value = true
-    const response = await $fetch<{ files: DbFile[] }>('/api/admin/files', {
+    const response = await $fetch<any>('/api/admin/files', {
       query: {
-        page: 1,
-        limit: 1000 // Fetch all files for client-side filtering
+        page: currentPage.value,
+        limit: pageSize.value,
+        search: searchQuery.value || undefined,
+        mime_type: filterMimeType.value || undefined
       }
     })
     files.value = response.files || []
+    totalPages.value = response.pagination?.totalPages || 1
+    totalItems.value = response.pagination?.total || 0
   } catch (err: any) {
     showError('Failed to load files', err.statusMessage || 'Please try again')
   } finally {
@@ -588,8 +598,22 @@ onMounted(() => {
   fetchFiles()
 })
 
-// Watch for filter/search changes to reset page
+// Watch for filter and search changes - reset to page 1 and reload
 watch([searchQuery, filterMimeType], () => {
-  currentPage.value = 1
+  if (currentPage.value === 1) {
+    // If already on page 1, manually reload
+    fetchFiles()
+  } else {
+    // Otherwise, setting page to 1 will trigger reload
+    currentPage.value = 1
+  }
+})
+
+// Reload when page changes (skip initial trigger)
+watch(currentPage, (newPage, oldPage) => {
+  // Only reload if the page actually changed (not initial setup)
+  if (oldPage !== undefined) {
+    fetchFiles()
+  }
 })
 </script>

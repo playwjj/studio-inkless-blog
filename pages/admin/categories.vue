@@ -66,6 +66,9 @@
           <thead class="bg-gray-50 border-b border-gray-200">
             <tr>
               <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                ID
+              </th>
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Category
               </th>
               <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -91,6 +94,9 @@
               :key="category.id"
               class="hover:bg-gray-50 transition-colors"
             >
+              <td class="px-4 py-3 whitespace-nowrap">
+                <span class="text-xs text-gray-500">{{ category.id }}</span>
+              </td>
               <td class="px-4 py-3">
                 <span class="text-sm font-medium text-gray-900">{{ category.name }}</span>
               </td>

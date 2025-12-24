@@ -24,8 +24,9 @@ export default defineEventHandler(async (event) => {
       limit,
       sortBy: 'created_at',
       sortOrder: 'desc',
-      search: search ? { field: 'file_name', value: search } : undefined,
-      where: Object.keys(where).length > 0 ? where : undefined
+      search,
+      searchFields: search ? ['file_name'] : undefined,
+      filters: Object.keys(where).length > 0 ? where : undefined
     })
 
     // Calculate total size
@@ -34,10 +35,13 @@ export default defineEventHandler(async (event) => {
     return {
       success: true,
       files: response.data,
-      total: response.meta.total,
       totalSize,
-      page,
-      limit
+      pagination: {
+        page: response.meta?.page || page,
+        limit: response.meta?.limit || limit,
+        total: response.meta?.total || response.data.length,
+        totalPages: Math.ceil((response.meta?.total || response.data.length) / limit)
+      }
     }
   } catch (error: any) {
     if (error.statusCode) {

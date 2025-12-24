@@ -83,7 +83,7 @@
       </div>
 
       <!-- No results state -->
-      <div v-else-if="filteredTags.length === 0" class="py-12 text-center">
+      <div v-else-if="tags.length === 0 && !loading" class="py-12 text-center">
         <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
@@ -96,6 +96,9 @@
         <table class="w-full">
           <thead class="bg-gray-50 border-b border-gray-200">
             <tr>
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                ID
+              </th>
               <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Tag Name
               </th>
@@ -118,10 +121,13 @@
           </thead>
           <tbody class="divide-y divide-gray-200">
             <tr
-              v-for="tag in filteredTags"
+              v-for="tag in paginatedTags"
               :key="tag.id"
               class="hover:bg-gray-50 transition-colors"
             >
+              <td class="px-4 py-3 whitespace-nowrap">
+                <span class="text-xs text-gray-500">{{ tag.id }}</span>
+              </td>
               <td class="px-4 py-3 whitespace-nowrap">
                 <span class="text-sm font-medium text-gray-900">
                   {{ tag.name }}
@@ -166,6 +172,68 @@
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="bg-gray-50 px-4 py-3 flex items-center justify-between border-t border-gray-200">
+        <div class="flex-1 flex justify-between sm:hidden">
+          <button
+            @click="prevPage"
+            :disabled="currentPage === 1"
+            class="px-3 py-1.5 border border-gray-300 text-xs bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Previous
+          </button>
+          <button
+            @click="nextPage"
+            :disabled="currentPage === totalPages"
+            class="ml-3 px-3 py-1.5 border border-gray-300 text-xs bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Next
+          </button>
+        </div>
+        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+          <div>
+            <p class="text-xs text-gray-500">
+              Showing <span class="font-medium">{{ paginationStart }}</span> to <span class="font-medium">{{ paginationEnd }}</span> of
+              <span class="font-medium">{{ totalItems }}</span> results
+            </p>
+          </div>
+          <div v-if="totalPages > 1">
+            <nav class="relative z-0 inline-flex -space-x-px">
+              <button
+                @click="prevPage"
+                :disabled="currentPage === 1"
+                class="px-3 py-1.5 border border-gray-200 bg-white text-xs text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <button
+                v-for="(page, index) in pageNumbers"
+                :key="index"
+                @click="typeof page === 'number' ? goToPage(page) : null"
+                :disabled="page === '...'"
+                :class="[
+                  'px-3 py-1.5 border border-gray-200 text-xs',
+                  page === currentPage
+                    ? 'bg-gray-900 text-white'
+                    : page === '...'
+                    ? 'bg-white text-gray-400 cursor-default'
+                    : 'bg-white text-gray-500 hover:bg-gray-50'
+                ]"
+              >
+                {{ page }}
+              </button>
+              <button
+                @click="nextPage"
+                :disabled="currentPage === totalPages"
+                class="px-3 py-1.5 border border-gray-200 bg-white text-xs text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </nav>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -304,6 +372,10 @@ const loading = ref(false)
 const submitting = ref(false)
 const isRecalculating = ref(false)
 const isCleaning = ref(false)
+const currentPage = ref(1)
+const pageSize = ref(10)
+const totalPages = ref(1)
+const totalItems = ref(0)
 
 const tagForm = reactive({
   name: '',
@@ -313,16 +385,20 @@ const tagForm = reactive({
 
 const tags = ref<Tag[]>([])
 
-// Load tags on mount
-onMounted(() => {
-  loadTags()
-})
-
 async function loadTags() {
   loading.value = true
   try {
-    const response = await $fetch('/api/admin/tags')
+    const response = await $fetch('/api/admin/tags', {
+      query: {
+        page: currentPage.value,
+        limit: pageSize.value,
+        search: searchQuery.value || undefined
+      }
+    })
+
     tags.value = response.tags || []
+    totalPages.value = response.pagination?.totalPages || 1
+    totalItems.value = response.pagination?.total || 0
   } catch (error) {
     console.error('Failed to load tags:', error)
     showError('Failed to load tags', 'Please try again.')
@@ -331,13 +407,101 @@ async function loadTags() {
   }
 }
 
-const filteredTags = computed(() => {
-  if (!searchQuery.value) return tags.value
+// Load tags on mount
+onMounted(() => {
+  loadTags()
+})
 
-  return tags.value.filter(tag =>
-    tag.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-    tag.slug.toLowerCase().includes(searchQuery.value.toLowerCase())
-  )
+// Server-side pagination - tags are already filtered and paginated by API
+const paginatedTags = computed(() => tags.value)
+
+const paginationStart = computed(() => {
+  if (totalItems.value === 0) return 0
+  return (currentPage.value - 1) * pageSize.value + 1
+})
+
+const paginationEnd = computed(() => {
+  const end = currentPage.value * pageSize.value
+  return Math.min(end, totalItems.value)
+})
+
+const pageNumbers = computed(() => {
+  const pages = []
+  const maxVisible = 5
+
+  if (totalPages.value <= maxVisible) {
+    // Show all pages if total is less than max
+    for (let i = 1; i <= totalPages.value; i++) {
+      pages.push(i)
+    }
+  } else {
+    // Show smart pagination
+    if (currentPage.value <= 3) {
+      // Near the beginning
+      for (let i = 1; i <= Math.min(4, totalPages.value); i++) {
+        pages.push(i)
+      }
+      if (totalPages.value > 4) {
+        pages.push('...')
+        pages.push(totalPages.value)
+      }
+    } else if (currentPage.value >= totalPages.value - 2) {
+      // Near the end
+      pages.push(1)
+      pages.push('...')
+      for (let i = totalPages.value - 3; i <= totalPages.value; i++) {
+        pages.push(i)
+      }
+    } else {
+      // In the middle
+      pages.push(1)
+      pages.push('...')
+      pages.push(currentPage.value - 1)
+      pages.push(currentPage.value)
+      pages.push(currentPage.value + 1)
+      pages.push('...')
+      pages.push(totalPages.value)
+    }
+  }
+
+  return pages
+})
+
+const goToPage = (page: number) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
+  }
+}
+
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++
+  }
+}
+
+const prevPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--
+  }
+}
+
+// Reset to page 1 and reload when search changes
+watch(searchQuery, () => {
+  if (currentPage.value === 1) {
+    // If already on page 1, manually reload
+    loadTags()
+  } else {
+    // Otherwise, setting page to 1 will trigger reload
+    currentPage.value = 1
+  }
+})
+
+// Reload when page changes (skip initial trigger)
+watch(currentPage, (newPage, oldPage) => {
+  // Only reload if the page actually changed (not initial setup)
+  if (oldPage !== undefined) {
+    loadTags()
+  }
 })
 
 const formatDate = (dateString: string) => {

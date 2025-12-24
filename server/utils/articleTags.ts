@@ -8,73 +8,152 @@ import type { DbTag } from '~/server/types/dbTypes'
 /**
  * Sync article tags using many-to-many relationship
  * This function handles creating/updating tag relationships for an article
+ * Optimized for stability and reliability in Cloudflare D1 environment
  *
  * @param articleId - The article ID
  * @param tagsString - Comma-separated tag names (from API input)
  * @param oldTagsString - Previous comma-separated tag names (for updates)
  * @param articleStatus - Current article status (published/draft/archived)
+ * @param isNewArticle - Whether this is a new article (optimization hint)
  */
 export async function syncArticleTags(
   articleId: string,
   tagsString: string,
   oldTagsString: string = '',
-  articleStatus: string = 'draft'
+  articleStatus: string = 'draft',
+  isNewArticle: boolean = false
 ): Promise<void> {
-  // Parse new and old tag names
+  console.log(`[syncArticleTags] Starting for article ${articleId}, isNew: ${isNewArticle}`)
+  console.log(`[syncArticleTags] Tags: "${tagsString}", Status: ${articleStatus}`)
+
+  // Parse new tag names
   const newTagNames = tagsString
     ? tagsString.split(',').map(tag => tag.trim()).filter(Boolean)
     : []
 
-  const oldTagNames = oldTagsString
-    ? oldTagsString.split(',').map(tag => tag.trim()).filter(Boolean)
-    : []
-
-  // Step 1: Find or create tags
-  const tagIds = await findOrCreateTags(newTagNames)
-
-  // Step 2: Get existing tag relationships for this article
-  const existingRelations = await executeQuery<{ tag_id: number }>(
-    `SELECT tag_id FROM article_tags WHERE article_id = ?`,
-    [articleId]
-  )
-  const existingTagIds = new Set(existingRelations.map(r => r.tag_id))
-
-  // Step 3: Determine which relationships to add and remove
-  const tagIdsToAdd = tagIds.filter(id => !existingTagIds.has(id))
-  const tagIdsToRemove = Array.from(existingTagIds).filter(id => !tagIds.includes(id))
-
-  // Step 4: Remove old relationships
-  if (tagIdsToRemove.length > 0) {
-    const placeholders = tagIdsToRemove.map(() => '?').join(',')
-    await executeQuery(
-      `DELETE FROM article_tags WHERE article_id = ? AND tag_id IN (${placeholders})`,
-      [articleId, ...tagIdsToRemove]
-    )
-
-    // Decrement usage count for removed tags if article is published
-    if (articleStatus === 'published') {
-      await decrementTagUsageCount(tagIdsToRemove)
-    }
+  if (newTagNames.length === 0) {
+    console.log('[syncArticleTags] No tags to sync, skipping')
+    return
   }
 
-  // Step 5: Add new relationships
-  if (tagIdsToAdd.length > 0) {
-    const now = new Date().toISOString()
-    const values = tagIdsToAdd.map(() => '(?, ?, ?)').join(', ')
-    const params: any[] = []
-    tagIdsToAdd.forEach(tagId => {
-      params.push(articleId, tagId, now)
-    })
+  try {
+    // Step 1: Find or create tags (with validation)
+    console.log(`[syncArticleTags] Step 1: Processing ${newTagNames.length} tag(s): ${newTagNames.join(', ')}`)
+    const tagIds = await findOrCreateTags(newTagNames)
 
-    await executeQuery(
-      `INSERT INTO article_tags (article_id, tag_id, created_at) VALUES ${values}`,
-      params
-    )
-
-    // Increment usage count for new tags if article is published
-    if (articleStatus === 'published') {
-      await incrementTagUsageCount(tagIdsToAdd)
+    // Critical validation: ensure we got IDs for all tags
+    if (!tagIds || tagIds.length !== newTagNames.length) {
+      const errorMsg = `Tag ID mismatch: expected ${newTagNames.length} IDs, got ${tagIds?.length || 0}. ` +
+        `Tags: ${newTagNames.join(', ')}, IDs: ${tagIds?.join(', ') || 'none'}`
+      console.error(`[syncArticleTags] VALIDATION FAILED: ${errorMsg}`)
+      throw new Error(errorMsg)
     }
+    console.log(`[syncArticleTags] Step 1 ✓ Got ${tagIds.length} tag ID(s): ${tagIds.join(', ')}`)
+
+    // Fast path for new articles: skip querying existing relationships
+    if (isNewArticle) {
+      console.log('[syncArticleTags] Step 2: New article - using simplified path')
+
+      // Step 2a: Insert article-tag relationships
+      const now = new Date().toISOString()
+      const values = tagIds.map(() => '(?, ?, ?)').join(', ')
+      const params: any[] = []
+      tagIds.forEach(tagId => {
+        params.push(articleId, tagId, now)
+      })
+
+      console.log(`[syncArticleTags] Inserting ${tagIds.length} relationship(s)...`)
+      const insertResult = await executeQuery(
+        `INSERT INTO article_tags (article_id, tag_id, created_at) VALUES ${values}`,
+        params
+      )
+      console.log(`[syncArticleTags] Step 2 ✓ Inserted ${tagIds.length} relationship(s)`)
+
+      // Step 3: Update usage count if article is published
+      // Note: Removed verification query to reduce DB requests and improve stability
+      if (articleStatus === 'published') {
+        console.log(`[syncArticleTags] Step 3: Updating usage counts...`)
+        await incrementTagUsageCount(tagIds)
+        console.log(`[syncArticleTags] Step 3 ✓ Updated usage counts`)
+      }
+
+      console.log(`[syncArticleTags] ✓ Completed successfully for article ${articleId}`)
+      return
+    }
+
+    // Update path for existing articles (sequential operations for stability)
+    console.log('[syncArticleTags] Step 2: Existing article - checking current relationships')
+
+    const existingRelations = await executeQuery<{ tag_id: number }>(
+      `SELECT tag_id FROM article_tags WHERE article_id = ?`,
+      [articleId]
+    )
+    const existingTagIds = new Set(existingRelations.map(r => r.tag_id))
+    console.log(`[syncArticleTags] Step 2 ✓ Found ${existingTagIds.size} existing relationship(s)`)
+
+    // Step 3: Determine which relationships to add and remove
+    const newTagIdSet = new Set(tagIds)
+    const tagIdsToAdd = tagIds.filter(id => !existingTagIds.has(id))
+    const tagIdsToRemove = Array.from(existingTagIds).filter(id => !newTagIdSet.has(id))
+
+    console.log(`[syncArticleTags] Step 3: Changes needed - Add: ${tagIdsToAdd.length}, Remove: ${tagIdsToRemove.length}`)
+
+    // Early exit if nothing to change
+    if (tagIdsToAdd.length === 0 && tagIdsToRemove.length === 0) {
+      console.log('[syncArticleTags] ✓ No changes needed')
+      return
+    }
+
+    // Step 4: Remove old relationships (sequential, not parallel)
+    if (tagIdsToRemove.length > 0) {
+      console.log(`[syncArticleTags] Step 4a: Removing ${tagIdsToRemove.length} old relationship(s)...`)
+      const placeholders = tagIdsToRemove.map(() => '?').join(',')
+      await executeQuery(
+        `DELETE FROM article_tags WHERE article_id = ? AND tag_id IN (${placeholders})`,
+        [articleId, ...tagIdsToRemove]
+      )
+      console.log(`[syncArticleTags] Step 4a ✓ Removed ${tagIdsToRemove.length} relationship(s)`)
+
+      // Update usage count for removed tags if article is published
+      if (articleStatus === 'published') {
+        console.log(`[syncArticleTags] Step 4b: Decrementing usage counts...`)
+        await decrementTagUsageCount(tagIdsToRemove)
+        console.log(`[syncArticleTags] Step 4b ✓ Decremented usage counts`)
+      }
+    }
+
+    // Step 5: Add new relationships (sequential, after removals complete)
+    if (tagIdsToAdd.length > 0) {
+      console.log(`[syncArticleTags] Step 5a: Adding ${tagIdsToAdd.length} new relationship(s)...`)
+      const now = new Date().toISOString()
+      const values = tagIdsToAdd.map(() => '(?, ?, ?)').join(', ')
+      const params: any[] = []
+      tagIdsToAdd.forEach(tagId => {
+        params.push(articleId, tagId, now)
+      })
+
+      await executeQuery(
+        `INSERT INTO article_tags (article_id, tag_id, created_at) VALUES ${values}`,
+        params
+      )
+      console.log(`[syncArticleTags] Step 5a ✓ Added ${tagIdsToAdd.length} relationship(s)`)
+
+      // Update usage count for new tags if article is published
+      if (articleStatus === 'published') {
+        console.log(`[syncArticleTags] Step 5b: Incrementing usage counts...`)
+        await incrementTagUsageCount(tagIdsToAdd)
+        console.log(`[syncArticleTags] Step 5b ✓ Incremented usage counts`)
+      }
+    }
+
+    console.log(`[syncArticleTags] ✓ Completed successfully for article ${articleId}`)
+  } catch (error) {
+    console.error(`[syncArticleTags] ✗ FAILED for article ${articleId}:`, error)
+    // Log the full error stack for debugging
+    if (error instanceof Error) {
+      console.error(`[syncArticleTags] Error stack:`, error.stack)
+    }
+    throw error  // Re-throw to let the caller handle it
   }
 }
 
@@ -113,6 +192,7 @@ export async function handleArticleStatusChangeForTags(
 
 /**
  * Find or create tags by name, returns array of tag IDs
+ * Uses batch operations for better performance
  *
  * @param tagNames - Array of tag names
  * @returns Array of tag IDs
@@ -120,45 +200,83 @@ export async function handleArticleStatusChangeForTags(
 async function findOrCreateTags(tagNames: string[]): Promise<number[]> {
   if (tagNames.length === 0) return []
 
-  const tagIds: number[] = []
   const now = new Date().toISOString()
 
-  // Fetch existing tags
+  // Step 1: Batch query existing tags
   const placeholders = tagNames.map(() => '?').join(',')
   const existingTags = await executeQuery<DbTag>(
     `SELECT id, name FROM tags WHERE name IN (${placeholders})`,
     tagNames
   )
 
-  // Build map of existing tags
+  // Build map of existing tags (case-insensitive)
   const existingTagMap = new Map<string, number>()
   existingTags.forEach(tag => {
     existingTagMap.set(tag.name.toLowerCase(), tag.id)
   })
 
-  // Process each tag name
-  for (const tagName of tagNames) {
-    const existingId = existingTagMap.get(tagName.toLowerCase())
+  console.log(`[findOrCreateTags] Found ${existingTags.length} existing tags out of ${tagNames.length}`)
 
-    if (existingId) {
-      tagIds.push(existingId)
-    } else {
-      // Create new tag
+  // Step 2: Identify tags that need to be created
+  const tagsToCreate = tagNames.filter(name => !existingTagMap.has(name.toLowerCase()))
+
+  // Step 3: Batch create new tags if needed
+  if (tagsToCreate.length > 0) {
+    console.log(`[findOrCreateTags] Creating ${tagsToCreate.length} new tags: ${tagsToCreate.join(', ')}`)
+
+    // Build batch insert statement
+    const insertValues = tagsToCreate.map(() => '(?, ?, 0, ?, ?)').join(', ')
+    const insertParams: any[] = []
+
+    tagsToCreate.forEach(tagName => {
       const slug = tagName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+      insertParams.push(tagName, slug, now, now)
+    })
 
-      const result = await executeQuery<{ id: number }>(
-        `INSERT INTO tags (name, slug, usage_count, created_at, updated_at)
-         VALUES (?, ?, 0, ?, ?)
-         RETURNING id`,
-        [tagName, slug, now, now]
+    try {
+      // Batch insert all new tags
+      await executeQuery(
+        `INSERT INTO tags (name, slug, usage_count, created_at, updated_at) VALUES ${insertValues}`,
+        insertParams
       )
 
-      if (result && result[0]) {
-        tagIds.push(result[0].id)
+      // Batch query the newly created tags to get their IDs
+      const newPlaceholders = tagsToCreate.map(() => '?').join(',')
+      const newTags = await executeQuery<{ id: number, name: string }>(
+        `SELECT id, name FROM tags WHERE name IN (${newPlaceholders})`,
+        tagsToCreate
+      )
+
+      if (newTags.length !== tagsToCreate.length) {
+        console.error(`[findOrCreateTags] Created ${tagsToCreate.length} tags but only retrieved ${newTags.length}`)
+        throw new Error(
+          `Tag creation mismatch: created ${tagsToCreate.length} tags, retrieved ${newTags.length}. ` +
+          `Missing: ${tagsToCreate.filter(name => !newTags.find(t => t.name === name)).join(', ')}`
+        )
       }
+
+      // Update the map with newly created tags
+      newTags.forEach(tag => {
+        existingTagMap.set(tag.name.toLowerCase(), tag.id)
+      })
+
+      console.log(`[findOrCreateTags] Successfully created ${newTags.length} tags`)
+    } catch (error) {
+      console.error('[findOrCreateTags] Failed to create tags:', error)
+      throw error
     }
   }
 
+  // Step 4: Build tag IDs array in the original order
+  const tagIds = tagNames.map(name => {
+    const id = existingTagMap.get(name.toLowerCase())
+    if (!id) {
+      throw new Error(`Failed to get ID for tag: ${name}`)
+    }
+    return id
+  })
+
+  console.log(`[findOrCreateTags] Returning ${tagIds.length} tag IDs: ${tagIds.join(', ')}`)
   return tagIds
 }
 
@@ -195,6 +313,35 @@ async function decrementTagUsageCount(tagIds: number[]): Promise<void> {
      WHERE id IN (${placeholders})`,
     [new Date().toISOString(), ...tagIds]
   )
+}
+
+/**
+ * Update usage counts for multiple tags in a single operation
+ * More efficient than calling increment and decrement separately
+ *
+ * @param tagIdsToIncrement - Tag IDs to increment
+ * @param tagIdsToDecrement - Tag IDs to decrement
+ */
+async function updateTagUsageCounts(
+  tagIdsToIncrement: number[],
+  tagIdsToDecrement: number[]
+): Promise<void> {
+  // If only one operation needed, use specific function
+  if (tagIdsToIncrement.length === 0 && tagIdsToDecrement.length > 0) {
+    return decrementTagUsageCount(tagIdsToDecrement)
+  }
+  if (tagIdsToDecrement.length === 0 && tagIdsToIncrement.length > 0) {
+    return incrementTagUsageCount(tagIdsToIncrement)
+  }
+  if (tagIdsToIncrement.length === 0 && tagIdsToDecrement.length === 0) {
+    return
+  }
+
+  // Execute both operations in parallel for better performance
+  await Promise.all([
+    incrementTagUsageCount(tagIdsToIncrement),
+    decrementTagUsageCount(tagIdsToDecrement)
+  ])
 }
 
 /**

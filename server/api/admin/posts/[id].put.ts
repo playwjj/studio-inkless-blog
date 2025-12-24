@@ -71,7 +71,10 @@ export default defineEventHandler(async (event) => {
     const oldCategoryId = article.category_id
     const newCategoryId = body.category_id ? parseInt(body.category_id) : oldCategoryId
 
-    // Handle tags using many-to-many relationship
+    // Handle tags using many-to-many relationship (with fault tolerance)
+    let tagSyncSuccess = true
+    let tagSyncError: string | null = null
+
     if (body.tags !== undefined) {
       // Get old tags from article_tags table
       const oldTagNames = await getArticleTagNames(articleId)
@@ -79,10 +82,22 @@ export default defineEventHandler(async (event) => {
       const newTags = body.tags || ''
 
       // Sync tags using many-to-many relationship
-      await syncArticleTags(articleId, newTags, oldTags, newStatus)
+      try {
+        await syncArticleTags(articleId, newTags, oldTags, newStatus)
+      } catch (error: any) {
+        // Fault tolerance: Don't fail the entire update if tag sync fails
+        tagSyncSuccess = false
+        tagSyncError = error?.message || 'Unknown error'
+        console.error('[UpdatePost] Failed to sync tags (non-fatal):', error)
+        console.warn(`[UpdatePost] Article ${articleId} updated but tags failed to sync.`)
+      }
     } else if (oldStatus !== newStatus) {
       // Status changed but tags didn't - still need to update tag counts
-      await handleArticleStatusChangeForTags(articleId, oldStatus, newStatus)
+      try {
+        await handleArticleStatusChangeForTags(articleId, oldStatus, newStatus)
+      } catch (error: any) {
+        console.error('[UpdatePost] Failed to update tag counts (non-fatal):', error)
+      }
     }
 
     // Update the article
@@ -111,6 +126,19 @@ export default defineEventHandler(async (event) => {
       } else if (oldStatus !== 'published' && newStatus === 'published') {
         // Changed from draft/archived to published
         await incrementCategoryCount(newCategoryId)
+      }
+    }
+
+    // Return response with warning if tags failed
+    if (!tagSyncSuccess) {
+      return {
+        success: true,
+        message: 'Article updated successfully, but tags sync failed',
+        warning: 'Tags were not synced. Please try saving again.',
+        data: {
+          tagSyncFailed: true,
+          tagSyncError: tagSyncError
+        }
       }
     }
 

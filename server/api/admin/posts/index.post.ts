@@ -42,16 +42,55 @@ export default defineEventHandler(async (event) => {
     }
 
     // Insert article into database
+    console.log(`[CreatePost] Creating article with ID: ${articleId}`)
     await insertRow('articles', articleData)
+    console.log(`[CreatePost] Article created successfully`)
 
-    // Sync tags using many-to-many relationship
+    // Sync tags using many-to-many relationship (with fault tolerance)
+    let tagSyncSuccess = true
+    let tagSyncError: string | null = null
+
     if (body.tags) {
-      await syncArticleTags(articleId, body.tags, '', body.status)
+      console.log(`[CreatePost] Syncing tags: ${body.tags}`)
+      try {
+        // Use fast path for new articles
+        await syncArticleTags(articleId, body.tags, '', body.status, true)
+        console.log(`[CreatePost] Tags synced successfully`)
+      } catch (tagError: any) {
+        // Fault tolerance: Don't rollback article if tag sync fails
+        // Article is more important than tags, tags can be fixed later
+        tagSyncSuccess = false
+        tagSyncError = tagError?.message || 'Unknown error'
+        console.error('[CreatePost] Failed to sync tags (non-fatal):', tagError)
+        console.warn(`[CreatePost] Article ${articleId} created but tags failed to sync. User can edit article later to retry.`)
+      }
     }
 
     // Update category count if article is published
     if (body.status === 'published') {
-      await incrementCategoryCount(parseInt(body.category_id))
+      console.log(`[CreatePost] Updating category count for category ${body.category_id}`)
+      try {
+        await incrementCategoryCount(parseInt(body.category_id))
+      } catch (categoryError) {
+        // Also non-fatal, just log the error
+        console.error('[CreatePost] Failed to update category count (non-fatal):', categoryError)
+      }
+    }
+
+    console.log(`[CreatePost] Article ${articleId} created successfully`)
+
+    // Return response with warning if tags failed
+    if (!tagSyncSuccess) {
+      return {
+        success: true,
+        message: 'Article created successfully, but tags sync failed',
+        warning: 'Tags were not synced. Please edit the article to retry tag sync.',
+        data: {
+          id: articleId,
+          tagSyncFailed: true,
+          tagSyncError: tagSyncError
+        }
+      }
     }
 
     return {

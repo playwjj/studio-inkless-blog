@@ -371,9 +371,11 @@ export async function deleteRows(
   return true
 }
 
+export type SqlParam = string | number | boolean | null
+
 export async function executeQuery<T = any>(
   sql: string,
-  params: any[] = []
+  params: SqlParam[] = []
 ): Promise<T[]> {
   const config = useRuntimeConfig()
   const apiUrl = config.dbApiUrl

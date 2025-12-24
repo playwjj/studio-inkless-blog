@@ -4,6 +4,7 @@
  */
 
 import type { DbTag } from '~/server/types/dbTypes'
+import type { SqlParam } from './dbApi'
 
 /**
  * Sync article tags using many-to-many relationship
@@ -57,7 +58,7 @@ export async function syncArticleTags(
       // Step 2a: Insert article-tag relationships
       const now = new Date().toISOString()
       const values = tagIds.map(() => '(?, ?, ?)').join(', ')
-      const params: any[] = []
+      const params: SqlParam[] = []
       tagIds.forEach(tagId => {
         params.push(articleId, tagId, now)
       })
@@ -127,7 +128,7 @@ export async function syncArticleTags(
       console.log(`[syncArticleTags] Step 5a: Adding ${tagIdsToAdd.length} new relationship(s)...`)
       const now = new Date().toISOString()
       const values = tagIdsToAdd.map(() => '(?, ?, ?)').join(', ')
-      const params: any[] = []
+      const params: SqlParam[] = []
       tagIdsToAdd.forEach(tagId => {
         params.push(articleId, tagId, now)
       })

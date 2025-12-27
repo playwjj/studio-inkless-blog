@@ -4,7 +4,7 @@
 
 **A modern, feature-rich blog platform built with Nuxt 3, Tailwind CSS, and Cloudflare**
 
-[Live Demo](https://404401.xyz) • [Features](#-features) • [Getting Started](#-getting-started) • [Documentation](#-documentation--resources)
+[Live Demo](https://blog.404401.xyz) • [Features](#-features) • [Getting Started](#-getting-started) • [Documentation](#-documentation--resources)
 
 [![Nuxt 3](https://img.shields.io/badge/Nuxt-3.13.0-00DC82?logo=nuxt.js)](https://nuxt.com/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3.0-3178C6?logo=typescript)](https://www.typescriptlang.org/)
@@ -17,7 +17,7 @@
 
 ## 🌐 Live Preview
 
-**Visit the live site:** [https://404401.xyz](https://404401.xyz)
+**Visit the live site:** [https://blog.404401.xyz](https://blog.404401.xyz)
 
 Experience all features in action including the admin dashboard, content management system, and responsive design.
 
@@ -93,7 +93,7 @@ Experience all features in action including the admin dashboard, content managem
 
 ## 🚀 Getting Started
 
-> 💡 **Tip**: Check out the [live demo](https://404401.xyz) to see all features in action before setting up your own instance!
+> 💡 **Tip**: Check out the [live demo](https://blog.404401.xyz) to see all features in action before setting up your own instance!
 
 ### Prerequisites
 
@@ -807,7 +807,7 @@ If you find this project helpful, please consider:
 - 🐛 **Reporting bugs** - Help us fix issues
 - 💡 **Suggesting features** - Share your ideas
 
-**Live site**: [https://404401.xyz](https://404401.xyz)
+**Live site**: [https://blog.404401.xyz](https://blog.404401.xyz)
 
 ## 📄 License
 

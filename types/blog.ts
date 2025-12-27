@@ -10,8 +10,14 @@ export interface BlogPost {
   }
   coverImage: string
   publishedAt: string
-  category: string
-  tags: string[]
+  category: {
+    name: string
+    slug: string
+  }
+  tags: {
+    name: string
+    slug: string
+  }[]
   readTime: number
   viewCount: number
 }

@@ -83,12 +83,12 @@
           <div v-if="selectedTags.length > 0" class="flex items-center gap-2 flex-wrap">
             <span class="text-sm text-gray-600 font-medium">Tags:</span>
             <button
-              v-for="tag in selectedTags"
-              :key="tag"
-              @click="toggleTag(tag)"
+              v-for="tagSlug in selectedTags"
+              :key="tagSlug"
+              @click="toggleTag(tagSlug)"
               class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-100 text-purple-700 rounded-lg text-sm font-medium hover:bg-purple-200 transition-colors"
             >
-              #{{ tag }}
+              #{{ getTagName(tagSlug) }}
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -187,11 +187,11 @@
                 <div class="flex flex-wrap gap-2">
                   <button
                     v-for="tag in categoryTags"
-                    :key="tag.name"
-                    @click="toggleTag(tag.name)"
+                    :key="tag.slug"
+                    @click="toggleTag(tag.slug)"
                     :class="[
                       'px-3 py-1.5 text-sm font-medium rounded-lg transition-all',
-                      selectedTags.includes(tag.name)
+                      selectedTags.includes(tag.slug)
                         ? 'bg-purple-600 text-white shadow-md scale-105'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105'
                     ]"
@@ -301,15 +301,19 @@ const allPostsCount = computed(() => {
 const categoryTags = computed(() => {
   if (!data.value?.posts) return []
 
-  const tagCounts = new Map<string, number>()
+  const tagCounts = new Map<string, { name: string, slug: string, count: number }>()
   data.value.posts.forEach((post: BlogListItem) => {
     post.tags.forEach(tag => {
-      tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1)
+      const existing = tagCounts.get(tag.slug)
+      if (existing) {
+        existing.count++
+      } else {
+        tagCounts.set(tag.slug, { name: tag.name, slug: tag.slug, count: 1 })
+      }
     })
   })
 
-  return Array.from(tagCounts.entries())
-    .map(([name, count]) => ({ name, count }))
+  return Array.from(tagCounts.values())
     .sort((a, b) => b.count - a.count)
 })
 
@@ -324,14 +328,14 @@ const filteredPosts = computed(() => {
     posts = posts.filter(post =>
       post.title.toLowerCase().includes(query) ||
       post.excerpt.toLowerCase().includes(query) ||
-      post.tags.some(tag => tag.toLowerCase().includes(query))
+      post.tags.some(tag => tag.name.toLowerCase().includes(query))
     )
   }
 
-  // Tag filter
+  // Tag filter (selectedTags contains tag slugs)
   if (selectedTags.value.length > 0) {
     posts = posts.filter(post =>
-      selectedTags.value.some(tag => post.tags.includes(tag))
+      selectedTags.value.some(tagSlug => post.tags.some(tag => tag.slug === tagSlug))
     )
   }
 
@@ -353,13 +357,19 @@ const sortedPosts = computed(() => {
   }
 })
 
-const toggleTag = (tag: string) => {
-  const index = selectedTags.value.indexOf(tag)
+const toggleTag = (tagSlug: string) => {
+  const index = selectedTags.value.indexOf(tagSlug)
   if (index > -1) {
     selectedTags.value.splice(index, 1)
   } else {
-    selectedTags.value.push(tag)
+    selectedTags.value.push(tagSlug)
   }
+}
+
+// Helper to get tag name from slug
+const getTagName = (tagSlug: string) => {
+  const tag = categoryTags.value.find(t => t.slug === tagSlug)
+  return tag?.name || tagSlug
 }
 
 const clearFilters = () => {

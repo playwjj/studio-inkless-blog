@@ -203,11 +203,11 @@ async function findOrCreateTags(tagNames: string[]): Promise<number[]> {
 
   const now = new Date().toISOString()
 
-  // Step 1: Batch query existing tags
+  // Step 1: Batch query existing tags (case-insensitive to match UNIQUE constraint)
   const placeholders = tagNames.map(() => '?').join(',')
   const existingTags = await executeQuery<DbTag>(
-    `SELECT id, name FROM tags WHERE name IN (${placeholders})`,
-    tagNames
+    `SELECT id, name FROM tags WHERE LOWER(name) IN (${placeholders})`,
+    tagNames.map(name => name.toLowerCase())
   )
 
   // Build map of existing tags (case-insensitive)
@@ -241,11 +241,11 @@ async function findOrCreateTags(tagNames: string[]): Promise<number[]> {
         insertParams
       )
 
-      // Batch query the newly created tags to get their IDs
+      // Batch query the newly created tags to get their IDs (case-insensitive)
       const newPlaceholders = tagsToCreate.map(() => '?').join(',')
       const newTags = await executeQuery<{ id: number, name: string }>(
-        `SELECT id, name FROM tags WHERE name IN (${newPlaceholders})`,
-        tagsToCreate
+        `SELECT id, name FROM tags WHERE LOWER(name) IN (${newPlaceholders})`,
+        tagsToCreate.map(name => name.toLowerCase())
       )
 
       if (newTags.length !== tagsToCreate.length) {

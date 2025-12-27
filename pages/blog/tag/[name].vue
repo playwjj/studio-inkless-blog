@@ -92,7 +92,7 @@
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
               </svg>
-              {{ selectedCategory }}
+              {{ selectedCategoryName }}
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -158,18 +158,18 @@
                 <button
                   v-for="category in categoriesData"
                   :key="category.slug"
-                  @click="selectedCategory = category.name"
+                  @click="selectedCategory = category.slug"
                   :class="[
                     'block w-full text-left px-4 py-2.5 rounded-lg transition-all font-medium text-sm',
-                    selectedCategory === category.name
+                    selectedCategory === category.slug
                       ? 'bg-primary-600 text-white shadow-md'
                       : 'text-gray-700 hover:bg-gray-50'
                   ]"
                 >
                   <span class="flex items-center justify-between">
                     <span>{{ category.name }}</span>
-                    <span :class="selectedCategory === category.name ? 'text-primary-100' : 'text-gray-500'">
-                      {{ getCategoryCount(category.name) }}
+                    <span :class="selectedCategory === category.slug ? 'text-primary-100' : 'text-gray-500'">
+                      {{ getCategoryCount(category.slug) }}
                     </span>
                   </span>
                 </button>
@@ -295,25 +295,22 @@ const relatedTags = computed(() => {
   if (!tagsData.value || !data.value?.posts) return []
 
   // Get all tags from posts with current tag
-  const tagCounts = new Map<string, number>()
+  const tagCounts = new Map<string, { name: string, slug: string, count: number }>()
   data.value.posts.forEach((post: BlogListItem) => {
     post.tags.forEach(tag => {
-      if (tag !== tagName.value) { // Exclude current tag
-        tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1)
+      if (tag.name !== tagName.value) { // Exclude current tag
+        const existing = tagCounts.get(tag.slug)
+        if (existing) {
+          existing.count++
+        } else {
+          tagCounts.set(tag.slug, { name: tag.name, slug: tag.slug, count: 1 })
+        }
       }
     })
   })
 
-  // Convert to array and add slugs
-  return Array.from(tagCounts.entries())
-    .map(([name, count]) => {
-      const tagData = tagsData.value?.find(t => t.name === name)
-      return {
-        name,
-        slug: tagData?.slug || name.toLowerCase().replace(/\s+/g, '-'),
-        count
-      }
-    })
+  // Convert to array and sort
+  return Array.from(tagCounts.values())
     .sort((a, b) => b.count - a.count)
     .slice(0, 10) // Show top 10 related tags
 })
@@ -332,12 +329,19 @@ const filteredPosts = computed(() => {
     )
   }
 
-  // Category filter
+  // Category filter (use slug)
   if (selectedCategory.value) {
-    posts = posts.filter(post => post.category === selectedCategory.value)
+    posts = posts.filter(post => post.category.slug === selectedCategory.value)
   }
 
   return posts
+})
+
+// Helper to get selected category name from slug
+const selectedCategoryName = computed(() => {
+  if (!selectedCategory.value || !categoriesData.value) return ''
+  const category = categoriesData.value.find(cat => cat.slug === selectedCategory.value)
+  return category?.name || selectedCategory.value
 })
 
 const sortedPosts = computed(() => {
@@ -356,9 +360,9 @@ const sortedPosts = computed(() => {
 })
 
 // Get count of posts in a category (from current tag's posts)
-const getCategoryCount = (categoryName: string) => {
+const getCategoryCount = (categorySlug: string) => {
   if (!data.value?.posts) return 0
-  return data.value.posts.filter((post: BlogListItem) => post.category === categoryName).length
+  return data.value.posts.filter((post: BlogListItem) => post.category.slug === categorySlug).length
 }
 
 const clearFilters = () => {

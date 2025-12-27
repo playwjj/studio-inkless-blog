@@ -16,11 +16,11 @@
     <div class="p-6">
       <div class="flex items-center gap-4 mb-3">
         <NuxtLink
-          :to="`/blog/category/${post.category.toLowerCase().replace(/\s+/g, '-')}`"
+          :to="`/blog/category/${post.category.slug}`"
           class="inline-block px-3 py-1 text-xs font-semibold text-primary-600 bg-primary-50 rounded-full hover:bg-primary-100 hover:shadow-sm transition-all"
           @click.stop
         >
-          {{ post.category }}
+          {{ post.category.name }}
         </NuxtLink>
         <span class="text-sm text-gray-500 hidden">{{ post.readTime }} min read</span>
       </div>
@@ -38,9 +38,9 @@
       <div class="flex flex-wrap gap-2 mb-4">
         <AiChipTag
           v-for="tag in post.tags"
-          :key="tag"
-          :text="tag"
-          :to="`/blog/tag/${tag.toLowerCase().replace(/\s+/g, '-')}`"
+          :key="tag.slug"
+          :text="tag.name"
+          :to="`/blog/tag/${tag.slug}`"
         />
       </div>
 

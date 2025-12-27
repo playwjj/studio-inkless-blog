@@ -36,9 +36,9 @@
         <div class="flex flex-wrap gap-2 mb-6">
           <AiChipTag
             v-for="tag in post.tags.slice(0, 3)"
-            :key="tag"
-            :text="tag"
-            :to="`/blog/tag/${tag.toLowerCase().replace(/\s+/g, '-')}`"
+            :key="tag.slug"
+            :text="tag.name"
+            :to="`/blog/tag/${tag.slug}`"
           />
         </div>
 

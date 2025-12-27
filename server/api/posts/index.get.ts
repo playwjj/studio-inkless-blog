@@ -37,13 +37,26 @@ export default defineEventHandler(async (event) => {
     const articleIds = articlesResponse.data.map(a => a.id)
     const articleTagsMap = await getTagsForArticles(articleIds)
 
+    // Fetch all tags for slug mapping
+    const tagsResponse = await fetchFromDb<DbTag>('tags', { limit: 1000 })
+    const tags = tagsResponse.data
+
     // Helper function to convert article to BlogListItem
     const mapArticleToBlogItem = (article: DbArticle): BlogListItem => {
       const author = authors.find(a => a.id === article.author_id)
       const category = categories.find(c => c.id === article.category_id)
 
-      // Get tags from the many-to-many relationship
-      const articleTags = articleTagsMap.get(article.id) || []
+      // Get tag names from the many-to-many relationship
+      const articleTagNames = articleTagsMap.get(article.id) || []
+
+      // Map tag names to tag objects with slugs
+      const articleTags = articleTagNames.map(tagName => {
+        const tag = tags.find(t => t.name === tagName)
+        return {
+          name: tagName,
+          slug: tag?.slug || tagName.toLowerCase().replace(/\s+/g, '-')
+        }
+      })
 
       return {
         id: article.id.toString(),
@@ -55,7 +68,10 @@ export default defineEventHandler(async (event) => {
           avatar: author?.avatar_url || '/default-avatar.png'
         },
         coverImage: article.cover_image_url,
-        category: category?.name || 'Uncategorized',
+        category: {
+          name: category?.name || 'Uncategorized',
+          slug: category?.slug || 'uncategorized'
+        },
         tags: articleTags,
         publishedAt: article.published_at,
         readTime: article.read_time,
@@ -73,10 +89,7 @@ export default defineEventHandler(async (event) => {
     // Filter by category
     if (query.category && typeof query.category === 'string') {
       const categorySlug = query.category.toString().toLowerCase()
-      const category = categories.find(cat => cat.slug === categorySlug)
-      if (category) {
-        posts = posts.filter(post => post.category === category.name)
-      }
+      posts = posts.filter(post => post.category.slug === categorySlug)
     }
 
     // Filter by tag

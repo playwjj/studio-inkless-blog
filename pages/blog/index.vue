@@ -82,19 +82,19 @@
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
               </svg>
-              {{ selectedCategory }}
+              {{ selectedCategoryName }}
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
 
             <button
-              v-for="tag in selectedTags"
-              :key="tag"
-              @click="toggleTag(tag)"
+              v-for="tagSlug in selectedTags"
+              :key="tagSlug"
+              @click="toggleTag(tagSlug)"
               class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-100 text-purple-700 rounded-lg text-sm font-medium hover:bg-purple-200 transition-colors"
             >
-              #{{ tag }}
+              #{{ getTagName(tagSlug) }}
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -164,17 +164,17 @@
                 <button
                   v-for="category in categoriesData"
                   :key="category.slug"
-                  @click="setCategory(category.name)"
+                  @click="setCategory(category.slug)"
                   :class="[
                     'block w-full text-left px-4 py-2.5 rounded-lg transition-all font-medium text-sm',
-                    selectedCategory === category.name
+                    selectedCategory === category.slug
                       ? 'bg-primary-600 text-white shadow-md'
                       : 'text-gray-700 hover:bg-gray-50'
                   ]"
                 >
                   <span class="flex items-center justify-between">
                     <span>{{ category.name }}</span>
-                    <span :class="selectedCategory === category.name ? 'text-primary-100' : 'text-gray-500'">
+                    <span :class="selectedCategory === category.slug ? 'text-primary-100' : 'text-gray-500'">
                       {{ category.count }}
                     </span>
                   </span>
@@ -196,11 +196,11 @@
                 <div class="flex flex-wrap gap-2">
                   <button
                     v-for="tag in tagsData"
-                    :key="tag.name"
-                    @click="toggleTag(tag.name)"
+                    :key="tag.slug"
+                    @click="toggleTag(tag.slug)"
                     :class="[
                       'px-3 py-1.5 text-sm font-medium rounded-lg transition-all',
-                      selectedTags.includes(tag.name)
+                      selectedTags.includes(tag.slug)
                         ? 'bg-purple-600 text-white shadow-md scale-105'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105'
                     ]"
@@ -355,6 +355,19 @@ const sortedPosts = computed(() => {
 const hasActiveFilters = computed(() => {
   return selectedCategory.value !== null || selectedTags.value.length > 0 || searchQuery.value.trim() !== ''
 })
+
+// Helper functions to get display names from slugs
+const selectedCategoryName = computed(() => {
+  if (!selectedCategory.value || !categoriesData.value) return ''
+  const category = categoriesData.value.find(cat => cat.slug === selectedCategory.value)
+  return category?.name || selectedCategory.value
+})
+
+const getTagName = (tagSlug: string) => {
+  if (!tagsData.value) return tagSlug
+  const tag = tagsData.value.find(t => t.slug === tagSlug)
+  return tag?.name || tagSlug
+}
 
 // Update filters in URL
 const updateFiltersInUrl = (updates: {

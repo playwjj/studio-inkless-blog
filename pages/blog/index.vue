@@ -11,7 +11,7 @@
             Blog Articles
           </h1>
           <p class="text-base md:text-lg text-gray-600">
-            Explore our collection of {{ data?.posts?.length || 0 }} articles on web development and technology
+            Explore our collection of {{ data?.pagination?.total || 0 }} articles on web development and technology
           </p>
         </div>
       </div>
@@ -157,7 +157,7 @@
                   <span class="flex items-center justify-between">
                     <span>All Posts</span>
                     <span :class="!selectedCategory ? 'text-primary-100' : 'text-gray-500'">
-                      {{ data?.posts?.length || 0 }}
+                      {{ data?.pagination?.total || 0 }}
                     </span>
                   </span>
                 </button>

@@ -400,7 +400,7 @@ useSeoMeta({
   ogTitle: () => data.value?.title || siteConfig.value?.og_title || 'Blog Post',
   description: () => data.value?.excerpt || siteConfig.value?.description || '',
   ogDescription: () => data.value?.excerpt || siteConfig.value?.og_description || '',
-  ogImage: () => siteConfig.value?.og_image || '',
+  ogImage: () => data.value?.coverImage || siteConfig.value?.og_image || '',
   ogType: 'article',
   articlePublishedTime: () => data.value?.publishedAt || '',
   articleAuthor: () => data.value?.author?.name ? [data.value.author.name] : [],
@@ -408,7 +408,7 @@ useSeoMeta({
   twitterCard: 'summary_large_image',
   twitterTitle: () => data.value?.title || siteConfig.value?.twitter_title || '',
   twitterDescription: () => data.value?.excerpt || siteConfig.value?.twitter_description || '',
-  twitterImage: () => siteConfig.value?.og_image || '',
+  twitterImage: () => data.value?.coverImage || siteConfig.value?.og_image || '',
 })
 
 useHead(() => ({

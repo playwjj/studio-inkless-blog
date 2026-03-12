@@ -1,4 +1,9 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import { fileURLToPath } from 'node:url'
+import { resolve } from 'node:path'
+
+const __dirname = fileURLToPath(new URL('.', import.meta.url))
+
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
   devtools: { enabled: true },
@@ -16,8 +21,11 @@ export default defineNuxtConfig({
   nitro: {
     preset: 'cloudflare-pages',
     serveStatic: true,
-    externals: {
-      inline: ['satori', '@resvg/resvg-wasm']
+    // Cloudflare Pages uses noExternals:true (base-worker preset), so externals.inline has no effect.
+    // Use alias to bypass package resolution — alias plugin runs before the no-externals plugin,
+    // so this.resolve() in no-externals sees an explicit file path (external:false) and passes.
+    alias: {
+      '@resvg/resvg-wasm': resolve(__dirname, 'node_modules/@resvg/resvg-wasm/index.mjs'),
     }
   },
 

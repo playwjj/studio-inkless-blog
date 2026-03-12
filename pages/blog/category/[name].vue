@@ -385,4 +385,21 @@ useSeoMeta({
   ogImage: 'https://images.pexels.com/photos/11035471/pexels-photo-11035471.jpeg?auto=compress&cs=tinysrgb&w=1200',
   twitterCard: 'summary_large_image',
 })
+
+const { origin } = useRequestURL()
+useHead(() => ({
+  script: [{
+    type: 'application/ld+json',
+    innerHTML: JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: `${origin}/` },
+        { '@type': 'ListItem', position: 2, name: 'Blog', item: `${origin}/blog` },
+        { '@type': 'ListItem', position: 3, name: 'Categories', item: `${origin}/blog/categories` },
+        { '@type': 'ListItem', position: 4, name: categoryName.value, item: `${origin}/blog/category/${categorySlug.value}` },
+      ],
+    }),
+  }],
+}))
 </script>

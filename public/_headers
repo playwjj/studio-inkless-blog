@@ -32,6 +32,21 @@
 /site.webmanifest
   Cache-Control: public, max-age=86400
 
+# WASM binary — must have this MIME type for WebAssembly.instantiateStreaming
+/resvg.wasm
+  Content-Type: application/wasm
+  Cache-Control: public, max-age=31536000, immutable
+
+# OG image fonts
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# --------------------------------------------
+# Dynamic OG Image — override /* rule so CDN caches images for 24h
+# --------------------------------------------
+/og
+  Cache-Control: public, max-age=86400, s-maxage=86400, immutable
+
 # --------------------------------------------
 # Public Read-only APIs - Short cache + CDN cache
 # --------------------------------------------

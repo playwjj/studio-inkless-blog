@@ -395,24 +395,12 @@ const scrollToTop = () => {
 
 const { origin } = useRequestURL()
 
-const buildOgImageUrl = () => {
-  if (!data.value) return siteConfig.value?.og_image || ''
-  const params = new URLSearchParams({ title: data.value.title })
-  const cat = data.value.category?.name
-  if (cat && cat !== 'Uncategorized') params.set('category', cat)
-  if (data.value.author?.name) params.set('author', data.value.author.name)
-  return `${origin}/og?${params.toString()}`
-}
-
-// Compute ogImage URL once after await useFetch — static value ensures SSR includes it in HTML
-const ogImageUrl = buildOgImageUrl()
-
 useSeoMeta({
   title: () => data.value ? getTitle(data.value.title) : getTitle('Post'),
   ogTitle: () => data.value?.title || siteConfig.value?.og_title || 'Blog Post',
   description: () => data.value?.excerpt || siteConfig.value?.description || '',
   ogDescription: () => data.value?.excerpt || siteConfig.value?.og_description || '',
-  ogImage: ogImageUrl,
+  ogImage: () => siteConfig.value?.og_image || '',
   ogType: 'article',
   articlePublishedTime: () => data.value?.publishedAt || '',
   articleAuthor: () => data.value?.author?.name ? [data.value.author.name] : [],
@@ -420,7 +408,7 @@ useSeoMeta({
   twitterCard: 'summary_large_image',
   twitterTitle: () => data.value?.title || siteConfig.value?.twitter_title || '',
   twitterDescription: () => data.value?.excerpt || siteConfig.value?.twitter_description || '',
-  twitterImage: ogImageUrl,
+  twitterImage: () => siteConfig.value?.og_image || '',
 })
 
 useHead(() => ({

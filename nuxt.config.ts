@@ -15,7 +15,10 @@ export default defineNuxtConfig({
 
   nitro: {
     preset: 'cloudflare-pages',
-    serveStatic: true      
+    serveStatic: true,
+    externals: {
+      inline: ['satori', '@resvg/resvg-wasm']
+    }
   },
 
   // App configuration

@@ -92,13 +92,15 @@ export default defineEventHandler(async (event) => {
       posts = posts.filter(post => post.category.slug === categorySlug)
     }
 
-    // Filter by tag
-    if (query.tag && typeof query.tag === 'string') {
-      const tagSlug = query.tag.toString().toLowerCase()
-      const articleIdsWithTag = await getArticleIdsByTag(tagSlug)
-      if (articleIdsWithTag.length > 0) {
-        // Filter posts that have this tag
-        posts = posts.filter(post => articleIdsWithTag.includes(post.id))
+    // Filter by tag(s) - supports single or multiple tags (OR logic)
+    if (query.tag) {
+      const tagSlugs = Array.isArray(query.tag)
+        ? query.tag.map(t => String(t).toLowerCase())
+        : [String(query.tag).toLowerCase()]
+      const articleIdSets = await Promise.all(tagSlugs.map(slug => getArticleIdsByTag(slug)))
+      const allArticleIds = new Set(articleIdSets.flat())
+      if (allArticleIds.size > 0) {
+        posts = posts.filter(post => allArticleIds.has(post.id))
       }
     }
 

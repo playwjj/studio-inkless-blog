@@ -273,8 +273,11 @@ const searchQuery = ref('')
 const selectedTags = ref<string[]>([])
 const sortBy = ref('newest')
 
-// Fetch all categories for sidebar
-const { data: categoriesData } = await useFetch('/api/categories')
+// Fetch categories and posts in parallel
+const [{ data: categoriesData }, { data, pending, error }] = await Promise.all([
+  useFetch('/api/categories'),
+  useFetch('/api/posts', { query: { category: categorySlug } })
+])
 
 // Find current category by slug
 const currentCategory = computed(() => {
@@ -283,13 +286,6 @@ const currentCategory = computed(() => {
 })
 
 const categoryName = computed(() => currentCategory.value?.name || '')
-
-// Fetch posts for this category
-const { data, pending, error } = await useFetch('/api/posts', {
-  query: {
-    category: categorySlug,
-  }
-})
 
 // Calculate all posts count
 const allPostsCount = computed(() => {
@@ -377,12 +373,14 @@ const clearFilters = () => {
   searchQuery.value = ''
 }
 
+const { siteConfig } = useSiteConfig()
+
 useSeoMeta({
-  title: `${categoryName.value} - Blog - Studio Inkless Blog`,
-  ogTitle: `${categoryName.value} Articles - Studio Inkless Blog`,
-  description: `Explore articles in ${categoryName.value} category. Find tutorials, guides, and insights about ${categoryName.value}.`,
-  ogDescription: `Explore articles in ${categoryName.value} category.`,
-  ogImage: 'https://images.pexels.com/photos/11035471/pexels-photo-11035471.jpeg?auto=compress&cs=tinysrgb&w=1200',
+  title: () => `${categoryName.value} - Blog - Studio Inkless Blog`,
+  ogTitle: () => `${categoryName.value} Articles - Studio Inkless Blog`,
+  description: () => `Explore articles in ${categoryName.value} category. Find tutorials, guides, and insights about ${categoryName.value}.`,
+  ogDescription: () => `Explore articles in ${categoryName.value} category.`,
+  ogImage: () => siteConfig.value?.og_image || '',
   twitterCard: 'summary_large_image',
 })
 

@@ -240,12 +240,14 @@ const getProgressWidth = (count: number) => {
   return (count / maxCount) * 100
 }
 
+const { siteConfig } = useSiteConfig()
+
 useSeoMeta({
   title: 'Categories - Blog - Studio Inkless Blog',
   ogTitle: 'Browse Categories - Studio Inkless Blog',
   description: 'Explore all categories and find articles on topics that interest you. Browse by technology, framework, or topic.',
   ogDescription: 'Explore all categories and find articles on topics that interest you.',
-  ogImage: 'https://images.pexels.com/photos/11035471/pexels-photo-11035471.jpeg?auto=compress&cs=tinysrgb&w=1200',
+  ogImage: () => siteConfig.value?.og_image || '',
   twitterCard: 'summary_large_image',
 })
 

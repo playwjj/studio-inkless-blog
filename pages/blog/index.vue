@@ -320,7 +320,7 @@ const apiQuery = computed(() => ({
   page: currentPage.value,
   limit: 10,
   category: selectedCategory.value || undefined,
-  tag: selectedTags.value.length > 0 ? selectedTags.value[0] : undefined,
+  tag: selectedTags.value.length > 0 ? selectedTags.value : undefined,
   search: searchQuery.value.trim() || undefined
 }))
 

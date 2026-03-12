@@ -282,12 +282,14 @@ const getTagSize = (count: number) => {
   return minSize + (maxSize - minSize) * ratio
 }
 
+const { siteConfig } = useSiteConfig()
+
 useSeoMeta({
   title: 'Tags - Blog - Studio Inkless Blog',
   ogTitle: 'Browse Tags - Studio Inkless Blog',
   description: 'Explore all tags and find articles on topics that interest you. Browse by technology, framework, or topic.',
   ogDescription: 'Explore all tags and find articles on topics that interest you.',
-  ogImage: 'https://images.pexels.com/photos/11035471/pexels-photo-11035471.jpeg?auto=compress&cs=tinysrgb&w=1200',
+  ogImage: () => siteConfig.value?.og_image || '',
   twitterCard: 'summary_large_image',
 })
 

@@ -269,8 +269,12 @@ const searchQuery = ref('')
 const selectedCategory = ref<string | null>(null)
 const sortBy = ref('newest')
 
-// Fetch top 80 tags for sidebar
-const { data: tagsData } = await useFetch('/api/tags', { query: { limit: 80 } })
+// Fetch tags, posts, and categories in parallel
+const [{ data: tagsData }, { data, pending, error }, { data: categoriesData }] = await Promise.all([
+  useFetch('/api/tags', { query: { limit: 80 } }),
+  useFetch('/api/posts', { query: { tag: tagSlug } }),
+  useFetch('/api/categories')
+])
 
 // Find current tag by slug
 const currentTag = computed(() => {
@@ -279,16 +283,6 @@ const currentTag = computed(() => {
 })
 
 const tagName = computed(() => currentTag.value?.name || '')
-
-// Fetch posts for this tag
-const { data, pending, error } = await useFetch('/api/posts', {
-  query: {
-    tag: tagSlug,
-  }
-})
-
-// Fetch all categories for sidebar
-const { data: categoriesData } = await useFetch('/api/categories')
 
 // Get related tags (tags that appear with current tag)
 const relatedTags = computed(() => {
@@ -370,12 +364,14 @@ const clearFilters = () => {
   searchQuery.value = ''
 }
 
+const { siteConfig } = useSiteConfig()
+
 useSeoMeta({
-  title: `${tagName.value} - Blog - Studio Inkless Blog`,
-  ogTitle: `${tagName.value} Articles - Studio Inkless Blog`,
-  description: `Explore articles tagged with ${tagName.value}. Find tutorials, guides, and insights about ${tagName.value}.`,
-  ogDescription: `Explore articles tagged with ${tagName.value}.`,
-  ogImage: 'https://images.pexels.com/photos/11035471/pexels-photo-11035471.jpeg?auto=compress&cs=tinysrgb&w=1200',
+  title: () => `${tagName.value} - Blog - Studio Inkless Blog`,
+  ogTitle: () => `${tagName.value} Articles - Studio Inkless Blog`,
+  description: () => `Explore articles tagged with ${tagName.value}. Find tutorials, guides, and insights about ${tagName.value}.`,
+  ogDescription: () => `Explore articles tagged with ${tagName.value}.`,
+  ogImage: () => siteConfig.value?.og_image || '',
   twitterCard: 'summary_large_image',
 })
 

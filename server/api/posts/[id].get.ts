@@ -49,8 +49,14 @@ export default defineEventHandler(async (event) => {
         avatar: author?.avatar_url || '/default-avatar.png'
       },
       coverImage: article.cover_image_url,
-      category: category?.name || 'Uncategorized',
-      tags: articleTags,
+      category: {
+        name: category?.name || 'Uncategorized',
+        slug: category?.slug || 'uncategorized'
+      },
+      tags: articleTags.map(name => ({
+        name,
+        slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+      })),
       publishedAt: article.published_at,
       readTime: article.read_time,
       viewCount: article.view_count || 0

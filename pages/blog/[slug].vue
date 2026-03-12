@@ -84,10 +84,10 @@
             <!-- Category & Read Time -->
             <div class="flex items-center gap-4 mb-4">
               <NuxtLink
-                :to="`/blog/category/${data.category.toLowerCase().replace(/\s+/g, '-')}`"
+                :to="`/blog/category/${data.category.slug}`"
                 class="inline-flex items-center px-4 py-1.5 text-sm font-semibold bg-white/80 backdrop-blur-sm rounded-lg border border-gray-200 text-primary-600 shadow-sm hover:bg-primary-50 hover:border-primary-300 transition-all"
               >
-                {{ data.category }}
+                {{ data.category.name }}
               </NuxtLink>
               <span class="text-gray-600 text-sm flex items-center gap-1.5 hidden">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -149,9 +149,9 @@
                 <div class="flex flex-wrap gap-2">
                   <AiChipTag
                     v-for="tag in data.tags"
-                    :key="tag"
-                    :text="tag"
-                    :to="`/blog/tag/${tag.toLowerCase().replace(/\s+/g, '-')}`"
+                    :key="tag.slug"
+                    :text="tag.name"
+                    :to="`/blog/tag/${tag.slug}`"
                   />
                 </div>
               </div>
@@ -266,10 +266,10 @@
                     <div>
                       <p class="text-gray-500 mb-1">Category</p>
                       <NuxtLink
-                        :to="`/blog/category/${data.category.toLowerCase().replace(/\s+/g, '-')}`"
+                        :to="`/blog/category/${data.category.slug}`"
                         class="text-gray-900 font-medium hover:text-primary-600 transition-colors"
                       >
-                        {{ data.category }}
+                        {{ data.category.name }}
                       </NuxtLink>
                     </div>
                   </div>
@@ -393,21 +393,50 @@ const scrollToTop = () => {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
+const { origin } = useRequestURL()
+
+const buildOgImageUrl = () => {
+  if (!data.value) return siteConfig.value?.og_image || ''
+  const params = new URLSearchParams({ title: data.value.title })
+  const cat = data.value.category?.name
+  if (cat && cat !== 'Uncategorized') params.set('category', cat)
+  if (data.value.author?.name) params.set('author', data.value.author.name)
+  return `${origin}/og?${params.toString()}`
+}
+
+// Compute ogImage URL once after await useFetch — static value ensures SSR includes it in HTML
+const ogImageUrl = buildOgImageUrl()
+
 useSeoMeta({
   title: () => data.value ? getTitle(data.value.title) : getTitle('Post'),
   ogTitle: () => data.value?.title || siteConfig.value?.og_title || 'Blog Post',
   description: () => data.value?.excerpt || siteConfig.value?.description || '',
   ogDescription: () => data.value?.excerpt || siteConfig.value?.og_description || '',
-  ogImage: () => data.value?.coverImage || siteConfig.value?.og_image || '',
+  ogImage: ogImageUrl,
   ogType: 'article',
-  articlePublishedTime: () => data.value?.publishedAt,
-  articleAuthor: () => data.value?.author.name,
-  articleTag: () => data.value?.tags,
+  articlePublishedTime: () => data.value?.publishedAt || '',
+  articleAuthor: () => data.value?.author?.name ? [data.value.author.name] : [],
+  articleTag: () => data.value?.tags?.map(t => t.name) ?? [],
   twitterCard: 'summary_large_image',
   twitterTitle: () => data.value?.title || siteConfig.value?.twitter_title || '',
   twitterDescription: () => data.value?.excerpt || siteConfig.value?.twitter_description || '',
-  twitterImage: () => data.value?.coverImage || siteConfig.value?.twitter_image || '',
+  twitterImage: ogImageUrl,
 })
+
+useHead(() => ({
+  script: data.value ? [{
+    type: 'application/ld+json',
+    innerHTML: JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: `${origin}/` },
+        { '@type': 'ListItem', position: 2, name: 'Blog', item: `${origin}/blog` },
+        { '@type': 'ListItem', position: 3, name: data.value.title, item: `${origin}/blog/${slug}` },
+      ],
+    }),
+  }] : [],
+}))
 </script>
 
 <style scoped>

@@ -89,7 +89,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  maxDisplayed: 7
+  maxDisplayed: 15
 })
 
 const route = useRoute()
@@ -117,36 +117,28 @@ const scrollToTop = () => {
 }
 
 const displayedPages = computed(() => {
-  const pages: (number | string)[] = []
   const { currentPage, totalPages, maxDisplayed } = props
 
   if (totalPages <= maxDisplayed) {
-    for (let i = 1; i <= totalPages; i++) {
-      pages.push(i)
-    }
-  } else {
-    const leftSide = Math.max(2, currentPage - 1)
-    const rightSide = Math.min(totalPages - 1, currentPage + 1)
-
-    pages.push(1)
-
-    if (leftSide > 2) {
-      pages.push('...')
-    }
-
-    for (let i = leftSide; i <= rightSide; i++) {
-      if (i !== 1 && i !== totalPages) {
-        pages.push(i)
-      }
-    }
-
-    if (rightSide < totalPages - 1) {
-      pages.push('...')
-    }
-
-    pages.push(totalPages)
+    return Array.from({ length: totalPages }, (_, i) => i + 1) as (number | string)[]
   }
 
-  return pages
+  // Always anchor first 2 and last 2 pages, plus ±3 window around current
+  const anchor = new Set([1, 2, totalPages - 1, totalPages])
+  const winStart = Math.max(1, currentPage - 3)
+  const winEnd = Math.min(totalPages, currentPage + 3)
+  for (let i = winStart; i <= winEnd; i++) anchor.add(i)
+
+  const sorted = Array.from(anchor).sort((a, b) => a - b)
+
+  const result: (number | string)[] = []
+  for (let i = 0; i < sorted.length; i++) {
+    result.push(sorted[i])
+    if (i < sorted.length - 1 && sorted[i + 1] - sorted[i] > 1) {
+      result.push('...')
+    }
+  }
+
+  return result
 })
 </script>

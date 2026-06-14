@@ -89,7 +89,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  maxDisplayed: 15
+  maxDisplayed: 10
 })
 
 const route = useRoute()

@@ -13,6 +13,10 @@ export default defineNuxtConfig({
   },
 
 
+  routeRules: {
+    '/blog/**': { swr: 3600 },
+  },
+
   nitro: {
     preset: 'cloudflare-pages',
     serveStatic: true,

@@ -411,20 +411,56 @@ useSeoMeta({
   twitterImage: () => data.value?.coverImage || siteConfig.value?.og_image || '',
 })
 
-useHead(() => ({
-  script: data.value ? [{
-    type: 'application/ld+json',
-    innerHTML: JSON.stringify({
-      '@context': 'https://schema.org',
-      '@type': 'BreadcrumbList',
-      itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Home', item: `${origin}/` },
-        { '@type': 'ListItem', position: 2, name: 'Blog', item: `${origin}/blog` },
-        { '@type': 'ListItem', position: 3, name: data.value.title, item: `${origin}/blog/${slug}` },
-      ],
-    }),
-  }] : [],
-}))
+useHead(() => {
+  const baseUrl = (siteConfig.value?.og_url || origin).replace(/\/$/, '')
+  const articleUrl = `${baseUrl}/blog/${slug}`
+  return {
+    link: [
+      { rel: 'canonical', href: articleUrl },
+    ],
+    script: data.value ? [{
+      type: 'application/ld+json',
+      innerHTML: JSON.stringify([
+        {
+          '@context': 'https://schema.org',
+          '@type': 'Article',
+          headline: data.value.title,
+          description: data.value.excerpt || '',
+          image: coverImageUrl.value,
+          author: {
+            '@type': 'Person',
+            name: data.value.author?.name,
+          },
+          publisher: {
+            '@type': 'Organization',
+            name: siteConfig.value?.og_site_name || 'Studio Inkless Blog',
+            logo: {
+              '@type': 'ImageObject',
+              url: `${baseUrl}/favicon.svg`,
+            },
+          },
+          datePublished: data.value.publishedAt,
+          mainEntityOfPage: {
+            '@type': 'WebPage',
+            '@id': articleUrl,
+          },
+          url: articleUrl,
+          articleSection: data.value.category?.name,
+          keywords: data.value.tags?.map((t: { name: string }) => t.name).join(', ') || '',
+        },
+        {
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Home', item: `${baseUrl}/` },
+            { '@type': 'ListItem', position: 2, name: 'Blog', item: `${baseUrl}/blog` },
+            { '@type': 'ListItem', position: 3, name: data.value.title, item: articleUrl },
+          ],
+        },
+      ]),
+    }] : [],
+  }
+})
 </script>
 
 <style scoped>

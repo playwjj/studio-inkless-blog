@@ -190,7 +190,7 @@
                 <div class="flex flex-wrap gap-2">
                   <AiChipTag
                     v-for="tag in relatedTags"
-                    :key="tag.name"
+                    :key="tag.slug"
                     :text="tag.name"
                     :to="`/blog/tag/${tag.slug}`"
                   />
@@ -292,7 +292,7 @@ const relatedTags = computed(() => {
   const tagCounts = new Map<string, { name: string, slug: string, count: number }>()
   data.value.posts.forEach((post: BlogListItem) => {
     post.tags.forEach(tag => {
-      if (tag.name !== tagName.value) { // Exclude current tag
+      if (tag.slug !== tagSlug.value) { // Exclude current tag
         const existing = tagCounts.get(tag.slug)
         if (existing) {
           existing.count++

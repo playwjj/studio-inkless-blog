@@ -1,34 +1,36 @@
 <template>
-  <div v-if="totalPages > 1" class="flex justify-center items-center gap-2 mt-8">
+  <div v-if="totalPages > 1" class="flex flex-wrap justify-center items-center gap-2 mt-8">
     <!-- Previous Button -->
     <NuxtLink
       v-if="currentPage > 1"
       :to="getPageUrl(currentPage - 1)"
       :class="[
-        'px-4 py-2 rounded-lg border transition-colors',
+        'px-2 sm:px-4 py-2 rounded-lg border transition-colors',
         'border-gray-300 text-gray-700 hover:bg-gray-50'
       ]"
       @click="scrollToTop"
     >
-      Previous
+      <span class="sm:hidden" aria-hidden="true">&#8592;</span>
+      <span class="hidden sm:inline">Previous</span>
     </NuxtLink>
     <span
       v-else
       :class="[
-        'px-4 py-2 rounded-lg border transition-colors',
+        'px-2 sm:px-4 py-2 rounded-lg border transition-colors',
         'border-gray-200 text-gray-400 cursor-not-allowed'
       ]"
     >
-      Previous
+      <span class="sm:hidden" aria-hidden="true">&#8592;</span>
+      <span class="hidden sm:inline">Previous</span>
     </span>
 
     <!-- Page Numbers -->
-    <div class="flex gap-1">
+    <div class="flex flex-wrap justify-center gap-1">
       <template v-for="page in displayedPages" :key="page">
         <!-- Ellipsis -->
         <span
           v-if="page === '...'"
-          class="min-w-[40px] h-10 rounded-lg border border-transparent text-gray-400 flex items-center justify-center"
+          class="min-w-[36px] sm:min-w-[40px] h-9 sm:h-10 rounded-lg border border-transparent text-gray-400 flex items-center justify-center text-sm"
         >
           {{ page }}
         </span>
@@ -36,7 +38,7 @@
         <span
           v-else-if="page === currentPage"
           :class="[
-            'min-w-[40px] h-10 rounded-lg border transition-colors flex items-center justify-center',
+            'min-w-[36px] sm:min-w-[40px] h-9 sm:h-10 rounded-lg border transition-colors flex items-center justify-center text-sm',
             'bg-primary-600 text-white border-primary-600 font-semibold'
           ]"
         >
@@ -47,7 +49,7 @@
           v-else
           :to="getPageUrl(page as number)"
           :class="[
-            'min-w-[40px] h-10 rounded-lg border transition-colors flex items-center justify-center',
+            'min-w-[36px] sm:min-w-[40px] h-9 sm:h-10 rounded-lg border transition-colors flex items-center justify-center text-sm',
             'border-gray-300 text-gray-700 hover:bg-gray-50'
           ]"
           @click="scrollToTop"
@@ -62,21 +64,23 @@
       v-if="currentPage < totalPages"
       :to="getPageUrl(currentPage + 1)"
       :class="[
-        'px-4 py-2 rounded-lg border transition-colors',
+        'px-2 sm:px-4 py-2 rounded-lg border transition-colors',
         'border-gray-300 text-gray-700 hover:bg-gray-50'
       ]"
       @click="scrollToTop"
     >
-      Next
+      <span class="sm:hidden" aria-hidden="true">&#8594;</span>
+      <span class="hidden sm:inline">Next</span>
     </NuxtLink>
     <span
       v-else
       :class="[
-        'px-4 py-2 rounded-lg border transition-colors',
+        'px-2 sm:px-4 py-2 rounded-lg border transition-colors',
         'border-gray-200 text-gray-400 cursor-not-allowed'
       ]"
     >
-      Next
+      <span class="sm:hidden" aria-hidden="true">&#8594;</span>
+      <span class="hidden sm:inline">Next</span>
     </span>
   </div>
 </template>

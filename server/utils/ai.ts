@@ -36,54 +36,31 @@ export function extractArticleHTML(raw: string): string {
 }
 
 /**
- * Build text generation prompt for blog articles
+ * Build combined prompt: tags + article in a single call
  */
 export function buildArticlePrompt(topic: string, categoryName: string, language: string): string {
   const langInstruction = language === 'zh'
-    ? 'Write the entire article in Simplified Chinese.'
-    : 'Write the entire article in English.'
+    ? 'Write everything in Simplified Chinese.'
+    : 'Write everything in English.'
 
-  return `You are a professional technical writer specializing in developer content.
+  return `You are a technical blog writer. ${langInstruction}
 
-Write a comprehensive, practical blog post in clean semantic HTML.
+Write a blog article about: "${topic}" (category: ${categoryName || 'Programming'})
 
-Topic: "${topic}"
-Category: "${categoryName || 'Programming'}"
-${langInstruction}
+Output format — exactly two parts separated by "---":
 
-CONTENT STRUCTURE:
-1. Introduction (1-2 paragraphs): hook the reader, explain why this matters
-2. Main Content (4-6 sections with <h2> headings): concrete examples, code snippets where relevant
-3. Conclusion: 2-3 key takeaways in a <ul> list
+Line 1: TAGS: comma-separated list of 3-5 lowercase tags (e.g. node, rest-api, database)
+Line 2: ---
+Remaining: full article as HTML, starting with <article> and ending with </article>
 
-HTML RULES:
-- Wrap everything in <article>
-- ONE <h1> only (the article title)
-- Use <h2> for sections, <h3> for subsections
-- Use <pre><code class="language-xxx">...</code></pre> for code blocks
-- Use <ul>/<ol>/<li> for lists, <strong> for emphasis
-- NO inline styles, NO markdown, NO emojis
-- Aim for 700-1000 words
+HTML rules:
+- ONE <h1> for the title, <h2> for sections
+- <pre><code class="language-xxx"> for code examples
+- <ul>/<ol> for lists, <strong> for emphasis
+- No markdown, no inline styles, no emojis
+- 600-900 words
 
-Output ONLY the HTML, starting with <article> and ending with </article>.`
-}
-
-/**
- * Build prompt to generate tags from article content
- */
-export function buildTagsPrompt(topic: string, excerpt: string): string {
-  return `Given this blog post topic and excerpt, generate 3-5 relevant tags.
-
-Topic: "${topic}"
-Excerpt: "${excerpt}"
-
-Rules:
-- Use lowercase
-- 1-3 words per tag
-- Focus on technical terms and technologies
-- Avoid generic tags like "tutorial" or "guide"
-
-Return ONLY a comma-separated list, no explanation. Example: vue, nuxt, typescript`
+Start your response now:`
 }
 
 /**

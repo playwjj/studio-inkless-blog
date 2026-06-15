@@ -15,40 +15,46 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Topic is required' })
   }
 
-  // Step 1: Generate article HTML
-  const articleResult = await ai.run('@cf/meta/llama-3.1-8b-instruct', {
-    messages: [
-      { role: 'user', content: buildArticlePrompt(topic, categoryName, language) }
-    ],
-    max_tokens: 2048,
-    temperature: 0.7,
-  }) as { response: string }
+  let rawOutput = ''
+  try {
+    // Single call: returns TAGS line + separator + article HTML
+    const result = await ai.run('@cf/meta/llama-3.1-8b-instruct', {
+      messages: [
+        { role: 'user', content: buildArticlePrompt(topic, categoryName, language) }
+      ],
+      max_tokens: 1500,
+    }) as { response: string }
 
-  const rawContent = articleResult?.response || ''
-  const content = extractArticleHTML(rawContent)
+    rawOutput = result?.response || ''
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err)
+    throw createError({ statusCode: 500, statusMessage: `AI generation failed: ${msg}` })
+  }
+
+  if (!rawOutput) {
+    throw createError({ statusCode: 500, statusMessage: 'AI returned empty response' })
+  }
+
+  // Parse: split on first "---" separator
+  const separatorIndex = rawOutput.indexOf('---')
+  let tagsLine = ''
+  let articleRaw = rawOutput
+
+  if (separatorIndex !== -1) {
+    tagsLine = rawOutput.slice(0, separatorIndex).trim()
+    articleRaw = rawOutput.slice(separatorIndex + 3).trim()
+  }
+
+  // Extract tags from "TAGS: tag1, tag2, ..." line
+  const tags = tagsLine
+    .replace(/^tags?:?\s*/i, '')
+    .replace(/\n[\s\S]*/g, '') // only first line
+    .trim()
+
+  const content = extractArticleHTML(articleRaw)
   const title = extractTitle(content) || topic
   const excerpt = extractExcerpt(content)
 
-  // Step 2: Generate tags
-  let tags = ''
-  try {
-    const tagsResult = await ai.run('@cf/meta/llama-3.1-8b-instruct', {
-      messages: [
-        { role: 'user', content: buildTagsPrompt(topic, excerpt) }
-      ],
-      max_tokens: 60,
-      temperature: 0.3,
-    }) as { response: string }
-
-    tags = (tagsResult?.response || '')
-      .replace(/\n/g, '')
-      .replace(/^tags?:?\s*/i, '')
-      .trim()
-  } catch {
-    // tags are non-critical
-  }
-
-  // Estimate reading time (~200 words/min)
   const wordCount = content.replace(/<[^>]+>/g, '').split(/\s+/).length
   const readTime = Math.max(1, Math.round(wordCount / 200))
 

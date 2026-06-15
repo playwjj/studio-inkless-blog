@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
   let rawOutput = ''
   try {
     // Single call: returns TAGS line + separator + article HTML
-    const result = await ai.run('@cf/meta/llama-3.1-8b-instruct', {
+    const result = await ai.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
       messages: [
         { role: 'user', content: buildArticlePrompt(topic, categoryName, language) }
       ],

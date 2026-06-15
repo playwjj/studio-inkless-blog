@@ -22,6 +22,14 @@
       <p class="text-sm text-red-600">{{ errorMessage }}</p>
     </div>
 
+    <!-- AI Generate Panel -->
+    <AdminAiGeneratePanel
+      :categories="categories"
+      class="mb-6"
+      @generated="onAiGenerated"
+      @image-generated="onAiImageGenerated"
+    />
+
     <form @submit.prevent="publish" class="space-y-6">
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Main content area -->
@@ -418,4 +426,17 @@ watch(() => formData.title, (newTitle: string) => {
 watch(() => formData.content, () => {
   validateField('content', formData as any)
 })
+
+function onAiGenerated(data: { title: string; excerpt: string; content: string; tags: string; readTime: number }) {
+  formData.title = data.title
+  formData.excerpt = data.excerpt
+  formData.content = data.content
+  formData.tags = data.tags
+  formData.read_time = data.readTime
+  isSlugManuallyEdited.value = false
+}
+
+function onAiImageGenerated(url: string) {
+  formData.cover_image_url = url
+}
 </script>

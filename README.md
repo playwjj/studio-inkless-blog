@@ -4,6 +4,8 @@
 
 **A modern, feature-rich blog platform built with Nuxt 3, Tailwind CSS, and Cloudflare**
 
+![Version](https://img.shields.io/badge/version-1.1.0-blue)
+
 [Live Demo](https://blog.404401.xyz) • [Features](#-features) • [Getting Started](#-getting-started) • [Documentation](#-documentation--resources)
 
 [![Nuxt 3](https://img.shields.io/badge/Nuxt-3.13.0-00DC82?logo=nuxt.js)](https://nuxt.com/)
@@ -34,6 +36,7 @@ Experience all features in action including the admin dashboard, content managem
   - [Environment Configuration](#environment-configuration)
 - [Database Setup (D1 SQL Studio)](#-database-setup-with-d1-sql-studio)
 - [File Management (Cloudflare R2)](#-file-management-with-cloudflare-r2)
+- [AI Content Generation (optional)](#-ai-content-generation-cloudflare-workers-ai)
 - [Project Structure](#project-structure)
 - [API Endpoints](#-api-endpoints)
 - [Features Deep Dive](#-features-deep-dive)
@@ -73,6 +76,13 @@ Experience all features in action including the admin dashboard, content managem
 - **User Management**: Support for multiple users and roles
 - **Content Blocks**: 10+ reusable content blocks for page building
 
+### AI Content Generation *(optional)*
+- **Article Generation**: Generate full blog posts from a topic using Cloudflare Workers AI (Llama 3.1)
+- **Cover Image Generation**: Auto-generate cover images via Stable Diffusion XL Lightning, saved to R2
+- **Smart Metadata**: Automatically extracts title, excerpt, tags, and reading time from generated content
+- **Multilingual**: Supports English and Chinese article generation
+- **Zero-config fallback**: Panel is hidden automatically if AI binding is not configured
+
 ## 🛠 Tech Stack
 
 ### Core Framework
@@ -88,6 +98,7 @@ Experience all features in action including the admin dashboard, content managem
 ### Backend & Infrastructure
 - **[Cloudflare Pages](https://pages.cloudflare.com/)** - Global CDN deployment
 - **[Cloudflare R2](https://www.cloudflare.com/products/r2/)** - S3-compatible object storage
+- **[Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/)** - On-demand AI inference (optional)
 - **[D1 SQL Studio](https://github.com/playwjj/d1-sql-studio)** - Database management with REST API
 - **[H3](https://h3.unjs.io/)** - Web framework for server routes
 
@@ -331,6 +342,80 @@ When deploying to Cloudflare Pages:
    - Files are served directly from R2 or your custom domain
    - CDN caching can be enabled for optimal performance
 
+## 🤖 AI Content Generation (Cloudflare Workers AI)
+
+AI-assisted article and cover image generation is an **optional** feature powered by [Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/). The admin panel automatically hides the AI section if the binding is not configured — it has no impact on normal blog usage.
+
+### Models Used
+
+| Task | Model |
+|------|-------|
+| Article generation | `@cf/meta/llama-3.1-8b-instruct` |
+| Cover image generation | `@cf/bytedance/stable-diffusion-xl-lightning` |
+
+### Enabling AI Generation
+
+**Step 1 — Add the binding in `wrangler.toml`** (already included):
+
+```toml
+[ai]
+binding = "AI"
+```
+
+**Step 2 — Add the binding in Cloudflare Pages dashboard** (one-time setup):
+
+1. Go to [Cloudflare Dashboard](https://dash.cloudflare.com/) → **Pages** → your project
+2. **Settings** → **Functions** → **AI Bindings**
+3. Click **Add binding**, set Variable name to `AI`, save
+4. Redeploy the project
+
+That's it. The AI panel will appear automatically in the **New Post** editor.
+
+### How It Works
+
+In the admin **New Post** page, an AI Generate panel appears at the top:
+
+1. Enter a topic or keywords (e.g. `"Cloudflare Workers AI tutorial"`)
+2. Optionally select a category and language (English / Chinese)
+3. Click **Generate Article** → fills title, excerpt, content, tags, and reading time
+4. Click **Cover Image** → generates and uploads an image to R2, fills the cover URL
+5. Review and edit the draft, then publish
+
+### AI Admin API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/admin/ai/status` | Check if AI binding is available |
+| `POST` | `/api/admin/ai/generate` | Generate article from topic |
+| `POST` | `/api/admin/ai/generate-image` | Generate and upload cover image |
+
+**`POST /api/admin/ai/generate`** request body:
+
+```json
+{
+  "topic": "Building a REST API with Cloudflare Workers",
+  "categoryName": "Backend",
+  "language": "en"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "title": "Building a REST API with Cloudflare Workers",
+    "excerpt": "Learn how to build scalable REST APIs...",
+    "content": "<article>...</article>",
+    "tags": "cloudflare, workers, rest-api",
+    "readTime": 5
+  }
+}
+```
+
+---
+
 ## Project Structure
 
 ```
@@ -342,6 +427,7 @@ studio-inkless-blog/
 │   ├── Pagination.vue            # Pagination component
 │   ├── BackToTop.vue             # Back to top button
 │   ├── admin/                    # Admin UI components
+│   │   ├── AiGeneratePanel.vue   # AI article & image generation panel
 │   │   ├── ConfirmDialog.vue
 │   │   ├── EditorFileDialog.vue
 │   │   ├── EditorImageDialog.vue
@@ -437,12 +523,17 @@ studio-inkless-blog/
 │   │       ├── authors/
 │   │       ├── categories/
 │   │       ├── tags/
+│   │       ├── ai/
+│   │       │   ├── status.get.ts       # Check AI binding availability
+│   │       │   ├── generate.post.ts    # Generate article content
+│   │       │   └── generate-image.post.ts  # Generate & upload cover image
 │   │       └── dashboard/
 │   │           └── stats.get.ts
 │   ├── middleware/             # Server middleware
 │   │   ├── apiAuth.ts         # API authentication
 │   │   └── db-check.ts        # Database connection check
 │   ├── utils/                 # Utility functions
+│   │   ├── ai.ts             # Cloudflare Workers AI helpers & prompts
 │   │   ├── r2.ts             # Cloudflare R2 functions
 │   │   ├── dbApi.ts          # D1 SQL Studio API
 │   │   ├── auth.ts           # Authentication utilities
@@ -524,6 +615,11 @@ studio-inkless-blog/
 
 #### Dashboard
 - `GET /api/admin/dashboard/stats` - Get dashboard statistics
+
+#### AI Generation *(requires AI binding)*
+- `GET /api/admin/ai/status` - Check if AI binding is configured
+- `POST /api/admin/ai/generate` - Generate article from topic
+- `POST /api/admin/ai/generate-image` - Generate cover image and upload to R2
 
 ### Query Parameters
 
@@ -722,6 +818,9 @@ File Storage (R2):
 
 Session:
 - [ ] SESSION_SECRET (minimum 32 characters)
+
+AI Generation (optional):
+- [ ] Add AI binding in Pages dashboard: Settings → Functions → AI Bindings → name: AI
 ```
 
 ## 🚀 Performance Optimization

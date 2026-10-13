@@ -87,7 +87,8 @@ export const useImageFallback = () => {
       </svg>
     `.trim()
 
-    return `data:image/svg+xml;base64,${btoa(svg)}`
+    // encodeURIComponent (not btoa) so non-Latin-1 characters in text do not throw
+    return `data:image/svg+xml,${encodeURIComponent(svg)}`
   }
 
   return {

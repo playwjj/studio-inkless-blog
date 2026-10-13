@@ -1,5 +1,8 @@
 import type { DbArticle, DbCategory } from '~/server/types/dbTypes'
 
+const SORTABLE_COLUMNS = ['created_at', 'updated_at', 'published_at', 'title', 'view_count']
+const STATUSES = ['draft', 'published', 'archived']
+
 export default defineEventHandler(async (event) => {
   try {
     // Require authentication
@@ -7,39 +10,48 @@ export default defineEventHandler(async (event) => {
 
     // Get pagination and filter parameters from query
     const query = getQuery(event)
-    const page = parseInt(query.page as string) || 1
-    const limit = parseInt(query.limit as string) || 20
-    const sortBy = (query.sortBy as string) || 'created_at'
-    const sortOrder = (query.sortOrder as 'asc' | 'desc') || 'desc'
-    const search = query.search as string
+    const page = Math.max(1, parseInt(query.page as string) || 1)
+    const limit = Math.min(100, Math.max(1, parseInt(query.limit as string) || 20))
+    const sortBy = SORTABLE_COLUMNS.includes(query.sortBy as string) ? query.sortBy as string : 'created_at'
+    const sortOrder = query.sortOrder === 'asc' ? 'ASC' : 'DESC'
+    const search = typeof query.search === 'string' ? query.search.trim() : ''
     const status = query.status as string
     const categoryId = query.category ? parseInt(query.category as string) : undefined
 
-    // Build filter conditions
-    const filters: any = {}
-    if (status) {
-      filters.status = status
+    // Build filter conditions (fetchFromDb does not support filters, so query directly)
+    const filters: string[] = []
+    const filterParams: Array<string | number> = []
+    if (status && STATUSES.includes(status)) {
+      filters.push('status = ?')
+      filterParams.push(status)
     }
     if (categoryId) {
-      filters.category_id = categoryId
+      filters.push('category_id = ?')
+      filterParams.push(categoryId)
+    }
+    if (search) {
+      filters.push('(title LIKE ? OR excerpt LIKE ?)')
+      filterParams.push(`%${search}%`, `%${search}%`)
     }
 
-    // Fetch articles and categories
-    const [articlesResponse, categoriesResponse] = await Promise.all([
-      fetchFromDb<DbArticle>('articles', {
-        page,
-        limit,
-        sortBy,
-        sortOrder,
-        search,
-        searchFields: search ? ['title', 'excerpt'] : undefined,
-        filters: Object.keys(filters).length > 0 ? filters : undefined
-      }),
+    const whereClause = filters.length > 0 ? `WHERE ${filters.join(' AND ')}` : ''
+    const offset = (page - 1) * limit
+
+    // Fetch articles, total count and categories
+    const [articles, countRows, categoriesResponse] = await Promise.all([
+      executeQuery<DbArticle>(
+        `SELECT * FROM articles ${whereClause} ORDER BY ${sortBy} ${sortOrder} LIMIT ? OFFSET ?`,
+        [...filterParams, limit, offset]
+      ),
+      executeQuery<{ total: number }>(
+        `SELECT COUNT(*) as total FROM articles ${whereClause}`,
+        filterParams
+      ),
       fetchFromDb<DbCategory>('categories', { limit: 100 })
     ])
 
-    const articles = articlesResponse.data || []
     const categories = categoriesResponse.data || []
+    const total = Number(countRows[0]?.total || 0)
 
     // Enhance articles with category names
     const articlesWithCategory = articles.map(article => {
@@ -54,10 +66,10 @@ export default defineEventHandler(async (event) => {
       success: true,
       articles: articlesWithCategory,
       pagination: {
-        page: articlesResponse.meta?.page || page,
-        limit: articlesResponse.meta?.limit || limit,
-        total: articlesResponse.meta?.total || articles.length,
-        totalPages: Math.ceil((articlesResponse.meta?.total || articles.length) / limit)
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
       }
     }
   } catch (error: any) {

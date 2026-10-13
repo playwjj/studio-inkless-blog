@@ -102,6 +102,11 @@
               {{ data.title }}
             </h1>
 
+            <!-- Excerpt Lead -->
+            <p v-if="data.excerpt" class="mb-6 text-lg md:text-xl leading-relaxed text-gray-600 border-l-4 border-primary-300 pl-4">
+              {{ data.excerpt }}
+            </p>
+
             <!-- Author & Date -->
             <div class="flex items-center gap-4">
               <NuxtImg
@@ -112,7 +117,14 @@
                 height="48"
               />
               <div>
-                <p class="font-semibold text-gray-900">{{ data.author.name }}</p>
+                <NuxtLink
+                  v-if="data.author.id"
+                  :to="`/blog/authors/${data.author.id}`"
+                  class="font-semibold text-gray-900 hover:text-primary-600 transition-colors"
+                >
+                  {{ data.author.name }}
+                </NuxtLink>
+                <p v-else class="font-semibold text-gray-900">{{ data.author.name }}</p>
                 <p class="text-sm text-gray-600">{{ formatDate(data.publishedAt, 'long') }}</p>
               </div>
             </div>
@@ -171,11 +183,20 @@
                   <div class="flex items-start justify-between mb-2">
                     <div>
                       <p class="text-sm text-primary-700 font-medium mb-1">Written by</p>
-                      <h3 class="text-2xl font-bold text-gray-900">{{ data.author.name }}</h3>
+                      <h3 class="text-2xl font-bold text-gray-900">
+                        <NuxtLink
+                          v-if="data.author.id"
+                          :to="`/blog/authors/${data.author.id}`"
+                          class="hover:text-primary-600 transition-colors"
+                        >
+                          {{ data.author.name }}
+                        </NuxtLink>
+                        <template v-else>{{ data.author.name }}</template>
+                      </h3>
                     </div>
                   </div>
                   <p class="text-gray-700 leading-relaxed">
-                    A passionate developer sharing insights and experiences in web development, design, and modern technologies.
+                    {{ data.author.bio || 'A passionate developer sharing insights and experiences in web development, design, and modern technologies.' }}
                   </p>
                 </div>
               </div>
@@ -299,6 +320,18 @@
           </aside>
         </div>
       </div>
+
+      <!-- Related Articles -->
+      <section v-if="relatedPosts && relatedPosts.length > 0" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+        <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-8">Related Articles</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+          <BlogCard
+            v-for="post in relatedPosts"
+            :key="post.id"
+            :post="post"
+          />
+        </div>
+      </section>
     </article>
   </div>
 </template>
@@ -307,7 +340,10 @@
 const route = useRoute()
 const slug = route.params.slug
 
-const { data, pending, error } = await useFetch(`/api/posts/${slug}`)
+const [{ data, pending, error }, { data: relatedPosts }] = await Promise.all([
+  useFetch(`/api/posts/${slug}`),
+  useFetch(`/api/posts/related/${slug}`)
+])
 
 const { formatDate } = useFormatDate()
 const { getTitle, siteConfig } = useSiteConfig()

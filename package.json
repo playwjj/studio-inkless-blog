@@ -21,6 +21,7 @@
     "h3-session": "^0.2.5",
     "marked": "^17.0.1",
     "nuxt": "^3.13.0",
+    "pinyin-pro": "^3.27.0",
     "vue": "^3.4.0",
     "vue-router": "^4.4.0",
     "vuedraggable": "^4.1.0"

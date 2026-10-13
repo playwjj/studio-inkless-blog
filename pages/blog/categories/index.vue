@@ -155,6 +155,11 @@
             {{ category.name }}
           </h3>
 
+          <!-- Category Description -->
+          <p v-if="category.description" class="text-sm text-gray-600 mb-3 line-clamp-2 leading-relaxed">
+            {{ category.description }}
+          </p>
+
           <!-- Post Count -->
           <div class="flex items-center gap-2 text-sm text-gray-600">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -212,7 +217,8 @@ const filteredCategories = computed(() => {
   if (searchQuery.value.trim()) {
     const query = searchQuery.value.toLowerCase()
     categories = categories.filter(category =>
-      category.name.toLowerCase().includes(query)
+      category.name.toLowerCase().includes(query) ||
+      (category.description && category.description.toLowerCase().includes(query))
     )
   }
 

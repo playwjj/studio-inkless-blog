@@ -1,4 +1,5 @@
 import type { DbArticle } from '~/server/types/dbTypes'
+import { generateSlug, generateUniqueSlug } from '~/server/utils/slugify'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -9,21 +10,41 @@ export default defineEventHandler(async (event) => {
     const body = await readBody(event)
 
     // Validate required fields
-    if (!body.title || !body.slug || !body.content || !body.author_id || !body.category_id) {
+    if (!body.title || !body.content || !body.author_id || !body.category_id) {
       throw createError({
         statusCode: 400,
-        statusMessage: 'Title, slug, content, author, and category are required'
+        statusMessage: 'Title, content, author, and category are required'
       })
     }
 
     // Generate UUID for article id (since id is text type in database)
     const articleId = crypto.randomUUID()
 
+    // Generate slug from title if not provided (supports Chinese)
+    let slug = body.slug?.trim()
+    if (!slug) {
+      const baseSlug = generateSlug(body.title)
+      slug = await generateUniqueSlug(baseSlug, async (checkSlug) => {
+        const existing = await fetchByField<DbArticle>('articles', 'slug', checkSlug)
+        return !!existing
+      })
+      console.log(`[CreatePost] Auto-generated slug for "${body.title}": ${slug}`)
+    } else {
+      // Check if provided slug already exists
+      const existingArticle = await fetchByField<DbArticle>('articles', 'slug', slug)
+      if (existingArticle) {
+        throw createError({
+          statusCode: 409,
+          statusMessage: 'An article with this slug already exists'
+        })
+      }
+    }
+
     // Prepare article data
     const articleData: Partial<DbArticle> = {
       id: articleId,  // UUID as text
       title: body.title,
-      slug: body.slug,
+      slug,
       content: body.content,
       excerpt: body.excerpt || '',
       status: body.status || 'draft',

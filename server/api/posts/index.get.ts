@@ -1,62 +1,88 @@
-import type { DbArticle, DbAuthor, DbCategory, DbTag } from '~/server/types/dbTypes'
+import type { DbArticle, DbAuthor, DbCategory } from '~/server/types/dbTypes'
 import type { BlogListItem } from '~/types/blog'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
 
   try {
-    // Fetch articles from database
-    const articlesResponse = await fetchFromDb<DbArticle>('articles', {
-      page: 1,
-      limit: 100,
-      sortBy: 'published_at',
-      sortOrder: 'desc',
-      search: query.search ? String(query.search) : undefined
-    })
+    const page = Math.max(1, parseInt(query.page as string) || 1)
+    const limit = Math.min(100, Math.max(1, parseInt(query.limit as string) || 10))
+    const sortBy = query.sortBy === 'title' ? 'title' : 'published_at'
+    const sortOrder = query.sortOrder === 'asc' || (query.sortBy === 'title' && query.sortOrder !== 'desc') ? 'ASC' : 'DESC'
 
-    // Fetch featured article (is_featured=1, most recent)
-    let featuredArticle: DbArticle | null = null
-    const featuredArticles = articlesResponse.data.filter(a => a.is_featured === 1 && a.status === 'published')
-    if (featuredArticles.length > 0) {
-      // Get the most recent featured article
-      featuredArticle = featuredArticles.sort((a, b) =>
-        new Date(b.published_at).getTime() - new Date(a.published_at).getTime()
-      )[0]
+    // Filtering and pagination are done in SQL so results are not capped
+    // by the DB API's page size
+    const filters: string[] = ['status = ?']
+    const filterParams: Array<string | number> = ['published']
+
+    if (query.search && typeof query.search === 'string' && query.search.trim()) {
+      filters.push('(title LIKE ? OR excerpt LIKE ?)')
+      const search = `%${query.search.trim()}%`
+      filterParams.push(search, search)
     }
 
-    // Fetch related data
-    const [authorsResponse, categoriesResponse] = await Promise.all([
+    if (query.category && typeof query.category === 'string') {
+      const category = await fetchByField<DbCategory>('categories', 'slug', query.category.toLowerCase())
+      if (!category) {
+        return emptyResponse(page, limit)
+      }
+      filters.push('category_id = ?')
+      filterParams.push(category.id)
+    }
+
+    // Filter by tag(s) - supports single or multiple tags (OR logic); accepts ?tag= or ?tags=
+    const rawTags = query.tag ?? query.tags
+    if (rawTags) {
+      const tagSlugs = (Array.isArray(rawTags) ? rawTags : [rawTags])
+        .map(tag => String(tag).toLowerCase())
+        .filter(Boolean)
+
+      if (tagSlugs.length > 0) {
+        const placeholders = tagSlugs.map(() => '?').join(', ')
+        filters.push(`EXISTS (
+          SELECT 1 FROM article_tags at
+          INNER JOIN tags t ON t.id = at.tag_id
+          WHERE at.article_id = articles.id AND t.slug IN (${placeholders})
+        )`)
+        filterParams.push(...tagSlugs)
+      }
+    }
+
+    const whereClause = filters.join(' AND ')
+    const offset = (page - 1) * limit
+    const [articles, countRows, featuredRows, authorsResponse, categoriesResponse] = await Promise.all([
+      executeQuery<DbArticle>(
+        `SELECT * FROM articles WHERE ${whereClause} ORDER BY ${sortBy} ${sortOrder} LIMIT ? OFFSET ?`,
+        [...filterParams, limit, offset]
+      ),
+      executeQuery<{ total: number }>(
+        `SELECT COUNT(*) as total FROM articles WHERE ${whereClause}`,
+        filterParams
+      ),
+      // Featured article (is_featured=1, most recent)
+      executeQuery<DbArticle>(
+        'SELECT * FROM articles WHERE status = ? AND is_featured = 1 ORDER BY published_at DESC LIMIT 1',
+        ['published']
+      ),
       fetchFromDb<DbAuthor>('authors', { limit: 100 }),
       fetchFromDb<DbCategory>('categories', { limit: 100 })
     ])
 
     const authors = authorsResponse.data
     const categories = categoriesResponse.data
+    const featuredArticle = featuredRows[0] || null
 
-    // Get all article IDs for batch tag fetching
-    const articleIds = articlesResponse.data.map(a => a.id)
+    // Batch fetch tags for the current page (plus the featured article)
+    const articleIds = articles.map(a => a.id)
+    if (featuredArticle && !articleIds.includes(featuredArticle.id)) {
+      articleIds.push(featuredArticle.id)
+    }
     const articleTagsMap = await getTagsForArticles(articleIds)
-
-    // Fetch all tags for slug mapping
-    const tagsResponse = await fetchFromDb<DbTag>('tags', { limit: 1000 })
-    const tags = tagsResponse.data
 
     // Helper function to convert article to BlogListItem
     const mapArticleToBlogItem = (article: DbArticle): BlogListItem => {
       const author = authors.find(a => a.id === article.author_id)
       const category = categories.find(c => c.id === article.category_id)
-
-      // Get tag names from the many-to-many relationship
-      const articleTagNames = articleTagsMap.get(article.id) || []
-
-      // Map tag names to tag objects with slugs
-      const articleTags = articleTagNames.map(tagName => {
-        const tag = tags.find(t => t.name === tagName)
-        return {
-          name: tagName,
-          slug: tag?.slug || tagName.toLowerCase().replace(/\s+/g, '-')
-        }
-      })
 
       return {
         id: article.id.toString(),
@@ -72,68 +98,41 @@ export default defineEventHandler(async (event) => {
           name: category?.name || 'Uncategorized',
           slug: category?.slug || 'uncategorized'
         },
-        tags: articleTags,
+        tags: articleTagsMap.get(article.id) || [],
         publishedAt: article.published_at,
         readTime: article.read_time,
         viewCount: article.view_count || 0
       }
     }
 
-    // Map featured article if exists
-    const featuredPost = featuredArticle ? mapArticleToBlogItem(featuredArticle) : null
-
-    // Map all articles to BlogListItem format
-    let posts: BlogListItem[] = articlesResponse.data
-      .map(mapArticleToBlogItem)
-
-    // Filter by category
-    if (query.category && typeof query.category === 'string') {
-      const categorySlug = query.category.toString().toLowerCase()
-      posts = posts.filter(post => post.category.slug === categorySlug)
-    }
-
-    // Filter by tag(s) - supports single or multiple tags (OR logic)
-    if (query.tag) {
-      const tagSlugs = Array.isArray(query.tag)
-        ? query.tag.map(t => String(t).toLowerCase())
-        : [String(query.tag).toLowerCase()]
-      const articleIdSets = await Promise.all(tagSlugs.map(slug => getArticleIdsByTag(slug)))
-      const allArticleIds = new Set(articleIdSets.flat())
-      if (allArticleIds.size > 0) {
-        posts = posts.filter(post => allArticleIds.has(post.id))
-      }
-    }
-
-    // Pagination
-    const page = parseInt(query.page as string) || 1
-    const limit = parseInt(query.limit as string) || 10
-    const startIndex = (page - 1) * limit
-    const endIndex = startIndex + limit
-
-    const paginatedPosts = posts.slice(startIndex, endIndex)
+    const total = Number(countRows[0]?.total || 0)
 
     return {
-      featuredPost,
-      posts: paginatedPosts,
+      featuredPost: featuredArticle ? mapArticleToBlogItem(featuredArticle) : null,
+      posts: articles.map(mapArticleToBlogItem),
       pagination: {
         page,
         limit,
-        total: posts.length,
-        totalPages: Math.ceil(posts.length / limit)
+        total,
+        totalPages: Math.ceil(total / limit)
       }
     }
   } catch (error) {
     console.error('Failed to fetch posts:', error)
     // Fallback to empty response
-    return {
-      featuredPost: null,
-      posts: [],
-      pagination: {
-        page: 1,
-        limit: 10,
-        total: 0,
-        totalPages: 0
-      }
-    }
+    return emptyResponse(1, 10)
   }
 })
+
+function emptyResponse(page: number, limit: number) {
+  return {
+    featuredPost: null,
+    posts: [] as BlogListItem[],
+    pagination: {
+      page,
+      limit,
+      total: 0,
+      totalPages: 0
+    }
+  }
+}

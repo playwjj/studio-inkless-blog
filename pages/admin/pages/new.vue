@@ -493,6 +493,7 @@ definePageMeta({
 })
 
 import { createValidation, required, pattern, minLength } from '~/composables/useFormValidation'
+import { toDatetimeLocal, fromDatetimeLocal } from '~/utils/datetime'
 
 // Custom slug validator that changes based on page type
 const validateSlug = (value: string, formData: any) => {
@@ -605,7 +606,7 @@ const handleSubmit = async () => {
     // Create page
     const response = await $fetch('/api/admin/pages', {
       method: 'POST',
-      body: formData
+      body: { ...formData, published_at: fromDatetimeLocal(formData.published_at) }
     })
 
     if ((response as any).success) {
@@ -628,7 +629,7 @@ const saveDraft = async () => {
 const publish = async () => {
   formData.status = 'published'
   if (!formData.published_at) {
-    formData.published_at = new Date().toISOString().slice(0, 16)
+    formData.published_at = toDatetimeLocal(new Date())
   }
   await handleSubmit()
 }

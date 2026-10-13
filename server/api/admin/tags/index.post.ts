@@ -1,4 +1,5 @@
 import type { DbTag } from '~/server/types/dbTypes'
+import { generateSlug, generateUniqueSlug } from '~/server/utils/slugify'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -6,29 +7,40 @@ export default defineEventHandler(async (event) => {
     await requireAuth(event)
 
     const body = await readBody(event)
-    const { name, slug, description } = body
+    const { name, slug: providedSlug, description } = body
 
     // Validate required fields
-    if (!name || !slug) {
+    if (!name) {
       throw createError({
         statusCode: 400,
-        statusMessage: 'Name and slug are required'
+        statusMessage: 'Name is required'
       })
     }
 
-    // Check if slug already exists
-    const existingTag = await fetchByField<DbTag>('tags', 'slug', slug)
-    if (existingTag) {
-      throw createError({
-        statusCode: 409,
-        statusMessage: 'A tag with this slug already exists'
+    // Generate slug from name if not provided (supports Chinese)
+    let slug = providedSlug?.trim()
+    if (!slug) {
+      const baseSlug = generateSlug(name.trim())
+      slug = await generateUniqueSlug(baseSlug, async (checkSlug) => {
+        const existing = await fetchByField<DbTag>('tags', 'slug', checkSlug)
+        return !!existing
       })
+    } else {
+      slug = slug.toLowerCase()
+      // Check if slug already exists
+      const existingTag = await fetchByField<DbTag>('tags', 'slug', slug)
+      if (existingTag) {
+        throw createError({
+          statusCode: 409,
+          statusMessage: 'A tag with this slug already exists'
+        })
+      }
     }
 
     // Create tag
     const newTag = await createRow<DbTag>('tags', {
       name: name.trim(),
-      slug: slug.trim().toLowerCase(),
+      slug,
       description: description?.trim() || null,
       usage_count: 0,
       created_at: new Date().toISOString(),

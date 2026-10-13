@@ -34,7 +34,7 @@ export default defineEventHandler(async (event) => {
     const [author, category, articleTags] = await Promise.all([
       fetchOneFromDb<DbAuthor>('authors', article.author_id),
       fetchOneFromDb<DbCategory>('categories', article.category_id),
-      getArticleTagNames(article.id)
+      getArticleTags(article.id)
     ])
 
     // Map to BlogPost format
@@ -45,18 +45,17 @@ export default defineEventHandler(async (event) => {
       excerpt: article.excerpt,
       content: article.content,
       author: {
+        id: author?.id,
         name: author?.name || 'Unknown Author',
-        avatar: author?.avatar_url || '/default-avatar.png'
+        avatar: author?.avatar_url || '/default-avatar.png',
+        bio: author?.bio || ''
       },
       coverImage: article.cover_image_url,
       category: {
         name: category?.name || 'Uncategorized',
         slug: category?.slug || 'uncategorized'
       },
-      tags: articleTags.map(name => ({
-        name,
-        slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-      })),
+      tags: articleTags,
       publishedAt: article.published_at,
       readTime: article.read_time,
       viewCount: article.view_count || 0

@@ -1,5 +1,6 @@
 import type { DbArticle } from '~/server/types/dbTypes'
 import { purgeCacheForPost } from '~/server/utils/cache'
+import { generateSlug, generateUniqueSlug } from '~/server/utils/slugify'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -35,16 +36,43 @@ export default defineEventHandler(async (event) => {
     }
 
     // Validate required fields
-    if (!body.title || !body.slug || !body.content || !body.author_id || !body.category_id) {
+    if (!body.title || !body.content || !body.author_id || !body.category_id) {
       throw createError({
         statusCode: 400,
-        statusMessage: 'Title, slug, content, author, and category are required'
+        statusMessage: 'Title, content, author, and category are required'
       })
     }
 
     // Update allowed fields
     if (body.title) updateData.title = body.title
-    if (body.slug) updateData.slug = body.slug
+
+    // Handle slug: generate if not provided, or validate if changed (supports Chinese)
+    if (body.slug !== undefined) {
+      let slug = body.slug?.trim()
+
+      if (!slug) {
+        // Generate slug from title if empty
+        const baseSlug = generateSlug(body.title)
+        slug = await generateUniqueSlug(baseSlug, async (checkSlug) => {
+          // Allow current article's slug
+          if (checkSlug === article.slug) return false
+          const existing = await fetchByField<DbArticle>('articles', 'slug', checkSlug)
+          return !!existing
+        })
+        console.log(`[UpdatePost] Auto-generated slug for "${body.title}": ${slug}`)
+      } else if (slug !== article.slug) {
+        // Slug changed, check if new slug already exists
+        const existingArticle = await fetchByField<DbArticle>('articles', 'slug', slug)
+        if (existingArticle && existingArticle.id !== articleId) {
+          throw createError({
+            statusCode: 409,
+            statusMessage: 'An article with this slug already exists'
+          })
+        }
+      }
+
+      updateData.slug = slug
+    }
     if (body.content) updateData.content = body.content
     if (body.excerpt !== undefined) updateData.excerpt = body.excerpt
     if (body.cover_image_url !== undefined) updateData.cover_image_url = body.cover_image_url

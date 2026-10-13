@@ -14,8 +14,17 @@ const shouldLoadGTM = computed(() => {
 // GTM code from site config
 const gtmCode = computed(() => siteConfig.value?.gtm_code || '')
 
+// Site name used by the title template
+const siteName = computed(() => siteConfig.value?.og_site_name || siteConfig.value?.name || 'Studio Inkless Blog')
+
 // Inject GTM scripts via useHead (works with SSR)
 useHead({
+  // Many page titles (e.g. from getTitle() or the site title pattern) already end
+  // with the site name — only append it when it is missing to avoid duplicates
+  titleTemplate: (title?: string) => {
+    if (!title) return siteName.value
+    return title.includes(siteName.value) ? title : `${title} - ${siteName.value}`
+  },
   link: [
     {
       rel: 'icon',

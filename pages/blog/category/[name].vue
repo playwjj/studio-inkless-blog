@@ -32,8 +32,11 @@
           <h1 class="text-3xl md:text-4xl font-bold mb-3 text-gray-900">
             {{ categoryName }} Articles
           </h1>
+          <p v-if="categoryDescription" class="text-base md:text-lg text-gray-700 mb-2">
+            {{ categoryDescription }}
+          </p>
           <p class="text-base md:text-lg text-gray-600">
-            Explore {{ filteredPosts.length }} article{{ filteredPosts.length !== 1 ? 's' : '' }} in {{ categoryName }}
+            Explore {{ totalPosts }} article{{ totalPosts !== 1 ? 's' : '' }} in {{ categoryName }}
           </p>
         </div>
       </div>
@@ -47,9 +50,10 @@
         <div class="max-w-2xl">
           <div class="relative">
             <input
-              v-model="searchQuery"
+              :value="searchInput"
+              @input="setSearch(($event.target as HTMLInputElement).value)"
               type="text"
-              placeholder="Search articles by title, content, or tags..."
+              placeholder="Search articles by title or excerpt..."
               class="w-full px-5 py-3.5 pl-12 rounded-xl border-2 border-gray-200 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all shadow-sm hover:border-gray-300"
             />
             <svg
@@ -66,8 +70,8 @@
               />
             </svg>
             <button
-              v-if="searchQuery"
-              @click="searchQuery = ''"
+              v-if="searchInput"
+              @click="setSearch('')"
               class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
             >
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -116,9 +120,9 @@
 
         <!-- Results Count -->
         <div v-if="!pending" class="text-sm text-gray-600">
-          Showing <span class="font-semibold text-gray-900">{{ filteredPosts.length }}</span>
-          {{ filteredPosts.length === 1 ? 'article' : 'articles' }}
-          <span v-if="searchQuery || selectedTags.length > 0"> (filtered)</span>
+          Showing <span class="font-semibold text-gray-900">{{ totalPosts }}</span>
+          {{ totalPosts === 1 ? 'article' : 'articles' }}
+          <span v-if="hasActiveFilters"> (filtered)</span>
         </div>
       </div>
 
@@ -227,16 +231,16 @@
           </div>
 
           <!-- Empty State -->
-          <div v-else-if="filteredPosts.length === 0" class="text-center py-16 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
+          <div v-else-if="posts.length === 0" class="text-center py-16 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
             <svg class="w-20 h-20 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <h3 class="text-xl font-semibold text-gray-900 mb-2">No articles found</h3>
             <p class="text-gray-600 mb-6">
-              {{ searchQuery || selectedTags.length > 0 ? 'Try adjusting your search terms or filters' : `No posts in ${categoryName} category yet` }}
+              {{ hasActiveFilters ? 'Try adjusting your search terms or filters' : `No posts in ${categoryName} category yet` }}
             </p>
             <button
-              v-if="searchQuery || selectedTags.length > 0"
+              v-if="hasActiveFilters"
               @click="clearFilters"
               class="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition-colors"
             >
@@ -251,11 +255,17 @@
           <div v-else>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
               <BlogCard
-                v-for="post in sortedPosts"
+                v-for="post in posts"
                 :key="post.id"
                 :post="post"
               />
             </div>
+
+            <Pagination
+              v-if="data?.pagination"
+              :current-page="currentPage"
+              :total-pages="data.pagination.totalPages"
+            />
           </div>
         </div>
       </div>
@@ -267,16 +277,54 @@
 import type { BlogListItem } from '~/types/blog'
 
 const route = useRoute()
+const router = useRouter()
 const categorySlug = computed(() => route.params.name as string)
 
-const searchQuery = ref('')
-const selectedTags = ref<string[]>([])
+// Filters are read from URL query parameters (mirrors pages/blog/index.vue)
+const currentPage = computed(() => {
+  const page = parseInt(route.query.page as string)
+  return page > 0 ? page : 1
+})
+const searchQuery = computed(() => (route.query.search as string) || '')
+const selectedTags = computed<string[]>(() => {
+  const tags = route.query.tags
+  if (!tags) return []
+  return (Array.isArray(tags) ? tags : [tags]) as string[]
+})
+const hasActiveFilters = computed(() => selectedTags.value.length > 0 || searchQuery.value.trim() !== '')
+
+// Local search input for debouncing
+const searchInput = ref(searchQuery.value)
 const sortBy = ref('newest')
 
-// Fetch categories and posts in parallel
-const [{ data: categoriesData }, { data, pending, error }] = await Promise.all([
+// Keep local search input in sync with URL (e.g. browser back/forward)
+watch(searchQuery, (newVal) => {
+  searchInput.value = newVal
+})
+
+const apiQuery = computed(() => ({
+  category: categorySlug.value,
+  page: currentPage.value,
+  limit: 12,
+  tags: selectedTags.value.length > 0 ? selectedTags.value : undefined,
+  search: searchQuery.value.trim() || undefined,
+  sortBy: sortBy.value === 'title' ? 'title' : 'published_at',
+  sortOrder: sortBy.value === 'oldest' || sortBy.value === 'title' ? 'asc' : 'desc'
+}))
+
+// Fetch categories, the current page of posts, and posts for the tag sidebar in parallel
+const [{ data: categoriesData }, { data, pending, error }, { data: allCategoryPosts }] = await Promise.all([
   useFetch('/api/categories'),
-  useFetch('/api/posts', { query: { category: categorySlug } })
+  useFetch('/api/posts', {
+    query: apiQuery,
+    watch: [currentPage, categorySlug, selectedTags, searchQuery, sortBy]
+  }),
+  // Tags for the sidebar are aggregated from the category's posts
+  // (the paginated fetch above only returns the current page)
+  useFetch('/api/posts', {
+    query: computed(() => ({ category: categorySlug.value, limit: 100 })),
+    watch: [categorySlug]
+  })
 ])
 
 // Find current category by slug
@@ -286,6 +334,7 @@ const currentCategory = computed(() => {
 })
 
 const categoryName = computed(() => currentCategory.value?.name || '')
+const categoryDescription = computed(() => currentCategory.value?.description || '')
 
 // Calculate all posts count
 const allPostsCount = computed(() => {
@@ -295,10 +344,10 @@ const allPostsCount = computed(() => {
 
 // Get tags specific to this category
 const categoryTags = computed(() => {
-  if (!data.value?.posts) return []
+  const categoryPosts = (allCategoryPosts.value?.posts as BlogListItem[] | undefined) ?? []
 
   const tagCounts = new Map<string, { name: string, slug: string, count: number }>()
-  data.value.posts.forEach((post: BlogListItem) => {
+  categoryPosts.forEach((post: BlogListItem) => {
     post.tags.forEach(tag => {
       const existing = tagCounts.get(tag.slug)
       if (existing) {
@@ -313,53 +362,45 @@ const categoryTags = computed(() => {
     .sort((a, b) => b.count - a.count)
 })
 
-const filteredPosts = computed(() => {
-  if (!data.value?.posts) return []
+const posts = computed(() => (data.value?.posts as BlogListItem[] | undefined) ?? [])
+const totalPosts = computed(() => data.value?.pagination?.total ?? 0)
 
-  let posts = data.value.posts as BlogListItem[]
+// Update filters in URL
+const updateFiltersInUrl = (updates: { tags?: string[], search?: string, resetPage?: boolean }) => {
+  const query: Record<string, any> = { ...route.query }
 
-  // Search filter
-  if (searchQuery.value.trim()) {
-    const query = searchQuery.value.toLowerCase()
-    posts = posts.filter(post =>
-      post.title.toLowerCase().includes(query) ||
-      post.excerpt.toLowerCase().includes(query) ||
-      post.tags.some(tag => tag.name.toLowerCase().includes(query))
-    )
+  if (updates.tags !== undefined) {
+    if (updates.tags.length > 0) {
+      query.tags = updates.tags
+    } else {
+      delete query.tags
+    }
   }
 
-  // Tag filter (selectedTags contains tag slugs)
-  if (selectedTags.value.length > 0) {
-    posts = posts.filter(post =>
-      selectedTags.value.some(tagSlug => post.tags.some(tag => tag.slug === tagSlug))
-    )
+  if (updates.search !== undefined) {
+    if (updates.search.trim()) {
+      query.search = updates.search.trim()
+    } else {
+      delete query.search
+    }
   }
 
-  return posts
-})
-
-const sortedPosts = computed(() => {
-  const posts = [...filteredPosts.value]
-
-  switch (sortBy.value) {
-    case 'newest':
-      return posts.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
-    case 'oldest':
-      return posts.sort((a, b) => new Date(a.publishedAt).getTime() - new Date(b.publishedAt).getTime())
-    case 'title':
-      return posts.sort((a, b) => a.title.localeCompare(b.title))
-    default:
-      return posts
+  if (updates.resetPage) {
+    delete query.page
   }
-})
+
+  router.push({ query })
+}
 
 const toggleTag = (tagSlug: string) => {
-  const index = selectedTags.value.indexOf(tagSlug)
+  const currentTags = [...selectedTags.value]
+  const index = currentTags.indexOf(tagSlug)
   if (index > -1) {
-    selectedTags.value.splice(index, 1)
+    currentTags.splice(index, 1)
   } else {
-    selectedTags.value.push(tagSlug)
+    currentTags.push(tagSlug)
   }
+  updateFiltersInUrl({ tags: currentTags, resetPage: true })
 }
 
 // Helper to get tag name from slug
@@ -368,18 +409,46 @@ const getTagName = (tagSlug: string) => {
   return tag?.name || tagSlug
 }
 
-const clearFilters = () => {
-  selectedTags.value = []
-  searchQuery.value = ''
+// Debounced search: wait 500ms after user stops typing
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
+const setSearch = (search: string) => {
+  searchInput.value = search
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
+  if (search.trim().length === 0) {
+    updateFiltersInUrl({ search: '', resetPage: true })
+  } else if (search.trim().length >= 2) {
+    searchTimeout = setTimeout(() => {
+      updateFiltersInUrl({ search, resetPage: true })
+    }, 500)
+  }
 }
+
+const clearFilters = () => {
+  searchInput.value = ''
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
+  updateFiltersInUrl({ tags: [], search: '', resetPage: true })
+}
+
+// Changing sort restarts from page 1
+watch(sortBy, () => {
+  if (currentPage.value > 1) {
+    const query = { ...route.query }
+    delete query.page
+    router.push({ query })
+  }
+})
 
 const { siteConfig } = useSiteConfig()
 
 useSeoMeta({
   title: () => `${categoryName.value} - Blog - Studio Inkless Blog`,
   ogTitle: () => `${categoryName.value} Articles - Studio Inkless Blog`,
-  description: () => `Explore articles in ${categoryName.value} category. Find tutorials, guides, and insights about ${categoryName.value}.`,
-  ogDescription: () => `Explore articles in ${categoryName.value} category.`,
+  description: () => categoryDescription.value || `Explore articles in ${categoryName.value} category. Find tutorials, guides, and insights about ${categoryName.value}.`,
+  ogDescription: () => categoryDescription.value || `Explore articles in ${categoryName.value} category.`,
   ogImage: () => siteConfig.value?.og_image || '',
   twitterCard: 'summary_large_image',
 })

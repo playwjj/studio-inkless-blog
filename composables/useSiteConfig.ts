@@ -22,8 +22,13 @@ export const useSiteConfig = () => {
     if (!siteConfig.value) return pageTitle || 'Loading...'
 
     if (pageTitle) {
+      // If the site title has no ${title}/{title} placeholder, append it to the page title
+      if (!siteConfig.value.title.includes('${title}') && !siteConfig.value.title.includes('{title}')) {
+        return `${pageTitle} - ${siteConfig.value.title}`
+      }
+
       // Replace ${title} placeholder with actual page title
-      return siteConfig.value.title.replace('${title}', pageTitle)
+      return siteConfig.value.title.replace(/\$\{title\}|\{title\}/, pageTitle)
     }
 
     // Use og_title as fallback when no page title is provided

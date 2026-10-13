@@ -271,6 +271,8 @@ definePageMeta({
 })
 
 import { createValidation, required, pattern, isUrl, minNumber, minLength } from '~/composables/useFormValidation'
+import { generateSlug as generateSlugFromText } from '~/utils/slugify'
+import { toDatetimeLocal, fromDatetimeLocal } from '~/utils/datetime'
 
 const { errors, touched, validateField, validateAll, setTouched } = createValidation<{
   title: string
@@ -356,7 +358,7 @@ const handleSubmit = async () => {
     // Create article
     const response = await $fetch('/api/admin/posts', {
       method: 'POST',
-      body: formData
+      body: { ...formData, published_at: fromDatetimeLocal(formData.published_at) }
     })
 
     if ((response as any).success) {
@@ -379,26 +381,16 @@ const saveDraft = async () => {
 const publish = async () => {
   formData.status = 'published'
   if (!formData.published_at) {
-    formData.published_at = new Date().toISOString().slice(0, 16)
+    formData.published_at = toDatetimeLocal(new Date())
   }
   await handleSubmit()
 }
 
-// Slug generation function
+// Slug generation function (supports Chinese via pinyin)
 const generateSlug = () => {
   if (!formData.title) return
 
-  formData.slug = formData.title
-    .toLowerCase()
-    .trim()
-    // Remove special characters, keep only alphanumeric and spaces
-    .replace(/[^\w\s-]/g, '')
-    // Replace spaces and underscores with hyphens
-    .replace(/[\s_]+/g, '-')
-    // Remove consecutive hyphens
-    .replace(/-+/g, '-')
-    // Remove leading and trailing hyphens
-    .replace(/^-+|-+$/g, '')
+  formData.slug = generateSlugFromText(formData.title)
 
   // Reset manual edit flag when using generate button
   isSlugManuallyEdited.value = false
@@ -412,13 +404,7 @@ const onSlugInput = () => {
 // Auto-generate slug when title changes (only if not manually edited)
 watch(() => formData.title, (newTitle: string) => {
   if (newTitle && !isSlugManuallyEdited.value) {
-    formData.slug = newTitle
-      .toLowerCase()
-      .trim()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/[\s_]+/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-+|-+$/g, '')
+    formData.slug = generateSlugFromText(newTitle)
   }
 })
 

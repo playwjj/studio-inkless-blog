@@ -9,52 +9,61 @@ export default defineEventHandler(async (event) => {
   const baseUrl = `${protocol}://${host}`
 
   try {
-    // Fetch all published articles
-    const articlesResponse = await fetchFromDb<DbArticle>('articles', {
-      limit: 1000,
-      sortBy: 'published_at',
-      sortOrder: 'desc'
-    })
+    // Query directly so results are not capped by the DB API's page size
+    const [publishedArticles, pagesResponse, categories, tags] = await Promise.all([
+      executeQuery<Pick<DbArticle, 'slug' | 'published_at' | 'updated_at'>>(
+        'SELECT slug, published_at, updated_at FROM articles WHERE status = ? ORDER BY published_at DESC',
+        ['published']
+      ),
+      // Fetch all published pages
+      fetchFromDb<DbPage>('pages', {
+        limit: 1000,
+        sortBy: 'updated_at',
+        sortOrder: 'desc'
+      }),
+      executeQuery<{ slug: string }>('SELECT slug FROM categories'),
+      executeQuery<{ slug: string }>('SELECT DISTINCT t.slug FROM tags t INNER JOIN article_tags at ON at.tag_id = t.id')
+    ])
 
-    // Fetch all published pages
-    const pagesResponse = await fetchFromDb<DbPage>('pages', {
-      limit: 1000,
-      sortBy: 'updated_at',
-      sortOrder: 'desc'
-    })
-
-    const articles = articlesResponse.data.filter(a => a.published_at && a.status === 'published' && new Date(a.published_at) <= new Date())
+    const articles = publishedArticles.filter(a => a.published_at && new Date(a.published_at) <= new Date())
     const pages = pagesResponse.data.filter(p => p.status === 'published' && (!p.published_at || new Date(p.published_at) <= new Date()))
 
     // Build XML
     let xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
     xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
 
+    // Dedupe: the pages table may hold records (e.g. slug "" or "blog")
+    // that duplicate the hardcoded homepage/blog entries below —
+    // emit each loc only once, keeping the first (hardcoded) version
+    const seen = new Set<string>()
+    const addUrl = (loc: string, lastmod: string, changefreq: string, priority: string) => {
+      if (seen.has(loc)) return
+      seen.add(loc)
+      xml += '  <url>\n'
+      xml += `    <loc>${loc}</loc>\n`
+      xml += `    <lastmod>${lastmod}</lastmod>\n`
+      xml += `    <changefreq>${changefreq}</changefreq>\n`
+      xml += `    <priority>${priority}</priority>\n`
+      xml += '  </url>\n'
+    }
+
+    const today = new Date().toISOString().split('T')[0]
+
     // Add homepage
-    xml += '  <url>\n'
-    xml += `    <loc>${baseUrl}/</loc>\n`
-    xml += `    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>\n`
-    xml += '    <changefreq>weekly</changefreq>\n'
-    xml += '    <priority>1.0</priority>\n'
-    xml += '  </url>\n'
+    addUrl(`${baseUrl}/`, today, 'weekly', '1.0')
 
     // Add blog index page
-    xml += '  <url>\n'
-    xml += `    <loc>${baseUrl}/blog</loc>\n`
-    xml += `    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>\n`
-    xml += '    <changefreq>daily</changefreq>\n'
-    xml += '    <priority>0.9</priority>\n'
-    xml += '  </url>\n'
+    addUrl(`${baseUrl}/blog`, today, 'daily', '0.9')
 
     // Add all articles
     for (const article of articles) {
       const lastmod = article.updated_at || article.published_at
-      xml += '  <url>\n'
-      xml += `    <loc>${baseUrl}/blog/${article.slug}</loc>\n`
-      xml += `    <lastmod>${new Date(lastmod).toISOString().split('T')[0]}</lastmod>\n`
-      xml += '    <changefreq>monthly</changefreq>\n'
-      xml += '    <priority>0.8</priority>\n'
-      xml += '  </url>\n'
+      addUrl(
+        `${baseUrl}/blog/${article.slug}`,
+        new Date(lastmod).toISOString().split('T')[0],
+        'monthly',
+        '0.8'
+      )
     }
 
     // Add all pages
@@ -62,36 +71,25 @@ export default defineEventHandler(async (event) => {
       const lastmod = page.updated_at || page.created_at
       // Remove leading slash from slug to avoid double slashes
       const slug = page.slug.startsWith('/') ? page.slug.slice(1) : page.slug
-      xml += '  <url>\n'
-      xml += `    <loc>${baseUrl}/${slug}</loc>\n`
-      xml += `    <lastmod>${new Date(lastmod).toISOString().split('T')[0]}</lastmod>\n`
-      xml += '    <changefreq>monthly</changefreq>\n'
-      xml += '    <priority>0.7</priority>\n'
-      xml += '  </url>\n'
+      // Skip malformed date-like slugs (e.g. 2026-01-06) — these page records 404
+      // and must not pollute the sitemap
+      if (/^\d{4}-\d{2}-\d{2}$/.test(slug)) continue
+      addUrl(
+        `${baseUrl}/${slug}`,
+        new Date(lastmod).toISOString().split('T')[0],
+        'monthly',
+        '0.7'
+      )
     }
 
     // Add category pages
-    const categoriesResponse = await fetchFromDb<any>('categories', { limit: 100 })
-    const categories = categoriesResponse.data
     for (const category of categories) {
-      xml += '  <url>\n'
-      xml += `    <loc>${baseUrl}/blog/category/${category.slug}</loc>\n`
-      xml += `    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>\n`
-      xml += '    <changefreq>weekly</changefreq>\n'
-      xml += '    <priority>0.6</priority>\n'
-      xml += '  </url>\n'
+      addUrl(`${baseUrl}/blog/category/${category.slug}`, today, 'weekly', '0.6')
     }
 
-    // Add tag pages
-    const tagsResponse = await fetchFromDb<any>('tags', { limit: 100 })
-    const tags = tagsResponse.data
+    // Add tag pages (only tags that are attached to at least one article)
     for (const tag of tags) {
-      xml += '  <url>\n'
-      xml += `    <loc>${baseUrl}/blog/tag/${tag.slug}</loc>\n`
-      xml += `    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>\n`
-      xml += '    <changefreq>weekly</changefreq>\n'
-      xml += '    <priority>0.5</priority>\n'
-      xml += '  </url>\n'
+      addUrl(`${baseUrl}/blog/tag/${tag.slug}`, today, 'weekly', '0.5')
     }
 
     xml += '</urlset>'

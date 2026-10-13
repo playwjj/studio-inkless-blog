@@ -5,6 +5,7 @@
 
 import type { DbTag } from '~/server/types/dbTypes'
 import type { SqlParam } from './dbApi'
+import { generateSlug, generateUniqueSlug } from './slugify'
 
 /**
  * Sync article tags using many-to-many relationship
@@ -203,11 +204,11 @@ async function findOrCreateTags(tagNames: string[]): Promise<number[]> {
 
   const now = new Date().toISOString()
 
-  // Step 1: Batch query existing tags (case-insensitive to match UNIQUE constraint)
+  // Step 1: Batch query existing tags (case-insensitive)
   const placeholders = tagNames.map(() => '?').join(',')
   const existingTags = await executeQuery<DbTag>(
     `SELECT id, name FROM tags WHERE LOWER(name) IN (${placeholders})`,
-    tagNames.map(name => name.toLowerCase())
+    tagNames.map(n => n.toLowerCase())
   )
 
   // Build map of existing tags (case-insensitive)
@@ -229,10 +230,22 @@ async function findOrCreateTags(tagNames: string[]): Promise<number[]> {
     const insertValues = tagsToCreate.map(() => '(?, ?, 0, ?, ?)').join(', ')
     const insertParams: any[] = []
 
-    tagsToCreate.forEach(tagName => {
-      const slug = tagName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+    // Generate slugs for new tags (with Chinese support via pinyin)
+    for (const tagName of tagsToCreate) {
+      const baseSlug = generateSlug(tagName)
+
+      // Ensure slug is unique
+      const slug = await generateUniqueSlug(baseSlug, async (checkSlug) => {
+        const existing = await executeQuery<{ id: number }>(
+          'SELECT id FROM tags WHERE slug = ?',
+          [checkSlug]
+        )
+        return existing.length > 0
+      })
+
+      console.log(`[findOrCreateTags] Generated slug for "${tagName}": ${slug}`)
       insertParams.push(tagName, slug, now, now)
-    })
+    }
 
     try {
       // Batch insert all new tags
@@ -245,14 +258,14 @@ async function findOrCreateTags(tagNames: string[]): Promise<number[]> {
       const newPlaceholders = tagsToCreate.map(() => '?').join(',')
       const newTags = await executeQuery<{ id: number, name: string }>(
         `SELECT id, name FROM tags WHERE LOWER(name) IN (${newPlaceholders})`,
-        tagsToCreate.map(name => name.toLowerCase())
+        tagsToCreate.map(n => n.toLowerCase())
       )
 
       if (newTags.length !== tagsToCreate.length) {
         console.error(`[findOrCreateTags] Created ${tagsToCreate.length} tags but only retrieved ${newTags.length}`)
         throw new Error(
           `Tag creation mismatch: created ${tagsToCreate.length} tags, retrieved ${newTags.length}. ` +
-          `Missing: ${tagsToCreate.filter(name => !newTags.find(t => t.name === name)).join(', ')}`
+          `Missing: ${tagsToCreate.filter(name => !newTags.find(t => t.name.toLowerCase() === name.toLowerCase())).join(', ')}`
         )
       }
 
@@ -365,6 +378,25 @@ export async function getArticleTagNames(articleId: string): Promise<string[]> {
 }
 
 /**
+ * Get tags with slug for an article (for display with links)
+ *
+ * @param articleId - The article ID
+ * @returns Array of tag objects with name and slug
+ */
+export async function getArticleTags(articleId: string): Promise<Array<{ name: string, slug: string }>> {
+  const result = await executeQuery<{ name: string, slug: string }>(
+    `SELECT t.name, t.slug
+     FROM tags t
+     INNER JOIN article_tags at ON t.id = at.tag_id
+     WHERE at.article_id = ?
+     ORDER BY t.name`,
+    [articleId]
+  )
+
+  return result
+}
+
+/**
  * Get articles by tag (for filtering)
  *
  * @param tagSlug - The tag slug
@@ -386,14 +418,14 @@ export async function getArticleIdsByTag(tagSlug: string): Promise<string[]> {
  * Get tags for multiple articles (batch operation for performance)
  *
  * @param articleIds - Array of article IDs
- * @returns Map of article ID to tag names array
+ * @returns Map of article ID to tag objects array (with name and slug)
  */
-export async function getTagsForArticles(articleIds: string[]): Promise<Map<string, string[]>> {
+export async function getTagsForArticles(articleIds: string[]): Promise<Map<string, Array<{ name: string, slug: string }>>> {
   if (articleIds.length === 0) return new Map()
 
   const placeholders = articleIds.map(() => '?').join(',')
-  const result = await executeQuery<{ article_id: string, name: string }>(
-    `SELECT at.article_id, t.name
+  const result = await executeQuery<{ article_id: string, name: string, slug: string }>(
+    `SELECT at.article_id, t.name, t.slug
      FROM article_tags at
      INNER JOIN tags t ON at.tag_id = t.id
      WHERE at.article_id IN (${placeholders})
@@ -401,13 +433,13 @@ export async function getTagsForArticles(articleIds: string[]): Promise<Map<stri
     articleIds
   )
 
-  // Build map of article ID to tag names
-  const tagsMap = new Map<string, string[]>()
+  // Build map of article ID to tag objects
+  const tagsMap = new Map<string, Array<{ name: string, slug: string }>>()
   result.forEach(row => {
     if (!tagsMap.has(row.article_id)) {
       tagsMap.set(row.article_id, [])
     }
-    tagsMap.get(row.article_id)!.push(row.name)
+    tagsMap.get(row.article_id)!.push({ name: row.name, slug: row.slug })
   })
 
   return tagsMap

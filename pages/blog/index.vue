@@ -321,12 +321,14 @@ const apiQuery = computed(() => ({
   limit: 10,
   category: selectedCategory.value || undefined,
   tag: selectedTags.value.length > 0 ? selectedTags.value : undefined,
-  search: searchQuery.value.trim() || undefined
+  search: searchQuery.value.trim() || undefined,
+  sortBy: sortBy.value === 'title' ? 'title' : 'published_at',
+  sortOrder: sortBy.value === 'oldest' || sortBy.value === 'title' ? 'asc' : 'desc'
 }))
 
 const { data, pending, error, refresh } = await useFetch('/api/posts', {
   query: apiQuery,
-  watch: [currentPage, selectedCategory, selectedTags, searchQuery]
+  watch: [currentPage, selectedCategory, selectedTags, searchQuery, sortBy]
 })
 const { data: categoriesData } = await useFetch('/api/categories')
 const { data: tagsData } = await useFetch('/api/tags', { query: { limit: 80 } })
@@ -337,18 +339,15 @@ const filteredPosts = computed(() => {
   return data.value.posts as BlogListItem[]
 })
 
-const sortedPosts = computed(() => {
-  const posts = [...filteredPosts.value]
+// Sorting is handled by the API so it applies across all pages
+const sortedPosts = filteredPosts
 
-  switch (sortBy.value) {
-    case 'newest':
-      return posts.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
-    case 'oldest':
-      return posts.sort((a, b) => new Date(a.publishedAt).getTime() - new Date(b.publishedAt).getTime())
-    case 'title':
-      return posts.sort((a, b) => a.title.localeCompare(b.title))
-    default:
-      return posts
+// Changing sort restarts from page 1
+watch(sortBy, () => {
+  if (currentPage.value > 1) {
+    const query = { ...route.query }
+    delete query.page
+    router.push({ query })
   }
 })
 

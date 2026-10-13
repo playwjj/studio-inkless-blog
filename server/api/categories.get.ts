@@ -13,6 +13,7 @@ export default defineEventHandler(async () => {
     return categories.map(category => ({
       name: category.name,
       slug: category.slug,
+      description: category.description || '',
       count: category.count
     }))
   } catch (error) {

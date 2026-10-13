@@ -5,8 +5,10 @@ export interface BlogPost {
   excerpt: string
   content: string
   author: {
+    id?: number
     name: string
     avatar: string
+    bio?: string
   }
   coverImage: string
   publishedAt: string

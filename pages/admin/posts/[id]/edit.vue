@@ -269,6 +269,8 @@ definePageMeta({
 })
 
 import { createValidation, required, pattern, isUrl, minNumber, minLength } from '~/composables/useFormValidation'
+import { generateSlug as generateSlugFromText } from '~/utils/slugify'
+import { toDatetimeLocal, fromDatetimeLocal } from '~/utils/datetime'
 
 const { errors, touched, validateField, validateAll, setTouched } = createValidation<{
   title: string
@@ -345,7 +347,7 @@ onMounted(async () => {
         excerpt: data.excerpt || '',
         content: data.content || '',
         status: data.status || 'draft',
-        published_at: data.published_at ? new Date(data.published_at).toISOString().slice(0, 16) : '',
+        published_at: toDatetimeLocal(data.published_at),
         read_time: data.read_time || 5,
         is_featured: (data as any).is_featured || 0,
         author_id: data.author_id?.toString() || '',
@@ -386,9 +388,7 @@ const handleSubmit = async () => {
     const requestBody = {
       ...formData,
       // Convert datetime-local format to ISO string
-      published_at: formData.published_at
-        ? new Date(formData.published_at).toISOString()
-        : new Date().toISOString()
+      published_at: fromDatetimeLocal(formData.published_at) || new Date().toISOString()
     }
 
     // Update article
@@ -409,21 +409,11 @@ const handleSubmit = async () => {
   }
 }
 
-// Slug generation function
+// Slug generation function (supports Chinese via pinyin)
 const generateSlug = () => {
   if (!formData.title) return
 
-  formData.slug = formData.title
-    .toLowerCase()
-    .trim()
-    // Remove special characters, keep only alphanumeric and spaces
-    .replace(/[^\w\s-]/g, '')
-    // Replace spaces and underscores with hyphens
-    .replace(/[\s_]+/g, '-')
-    // Remove consecutive hyphens
-    .replace(/-+/g, '-')
-    // Remove leading and trailing hyphens
-    .replace(/^-+|-+$/g, '')
+  formData.slug = generateSlugFromText(formData.title)
 }
 
 // validate content as it changes so editor errors clear

@@ -321,6 +321,43 @@
         </div>
       </div>
 
+      <!-- Previous / Next Article -->
+      <nav
+        v-if="adjacent && (adjacent.prev || adjacent.next)"
+        class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16"
+        aria-label="Article navigation"
+      >
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <NuxtLink
+            v-if="adjacent.prev"
+            :to="`/blog/${adjacent.prev.slug}`"
+            class="group block bg-white rounded-xl shadow-md border border-gray-100 p-6 hover:shadow-lg transition-shadow"
+          >
+            <span class="flex items-center gap-2 text-sm font-medium text-gray-500 mb-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Previous Article
+            </span>
+            <span class="block text-lg font-bold text-gray-900 group-hover:text-primary-600 transition-colors line-clamp-2">{{ adjacent.prev.title }}</span>
+          </NuxtLink>
+          <span v-else class="hidden md:block"></span>
+          <NuxtLink
+            v-if="adjacent.next"
+            :to="`/blog/${adjacent.next.slug}`"
+            class="group block bg-white rounded-xl shadow-md border border-gray-100 p-6 hover:shadow-lg transition-shadow text-right"
+          >
+            <span class="flex items-center justify-end gap-2 text-sm font-medium text-gray-500 mb-2">
+              Next Article
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </span>
+            <span class="block text-lg font-bold text-gray-900 group-hover:text-primary-600 transition-colors line-clamp-2">{{ adjacent.next.title }}</span>
+          </NuxtLink>
+        </div>
+      </nav>
+
       <!-- Related Articles -->
       <section v-if="relatedPosts && relatedPosts.length > 0" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
         <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-8">Related Articles</h2>
@@ -340,9 +377,10 @@
 const route = useRoute()
 const slug = route.params.slug
 
-const [{ data, pending, error }, { data: relatedPosts }] = await Promise.all([
+const [{ data, pending, error }, { data: relatedPosts }, { data: adjacent }] = await Promise.all([
   useFetch(`/api/posts/${slug}`),
-  useFetch(`/api/posts/related/${slug}`)
+  useFetch(`/api/posts/related/${slug}`),
+  useFetch(`/api/posts/adjacent/${slug}`)
 ])
 
 const { formatDate } = useFormatDate()

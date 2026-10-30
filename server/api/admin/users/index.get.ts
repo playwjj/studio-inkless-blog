@@ -3,7 +3,7 @@ import type { DbUser } from '~/server/types/dbTypes'
 export default defineEventHandler(async (event) => {
   try {
     // Require authentication
-    await requireAuth(event)
+    await requireAdmin(event)
 
     const users = await fetchAllFromDb<DbUser>('users')
 

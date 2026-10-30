@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
       article = await fetchByField<DbArticle>('articles', 'slug', id)
     }
 
-    if (!article) {
+    if (!article || article.status !== 'published') {
       throw createError({
         statusCode: 404,
         statusMessage: 'Post not found'

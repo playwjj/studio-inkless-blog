@@ -11,18 +11,10 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    // Fetch all blocks for this page
-    const blocksResponse = await fetchFromDb<DbPageBlock>('page_blocks', {
-      limit: 100
-    })
-
-    // Filter blocks by page_id and visible status
-    let blocks = blocksResponse.data.filter(
-      block => block.page_id === parseInt(id) && block.is_visible === 1
+    const blocks = await executeQuery<DbPageBlock>(
+      'SELECT * FROM page_blocks WHERE page_id = ? AND is_visible = 1 ORDER BY block_order ASC',
+      [parseInt(id)]
     )
-
-    // Sort by block_order
-    blocks = blocks.sort((a, b) => a.block_order - b.block_order)
 
     // Parse JSON config for each block
     const parsedBlocks = blocks.map(block => ({

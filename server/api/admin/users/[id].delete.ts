@@ -1,6 +1,6 @@
 export default defineEventHandler(async (event) => {
   try {
-    await requireAuth(event)
+    await requireAdmin(event)
 
     const userId = getRouterParam(event, 'id')
 

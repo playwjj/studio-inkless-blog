@@ -20,6 +20,11 @@ export default defineEventHandler(async (event) => {
     // Otherwise, fetch by slug
     else {
       page = await fetchByField<DbPage>('pages', 'slug', slug)
+      // Slugs may be stored with or without a leading slash
+      if (!page) {
+        const altSlug = slug.startsWith('/') ? slug.slice(1) : `/${slug}`
+        if (altSlug) page = await fetchByField<DbPage>('pages', 'slug', altSlug)
+      }
     }
 
     if (!page) {
@@ -29,9 +34,8 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // Only return published pages unless explicitly requesting draft
-    const query = getQuery(event)
-    if (page.status !== 'published' && query.preview !== 'true') {
+    // Only return published pages
+    if (page.status !== 'published') {
       throw createError({
         statusCode: 404,
         statusMessage: 'Page not found'
@@ -45,20 +49,20 @@ export default defineEventHandler(async (event) => {
     }
 
     // Fetch page blocks (only visible ones)
-    const blocksResponse = await fetchFromDb<DbPageBlock>('page_blocks', {
-      where: { page_id: page.id, is_visible: 1 },
-      sortBy: 'block_order',
-      sortOrder: 'asc',
-      limit: 100
-    })
-    const blocks = blocksResponse.data || []
+    // fetchFromDb has no WHERE support, so filter by page in SQL
+    const blocks = await executeQuery<DbPageBlock>(
+      'SELECT * FROM page_blocks WHERE page_id = ? AND is_visible = 1 ORDER BY block_order ASC',
+      [page.id]
+    )
 
     // Increment view count (fire and forget)
     // Note: This would need a custom update endpoint in your DB API
     // For now, we'll skip this or implement it later
 
+    const { password_hash, ...publicPage } = page
+
     return {
-      ...page,
+      ...publicPage,
       author: author ? {
         name: author.name,
         avatar: author.avatar_url,

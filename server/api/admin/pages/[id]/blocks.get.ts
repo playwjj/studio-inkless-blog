@@ -16,14 +16,11 @@ export default defineEventHandler(async (event) => {
     }
 
     // Fetch all blocks for this page, ordered by block_order
-    const blocksResponse = await fetchFromDb<DbPageBlock>('page_blocks', {
-      where: { page_id: parseInt(pageId) },
-      sortBy: 'block_order',
-      sortOrder: 'asc',
-      limit: 100
-    })
-
-    const blocks = blocksResponse.data || []
+    // fetchFromDb has no WHERE support, so filter by page in SQL
+    const blocks = await executeQuery<DbPageBlock>(
+      'SELECT * FROM page_blocks WHERE page_id = ? ORDER BY block_order ASC',
+      [parseInt(pageId)]
+    )
 
     return {
       success: true,

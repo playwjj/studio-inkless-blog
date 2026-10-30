@@ -51,6 +51,19 @@ export async function requireAuth(event: H3Event) {
   return user
 }
 
+export async function requireAdmin(event: H3Event) {
+  const user = await requireAuth(event)
+
+  if (user.role !== 'admin') {
+    throw createError({
+      statusCode: 403,
+      statusMessage: 'Admin access required'
+    })
+  }
+
+  return user
+}
+
 export function isApiRequest(event: H3Event): boolean {
   return event.context.isApiRequest === true
 }

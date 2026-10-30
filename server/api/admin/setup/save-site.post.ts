@@ -43,6 +43,15 @@ export default defineEventHandler(async (event) => {
       })
     }
 
+    // Setup may only create the first admin; refuse once any user exists
+    const existingUsers = await fetchFromDb<DbUser>('users', { page: 1, limit: 1 })
+    if (existingUsers.data && existingUsers.data.length > 0) {
+      throw createError({
+        statusCode: 409,
+        statusMessage: 'Setup has already been completed'
+      })
+    }
+
     const body = await readBody<SiteSetupData>(event)
 
     // Validate required fields

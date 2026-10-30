@@ -90,7 +90,7 @@ const route = useRoute()
 const slug = route.params.slug as string
 
 // Fetch page data
-const { data: page, pending, error } = await useFetch(`/api/pages/${slug}`)
+const { data: page, pending, error } = await useFetch(`/api/pages/page?slug=${encodeURIComponent(slug)}`)
 
 // Set page metadata
 if (page.value) {

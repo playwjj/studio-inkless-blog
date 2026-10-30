@@ -2,7 +2,7 @@ import type { DbUser } from '~/server/types/dbTypes'
 
 export default defineEventHandler(async (event) => {
   try {
-    await requireAuth(event)
+    await requireAdmin(event)
 
     const body = await readBody(event)
     const { username, email, password, full_name, avatar_url, role, is_active } = body

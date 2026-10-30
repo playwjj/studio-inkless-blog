@@ -12,13 +12,10 @@ export default defineEventHandler(async (event) => {
       sortOrder: 'desc'
     })
 
-    // Filter by status (only show published by default)
-    const statusFilter = query.status as string || 'published'
-    let pages = pagesResponse.data
-
-    if (statusFilter !== 'all') {
-      pages = pages.filter(page => page.status === statusFilter)
-    }
+    // Public endpoint: only published pages, never expose password hashes
+    const pages = pagesResponse.data
+      .filter(page => page.status === 'published')
+      .map(({ password_hash, ...page }) => page)
 
     return {
       pages,

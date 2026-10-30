@@ -49,6 +49,17 @@ export default defineEventHandler(async (event) => {
       const existingTables = tablesResponse.data?.map((t: any) => t.name) || []
       console.log('Existing tables:', existingTables)
       
+      // Never drop tables once an account exists
+      if (existingTables.includes('users')) {
+        const usersResponse = await fetchFromDb('users', { page: 1, limit: 1 })
+        if (usersResponse.data && usersResponse.data.length > 0) {
+          throw createError({
+            statusCode: 409,
+            statusMessage: 'Database initialization failed: users already exist. Prevent re-initialization to avoid data loss.'
+          })
+        }
+      }
+
       // If site table exists, check if it has data
       if (existingTables.includes('site')) {
         try {

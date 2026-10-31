@@ -1,4 +1,4 @@
-# Studio Inkless Blog
+<h1 align="center">Studio Inkless Blog</h1>
 
 <div align="center">
 

@@ -112,6 +112,50 @@
             <p class="mt-1 text-xs text-gray-500">Leave as 0 for tokens that never expire</p>
           </div>
 
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">
+              Scopes
+            </label>
+            <p class="mt-1 text-xs text-gray-500 mb-2">
+              Limit this token to specific areas of the admin API. Leave everything
+              unchecked for a legacy token with role-only access.
+            </p>
+            <p class="text-xs font-medium text-gray-500 uppercase mb-1">Content (editor)</p>
+            <div class="grid grid-cols-2 gap-x-4 gap-y-1.5 mb-3">
+              <label v-for="scope in editorScopes" :key="scope" class="flex items-center space-x-2 text-sm text-gray-700">
+                <input
+                  v-model="newToken.scopes"
+                  type="checkbox"
+                  :value="scope"
+                  class="border-gray-300"
+                />
+                <span>{{ scope }}</span>
+              </label>
+            </div>
+            <p class="text-xs font-medium text-gray-500 uppercase mb-1">Site management (admin)</p>
+            <div class="grid grid-cols-2 gap-x-4 gap-y-1.5 mb-3">
+              <label v-for="scope in adminScopes" :key="scope" class="flex items-center space-x-2 text-sm text-gray-700">
+                <input
+                  v-model="newToken.scopes"
+                  type="checkbox"
+                  :value="scope"
+                  class="border-gray-300"
+                />
+                <span>{{ scope }}</span>
+              </label>
+            </div>
+            <label class="flex items-center space-x-2 text-sm text-gray-700">
+              <input
+                v-model="newToken.scopes"
+                type="checkbox"
+                value="*"
+                class="border-gray-300"
+              />
+              <span>* (full access)</span>
+            </label>
+            <p class="mt-1 text-xs text-gray-500">A token's role still applies: an editor's token cannot use admin scopes.</p>
+          </div>
+
           <div class="flex items-center justify-end space-x-3 pt-4">
             <button
               type="button"
@@ -228,10 +272,15 @@ const createdToken = ref('')
 const copied = ref(false)
 const creating = ref(false)
 
+// Scope vocabulary; mirrors server/utils/tokenScopes.ts — keep in sync.
+const editorScopes = ['posts', 'authors', 'categories', 'tags', 'files', 'ai', 'dashboard']
+const adminScopes = ['users', 'site', 'pages', 'newsletters', 'contact']
+
 const newToken = reactive({
   name: '',
   description: '',
-  expires_in_days: 0
+  expires_in_days: 0,
+  scopes: [] as string[]
 })
 
 const apiBaseUrl = ref('')
@@ -267,7 +316,8 @@ async function createToken() {
       body: {
         name: newToken.name,
         description: newToken.description || undefined,
-        expires_in_days: newToken.expires_in_days || undefined
+        expires_in_days: newToken.expires_in_days || undefined,
+        scopes: [...newToken.scopes]
       }
     })
 
@@ -282,6 +332,7 @@ async function createToken() {
     newToken.name = ''
     newToken.description = ''
     newToken.expires_in_days = 0
+    newToken.scopes = []
   } catch (error: any) {
     showError('Failed to create token', 'Please try again.')
     console.error('Create token error:', error)
@@ -295,6 +346,7 @@ function cancelCreate() {
   newToken.name = ''
   newToken.description = ''
   newToken.expires_in_days = 0
+  newToken.scopes = []
 }
 
 function closeTokenModal() {

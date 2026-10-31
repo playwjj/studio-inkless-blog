@@ -60,8 +60,8 @@
               </div>
               <div>
                 <h3 class="font-semibold text-gray-900 mb-1">Email us</h3>
-                <a href="mailto:hello@404401.xyz" class="text-gray-600 hover:text-primary-600 transition-colors">
-                  hello@404401.xyz
+                <a href="mailto:hello@example.com" class="text-gray-600 hover:text-primary-600 transition-colors">
+                  hello@example.com
                 </a>
               </div>
             </div>

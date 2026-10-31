@@ -1,17 +1,34 @@
 /**
  * Role guard for the admin API.
  *
- * The user model has three roles (admin / editor / viewer), but most
- * /api/admin/** handlers only call requireAuth, which accepts any
- * signed-in account. A viewer is a read-only account: it must not be
- * able to create, edit, delete or export anything through the admin
- * API. This middleware closes that gap in one place instead of
- * editing every handler.
+ * Role policy (three roles in the user model):
+ * - admin: full site management
+ * - editor: article work only — writing/editing articles and the
+ *   content that goes with them (authors, categories, tags, media,
+ *   AI generation, dashboard)
+ * - viewer: read-only; no access to the admin API at all
  *
- * It runs after apiAuth (alphabetical middleware order), so token
- * requests already carry event.context.apiUser. Unauthenticated
- * requests fall through and get the handler's usual 401.
+ * Most /api/admin/** handlers only call requireAuth, which accepts
+ * any signed-in account, so the role split is enforced here in one
+ * place instead of editing every handler. Site-management groups
+ * (users, site settings, newsletters, pages, contact messages) are
+ * admin-only.
+ *
+ * This middleware runs after apiAuth (alphabetical order), so token
+ * requests already carry event.context.apiUser with the token
+ * owner's role. Unauthenticated requests fall through and get the
+ * handler's usual 401.
  */
+
+// Path segment after /api/admin/ that only an admin may use.
+const ADMIN_ONLY_GROUPS = new Set([
+  'users',
+  'site',
+  'newsletters',
+  'pages',
+  'contact'
+])
+
 export default defineEventHandler(async (event) => {
   const path = event.path
   if (!path.startsWith('/api/admin/')) {
@@ -36,10 +53,22 @@ export default defineEventHandler(async (event) => {
     }
   }
 
+  if (!role) {
+    return
+  }
+
   if (role === 'viewer') {
     throw createError({
       statusCode: 403,
       statusMessage: 'Viewer accounts cannot access the admin API'
+    })
+  }
+
+  const group = path.split('/')[3]
+  if (role !== 'admin' && ADMIN_ONLY_GROUPS.has(group)) {
+    throw createError({
+      statusCode: 403,
+      statusMessage: 'Admin access required'
     })
   }
 })
